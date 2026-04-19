@@ -3,12 +3,14 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="DC Planner">
+
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3252/3252906.png">
-    <link rel="manifest" href="data:application/json,{'name':'DC Planner','short_name':'DCPlan','display':'standalone','start_url':'.'}">
+    <link rel='manifest' href='data:application/json,{"name":"DC Planner","short_name":"DCPlan","display":"standalone","start_url":"."}'>
     <title>DC Planner Refactored V6</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -60,11 +62,15 @@
         }
         const { useState, useMemo, useRef, useEffect, useCallback, memo } = React;
 
-        const I18N = {
-            tw: { appTitle: 'Data Center Planner', pro: 'PRO', step1: '1. 基本設定', step2: '2. 結構系統', step3: '3. 空間規劃', step4: '4. 面積表', step5: '5. 斷面圖\n分析', step6: '6. 資訊\n可視化', langToggle: 'JP', importDxf: '匯入參考底圖 (DXF)', importDxfBtn: '匯入 DXF 檔案', confirmUnit: '確認圖面單位', unitMm: '毫米 (mm)', unitCm: '公分 (cm)', unitM: '公尺 (m)', confirmBoundary: '確認建築物室內界線範圍', maxWidth: '最大寬度 (mm)', maxDepth: '最大深度 (mm)', siteRuleTarget: '基地法規與目標設定', siteArea: '基地面積 (m²)', bcr: '法定建蔽率 (%)', far: '法定容積率 (%)', maxBcrArea: '容許最大建蔽投影面積：', maxFarArea: '容許最大總樓地板面積：', floorVolumeSetting: '樓層量體設定', addBtn: '新增', height: '高度', target: '目標', seismicLayer: '避震層', totalAreaFarLimit: '設定總面積 / 容積上限', maxSingleFloorBcrLimit: '最大單層設定 / 建蔽上限', colGridAxis: '獨立樓層柱網與軸線', enableColGrid: '啟用柱網與 CAD 軸線', settingFloor: '設定樓層:', colWidthX: '柱寬 (X)', colDepthY: '柱深 (Y)', xGridSeq: 'X 軸距模矩序列', yGridSeq: 'Y 軸距模矩序列', exGridX: '例: 10800, 8400, 10800', exGridY: '例: 10800', applyToThisFloor: '套用至本層', syncToAllFloors: '同步至全區', restoreDeletedCols: '還原本層已刪除柱子', kwPerRackEst: '單櫃耗電量預估', rackAisleSize: '機櫃與通道尺寸 (mm)', rackW: '機櫃寬 (W)', rackD: '機櫃深 (D)', hotAisle: '熱通道 (內)', coldAisle: '冷通道 (主)', marginX: '邊界留白 X', marginY: '邊界留白 Y', coolingEq: '空調設備 (FWU / AHU)', sideFwuAhu: '側邊配置 FWU/AHU', depthMm: '深度(mm)', widthMm: '寬度(mm)', itRoomList: 'IT 伺服器室列表', xArray: 'X陣列', yArray: 'Y陣列', widthW: '寬度 (W)', depthH: '深度 (H)', zOffset: 'Z軸底面墊高 (mm)', zHeight: '空間淨高 (mm)', walkDupLimit: '步行/重複限制', noDoorSet: '尚未設置門', itCorridorSet: '機房外圍走廊設定', itDoorOpen: '🚪 機房門/開口', doorNum: '門 #', delete: '刪除', topWall: '上牆', bottomWall: '下牆', leftWall: '左牆', rightWall: '右牆', singleDoor: '單開', doubleDoor: '雙開', slidingDoor: '拉門', openIn: '內開', openOut: '外開', swingLeft: '左向', swingRight: '右向', doorW: '寬', doorDist: '距', noDoorSetting: '無門片設定', editSpaceSet: '編輯空間設定', locatedFloor: '所在樓層', roomW: '房間寬度 (W)', roomH: '房間深度 (H)', stairTypeSet: '樓梯形式與配置', uStair: 'U型雙跑梯', straightStair: '單跑直梯', lStair: 'L型轉折梯', spiralStair: '螺旋梯', stairElevator: '樓梯 + 電梯', pureStair: '純樓梯', evacTypeSet: '避難階段類型', evacNormal: '一般階段', evacIndoor: '屋內避難階段', evacOutdoor: '屋外避難階段', evacSpecial: '特別避難階段', anteTypeSet: '前室/附室設定', anteRoom: '附室 (室內)', anteBalcony: '陽台 (Balcony)', anteSmoke: '附室 (排煙風洞)', stairRiser: '蹴上 (Riser)', stairTread: '踏面 (Tread)', stairWidth: '有效寬度 (Width)', elevatorSizeSet: '電梯井尺寸設定 (免計容積)', emergencyElevator: '非常用電梯', evW: '電梯井寬', evH: '電梯井深', corridorWSet: '專屬走道寬度', doorList: '🚪 門/開口列表', currentFloorSpace: '目前樓層空間', copyFloorTo: '整層複製至:', copy: '複製', addSpaceBlock: '新增空間塊 (附屬/景觀)', type: '類型', name: '名稱', addTo: '新增至', escapeCheck: '逃生距離與法規檢核', fireproofConst: '(3) 其他居室 (60m/30m)', windowlessConst: '(2) 特殊建築物 (50m/25m)', normalConst: '(1) 無窗居室等 (40m/20m)', escapeDistDesc: '最深處至最近出入口/梯廳', singleEscape: '單向逃生/重複距離', doubleEscape: '雙向逃生/步行距離', evacFloorNote: '避難階檢核：分別計算[居室->出入口]與[樓梯->出入口]', evacDistR2E: '居室至出入口', evacDistS2E: '樓梯至出入口', lawLimit: '法規限制:', pass: '合格', fail: '超標', bsjReq1: 'BSJ 基準法要求 (樓層目標:', atLeastReq: '至少需', straightStairs: '座直通樓梯', currentCount: '當前實體數：', compliant: '合規', insufficient: '不足', escapePrompt: '請新增同樓層的「主要出入口(1F)」或「梯廳」並設置門以進行檢核。', projectSummary: '專案概要', totalItCapacity: '總 IT 容量', farConsumption: '容積率消化', gfaReportTitle: 'GFA 容積檢討表', gfaReportDesc: '自動依據日本建築基準法計算 (各樓層已轉至橫向對齊)', spaceCategory: '空間類別 / 項目', total: '合計 (Total)', exportExcel: '匯出 Excel', exportCsv: '匯出 CSV', sectionAnalysis: '斷面圖分析 (建築剖面產生器)', sectionDesc: '拖曳剖面線 (X-X\', Y-Y\') 擷取對應位置的空間並生成剖面圖。', showLimitLines: '顯示高度限制斜線', showSectionCols: '顯示/隱藏結構柱', showSeismicCols: '顯示/隱藏避震裝置', limitDirSets: '各方向限制設定', planTop: 'Plan 上方', planBottom: 'Plan 下方', planLeft: 'Plan 左方', planRight: 'Plan 右方', noLimit: '無限制', roadLimit: '道路斜線', neighborLimit: '鄰地斜線', northLimit: '北側斜線', roadLimitParams: '道路斜線參數', neighborLimitParams: '鄰地斜線參數', northLimitParams: '北側斜線參數', roadW: '道路寬(mm)', setback: '退縮(mm)', slope: '斜率', baseH: '基準高(mm)', infoViz: '資訊可視化 (3D 空間爆炸圖)', infoVizDesc: '自動將全區建築展開為 3D 軸測圖。', explodeSpacing: '展開高度間距', totalRackCapacity: '全區總機櫃容量', floorSwitch: '樓層切換', displaySettings: '顯示設定', sectionLine: '斷面線', walkingLine: '步行線', undo: '回上一步', redo: '下一步', measure: '測量', snap: '鎖點', load: '讀取', save: '存檔', export: '匯出', expPng: '去背 PNG', expPptx: '原生 PPTX', expExcel: 'Excel 報表', expCsv: 'CSV 報表', expPlanDxf: '平面 DXF', expSecDxf: '剖面 DXF', opTips: '操作提示', hideTips: '隱藏提示', opSop: '操作 SOP', hideSop: '隱藏 SOP', mouseShortcuts: '滑鼠與快捷鍵操作', cancelMeasure: '取消測量', zoomCanvas: '縮放畫布', panCanvas: '平移畫布', rotateSpace: '旋轉空間', toggleDoor: '切換門位置', currentSop: '當前階段操作 SOP', aboutTool: '關於此工具', legend: '空間圖例 (Legend)', sop1_title: '1. 基本設定', sop1_1: '(1) 匯入 DXF 作為參考底圖。', sop1_2: '(2) 利用滑鼠描繪基地與建築物界線。', sop1_3: '(3) 設置樓層清單與避震層屬性。', sop1_4: '(4) 檢視總面積是否符合法規上限。', sop2_1_title: '2. 結構系統', sop2_1_1: '(1) 設置獨立樓層柱網尺寸，可同步至全區或單層調整。', sop2_1_2: '(2) 獨立層柱列設定與套用全區。', sop2_2_title: '3-1 機房設定', sop2_2_1: '(1) 調整伺服器單櫃耗電與通道尺寸。', sop2_2_2: '(2) 拖曳調整機房大小、位置與旋轉角度。', sop2_2_3: '(3) 設置周邊廊道寬度與機房大門。', sop2_2_4: '(4) 機櫃將自動運算並避開結構柱體。', sop3_title: '3-2 空間規劃', sop3_1: '(1) 設置附屬空間(機電、辦公、倉儲等)。', sop3_2: '(2) 利用 Z 軸調整空間淨高或設置夾層。', sop3_3: '(3) 點選空間邊緣「＋/－」快速開關專屬走道。', sop3_4: '(4) 設置樓梯將自動檢核法規步行/重複距離。', sop3_5: '(5) 可設置挑空區(Void)與降板區(Sunken)。', sop3_6: '(6) 可以單層空間一鍵複製到別層。', sop4_title: '4. 面積表與匯出', sop4_1: '(1) 檢視各樓層與全區之容積檢討表。', sop4_2: '(2) 系統會自動扣除法定免計容積項目。', sop4_3: '(3) 可將表格匯出為 CSV 供後續處理。', sop5_title: '5. 斷面分析', sop5_1: '(1) 在平面圖拖曳紅/黃色剖面線(X, Y軸)。', sop5_2: '(2) 檢視自動生成的建築實時剖面圖。', sop5_3: '(3) 開啟並調整各方向之法規高度斜線。', sop5_4: '(4) 可顯示/隱藏 1.結構柱 2.避震装置 3.高度限制斜線', sop6_title: '6. 資訊可視化', sop6_1: '(1) 將全區樓層展開為 3D 軸測圖。', sop6_2: '(2) 調整高度間距以利檢視機電管線或層次。', sop6_3: '(3) 右上角圖例說明可對照各灰階空間機能。', info1: '這是一個前期FS Study用的簡便工具', info2: '幫助你在DC的檢討上快速便捷了解整體狀況而不耗費時間', info3: '從平面到斷面再到視覺化，讓你可以簡單的操作上手並再最後將成果帶入BIM裡發展下去', developedBy: 'Developed by Wu Chieh Chun', emergencyText: '非常用', verticalPenetrate: '垂直貫穿 (複製至其他樓層)', penetrateAll: '貫穿至所有', toFloor: '至 ' }, jp: {
-                appTitle: 'データセンター プランナー', pro: 'PRO', step1: '1. 基本設定', step2: '2. 構造システム', step3: '3. 空間計画', step4: '4. 面積表', step5: '5. 断面図\n分析', step6: '6. 情報\n可視化', langToggle: 'TW', importDxf: '建築図面インポート (DXF)', importDxfBtn: 'DXF ファイルをインポート', confirmUnit: '図面単位の確認', unitMm: 'ミリメートル (mm)', unitCm: 'センチメートル (cm)', unitM: 'メートル (m)', confirmBoundary: '建物室内境界範囲の確認', maxWidth: '最大幅 (mm)', maxDepth: '最大奥行き (mm)', siteRuleTarget: '敷地法規と目標設定', siteArea: '敷地面積 (m²)', bcr: '法定建蔽率 (%)', far: '法定容積率 (%)', maxBcrArea: '許容最大建蔽投影面積：', maxFarArea: '許容最大延床面積：', floorVolumeSetting: '階層ボリューム設定', addBtn: '追加', height: '高さ', target: '目標', seismicLayer: '免震層', totalAreaFarLimit: '設定延面積 / 容積上限', maxSingleFloorBcrLimit: '最大単層設定 / 建蔽上限', colGridAxis: '各階柱スパンと通り芯', enableColGrid: '柱スパンとCAD通り芯を有効化', settingFloor: '設定階:', colWidthX: '柱幅 (X)', colDepthY: '柱奥行 (Y)', xGridSeq: 'X軸スパンモジュール', yGridSeq: 'Y軸スパンモジュール', exGridX: '例: 10800, 8400, 10800', exGridY: '例: 10800', applyToThisFloor: 'この階に適用', syncToAllFloors: '全階に同期', restoreDeletedCols: '削除した柱を復元', kwPerRackEst: 'ラック当たり予想電力', rackAisleSize: 'ラック及び通路寸法 (mm)', rackW: 'ラック幅 (W)', rackD: 'ラック奥行 (D)', hotAisle: 'ホットアイル (内)', coldAisle: 'コールドアイル (主)', marginX: '境界余白 X', marginY: '境界余白 Y', coolingEq: '空調設備 (FWU / AHU)', sideFwuAhu: '側面にFWU/AHUを配置', depthMm: '奥行 (mm)', widthMm: '幅 (mm)', itRoomList: 'サーバ室一覧', xArray: 'X配列', yArray: 'Y配列', widthW: '幅 (W)', depthH: '奥行 (H)', zOffset: 'Z軸床面かか上げ (mm)', zHeight: '天井高 (mm)', walkDupLimit: '歩行/重複距離制限', noDoorSet: 'ドア未設置', itCorridorSet: 'サーバ室周辺廊下設定', itDoorOpen: '🚪 サーバ室ドア/開口', doorNum: 'ドア #', delete: '削除', topWall: '上壁', bottomWall: '下壁', leftWall: '左壁', rightWall: '右壁', singleDoor: '片開き', doubleDoor: '両開き', slidingDoor: '引戸', openIn: '内開き', openOut: '外開き', swingLeft: '左吊元', swingRight: '右吊元', doorW: '幅', doorDist: '距離', noDoorSetting: 'ドア設定なし', editSpaceSet: '空間設定の編集', locatedFloor: '配置階', roomW: '部屋幅 (W)', roomH: '部屋奥行 (H)', stairTypeSet: '階段形式と配置', uStair: 'U字型階段', straightStair: '直階段', lStair: 'L字型階段', spiralStair: '螺旋階段', stairElevator: '階段 + エレベーター', pureStair: '階段のみ', evacTypeSet: '避難階段の種類', evacNormal: '一般階段', evacIndoor: '屋内避難階段', evacOutdoor: '屋外避難階段', evacSpecial: '特別避難階段', anteTypeSet: '前室・附室の設定', anteRoom: '附室', anteBalcony: 'バルコニー', anteSmoke: '附室 (排煙設備付)', stairRiser: '蹴上 (Riser)', stairTread: '踏面 (Tread)', stairWidth: '有効幅員 (Width)', elevatorSizeSet: 'EVシャフト寸法設定 (容積不算入)', emergencyElevator: '非常用EV', evW: 'EVシャフト幅', evH: 'EVシャフト奥行', corridorWSet: '専用廊下幅', doorList: '🚪 ドア/開口一覧', currentFloorSpace: '現在の階の空間', copyFloorTo: 'フロア全体をコピー:', copy: 'コピー', addSpaceBlock: '空間ブロック追加 (付属/外構)', type: 'タイプ', name: '名前', addTo: '追加先', escapeCheck: '避難距離と法規チェック', fireproofConst: '(3) その他の居室 (60m/30m)', windowlessConst: '(2) 特殊建築物 (50m/25m)', normalConst: '(1) 無窓居室等 (40m/20m)', escapeDistDesc: '最深部から最寄りの出入口/階段まで', singleEscape: '一方向避難/重複距離', doubleEscape: '二方向避難/歩行距離', evacFloorNote: '避難階：[居室->出入口]と[階段->出入口]の二重チェック', evacDistR2E: '居室から出入口', evacDistS2E: '階段から出入口', lawLimit: '法規制:', pass: '適合', fail: '超過', bsjReq1: '建築基準法要求 (階目標面積:', atLeastReq: '最低', straightStairs: 'つの直通階段が必要', currentCount: '現在の設置数：', compliant: '適合', insufficient: '不足', escapePrompt: 'チェックを行うには、同階に「主要出入口(1F)」または「階段」等を追加しドアを設置してください。', projectSummary: 'プロジェクト概要', totalItCapacity: '総 IT 容量', farConsumption: '容積率消化', gfaReportTitle: 'GFA 容積検討表', gfaReportDesc: '日本の建築基準法に基づき自動計算 (各階は横並びに変換済み)', spaceCategory: '空間カテゴリー / 項目', total: '合計 (Total)', exportExcel: 'Excel 出力', exportCsv: 'CSV 出力', sectionAnalysis: '断面図分析 (建築断面ジェネレーター)', sectionDesc: '断面線 (X-X\', Y-Y\') をドラッグして対応する位置の空間を取得し、断面図を生成します。', showLimitLines: '高さ制限斜線を表示', showSectionCols: '構造柱を表示/非表示', showSeismicCols: '免震装置を表示/非表示', limitDirSets: '各方向の制限設定', planTop: 'Plan 上部', planBottom: 'Plan 下部', planLeft: 'Plan 左部', planRight: 'Plan 右部', noLimit: '制限なし', roadLimit: '道路斜線', neighborLimit: '隣地斜線', northLimit: '北側斜線', roadLimitParams: '道路斜線パラメータ', neighborLimitParams: '隣地斜線パラメータ', northLimitParams: '北側斜線パラメータ', roadW: '道路幅(mm)', setback: '後退(mm)', slope: '勾配', baseH: '基準高(mm)', infoViz: '情報可視化 (3D 空間分解図)', infoVizDesc: '全エリアの建物を 3D アイソメトリック図に自動展開します。', explodeSpacing: '展開高さ間隔', totalRackCapacity: '全エリア総ラック容量', floorSwitch: 'フロア切替', displaySettings: '表示設定', sectionLine: '断面線', walkingLine: '歩行線', undo: '元に戻す', redo: 'やり直し', measure: '測定', snap: 'スナップ', load: '読込', save: '保存', export: 'エクスポート', expPng: '透過 PNG', expPptx: 'PPTX出力', expExcel: 'Excel出力', expCsv: 'CSV出力', expPlanDxf: '平面 DXF', expSecDxf: '断面 DXF', opTips: '操作ヒント', hideTips: 'ヒント非表示', opSop: '操作 SOP', hideSop: 'SOP非表示', mouseShortcuts: 'マウスとショートカット操作', cancelMeasure: '測定キャンセル', zoomCanvas: 'ズーム', panCanvas: 'パン', rotateSpace: '空間回転', toggleDoor: 'ドア位置切替', currentSop: '現在の操作 SOP', aboutTool: 'このツールについて', legend: '空間凡例 (Legend)', sop1_title: '1. 基本設定', sop1_1: '(1) DXFをインポートし、建物範囲と敷地を定義します。', sop1_2: '(2) 敷地面積、建蔽率、容積率を設定します。', sop1_3: '(3) 階層リストと免震層の属性を設定します。', sop1_4: '(4) 延床面積が法規上限に適合するか確認します。', sop2_1_title: '2. 構造システム', sop2_1_1: '(1) 階ごとの柱スパンを設定。全階同期や個別調整が可能。', sop2_1_2: '(2) 独立階の柱列設定と全階への適用。', sop2_2_title: '3-1 サーバ室設定', sop2_2_1: '(1) ラック当たり消費電力と通路寸法を調整。', sop2_2_2: '(2) ドラッグで部屋のサイズ、位置、角度を調整。', sop2_2_3: '(3) 周辺廊下幅とドアを設置。', sop2_2_4: '(4) ラックは構造柱を避けて自動配置されます。', sop3_title: '3-2 空間計画', sop3_1: '(1) 付属空間(MEP、オフィス、倉庫等)を配置。', sop3_2: '(2) Z軸で天井高の調整や中二階を設定。', sop3_3: '(3) 空間端の「＋/－」で専用廊下を素早く切替。', sop3_4: '(4) 階段配置時に歩行/重複距離を自動チェック。', sop3_5: '(5) 吹抜(Void)やピット(Sunken)を設定可能。', sop3_6: '(6) ワンクリックで他階へ空間をコピー。', sop4_title: '4. 面積表と出力', sop4_1: '(1) 各階と全エリアの容積検討表を確認。', sop4_2: '(2) 法定容積不算入項目を自動控除。', sop4_3: '(3) CSV出力で後続作業に活用。', sop5_title: '5. 断面分析', sop5_1: '(1) 平面図上で赤/黄の断面線(X,Y軸)をドラッグ。', sop5_2: '(2) 自動生成されたリアルタイム断面図を確認。', sop5_3: '(3) 各方向の高さ制限斜線を有効化・調整。', sop5_4: '(4) 1.構造柱 2.免震装置 3.高さ制限斜線の表示/非表示を切り替え可能。', sop6_title: '6. 情報可視化', sop6_1: '(1) 全エリアを3Dアイソメトリック図に展開。', sop6_2: '(2) 高さを調整し設備配管や階層を確認。', sop6_3: '(3) 右上の凡例で空間機能を確認。', info1: 'FS(フィージビリティスタディ)用の簡易ツールです。', info2: 'データセンター検討において、時間をかけず迅速に全体状況を把握できます。', info3: '平面から断面、可視化まで直感的に操作でき、成果をBIMへと展開可能です。', developedBy: 'Developed by Wu Chieh Chun', emergencyText: '非常用', verticalPenetrate: '垂直貫通 (他の階へコピー)', penetrateAll: '全階に貫通', toFloor: 'へ '
-            }
+        const I18N_JP_BASE = {
+            appTitle: 'データセンター プランナー', pro: 'PRO', step1: '1. 基本設定', step2: '2. 構造システム', step3: '3. 空間計画', step4: '4. 面積表', step5: '5. 断面図\n分析', step6: '6. 情報\n可視化', langToggle: 'TW', importDxf: '建築図面インポート (DXF)', importDxfBtn: 'DXF ファイルをインポート', confirmUnit: '図面単位の確認', unitMm: 'ミリメートル (mm)', unitCm: 'センチメートル (cm)', unitM: 'メートル (m)', confirmBoundary: '建物室内境界範囲の確認', maxWidth: '最大幅 (mm)', maxDepth: '最大奥行き (mm)', siteRuleTarget: '敷地法規と目標設定', siteArea: '敷地面積 (m²)', bcr: '法定建蔽率 (%)', far: '法定容積率 (%)', maxBcrArea: '許容最大建蔽投影面積：', maxFarArea: '許容最大延床面積：', floorVolumeSetting: '階層ボリューム設定', addBtn: '追加', height: '高さ', target: '目標', seismicLayer: '免震層', totalAreaFarLimit: '設定延面積 / 容積上限', maxSingleFloorBcrLimit: '最大単層設定 / 建蔽上限', colGridAxis: '各階柱スパンと通り芯', enableColGrid: '柱スパンとCAD通り芯を有効化', settingFloor: '設定階:', colWidthX: '柱幅 (X)', colDepthY: '柱奥行 (Y)', xGridSeq: 'X軸スパンモジュール', yGridSeq: 'Y軸スパンモジュール', exGridX: '例: 10800, 8400, 10800', exGridY: '例: 10800', applyToThisFloor: 'この階に適用', syncToAllFloors: '全階に同期', restoreDeletedCols: '削除した柱を復元', kwPerRackEst: 'ラック当たり予想電力', rackAisleSize: 'ラック及び通路寸法 (mm)', rackW: 'ラック幅 (W)', rackD: 'ラック奥行 (D)', hotAisle: 'ホットアイル (内)', coldAisle: 'コールドアイル (主)', marginX: '境界余白 X', marginY: '境界余白 Y', coolingEq: '空調設備 (FWU / AHU)', sideFwuAhu: '側面にFWU/AHUを配置', depthMm: '奥行 (mm)', widthMm: '幅 (mm)', itRoomList: 'サーバ室一覧', xArray: 'X配列', yArray: 'Y配列', widthW: '幅 (W)', depthH: '奥行 (H)', zOffset: 'Z軸床面かか上げ (mm)', zHeight: '天井高 (mm)', walkDupLimit: '歩行/重複距離制限', noDoorSet: 'ドア未設置', itCorridorSet: 'サーバ室周辺廊下設定', itDoorOpen: '🚪 サーバ室ドア/開口', doorNum: 'ドア #', delete: '削除', topWall: '上壁', bottomWall: '下壁', leftWall: '左壁', rightWall: '右壁', singleDoor: '片開き', doubleDoor: '両開き', slidingDoor: '引戸', openIn: '内開き', openOut: '外開き', swingLeft: '左吊元', swingRight: '右吊元', doorW: '幅', doorDist: '距離', noDoorSetting: 'ドア設定なし', editSpaceSet: '空間設定の編集', locatedFloor: '配置階', roomW: '部屋幅 (W)', roomH: '部屋奥行 (H)', stairTypeSet: '階段形式と配置', uStair: 'U字型階段', straightStair: '直階段', lStair: 'L字型階段', spiralStair: '螺旋階段', stairElevator: '階段 + エレベーター', pureStair: '階段のみ', evacTypeSet: '避難階段の種類', evacNormal: '一般階段', evacIndoor: '屋内避難階段', evacOutdoor: '屋外避難階段', evacSpecial: '特別避難階段', anteTypeSet: '前室・附室の設定', anteRoom: '附室', anteBalcony: 'バルコニー', anteSmoke: '附室 (排煙設備付)', stairRiser: '蹴上 (Riser)', stairTread: '踏面 (Tread)', stairWidth: '有効幅員 (Width)', elevatorSizeSet: 'EVシャフト寸法設定 (容積不算入)', emergencyElevator: '非常用EV', evW: 'EVシャフト幅', evH: 'EVシャフト奥行', corridorWSet: '専用廊下幅', doorList: '🚪 ドア/開口一覧', currentFloorSpace: '現在の階の空間', copyFloorTo: 'フロア全体をコピー:', copy: 'コピー', addSpaceBlock: '空間ブロック追加 (付属/外構)', type: 'タイプ', name: '名前', addTo: '追加先', escapeCheck: '避難距離と法規チェック', fireproofConst: '(3) その他の居室 (60m/30m)', windowlessConst: '(2) 特殊建築物 (50m/25m)', normalConst: '(1) 無窓居室等 (40m/20m)', escapeDistDesc: '最深部から最寄りの出入口/階段まで', singleEscape: '一方向避難/重複距離', doubleEscape: '二方向避難/歩行距離', evacFloorNote: '避難階：[居室->出入口]と[階段->出入口]の二重チェック', evacDistR2E: '居室から出入口', evacDistS2E: '階段から出入口', lawLimit: '法規制:', pass: '適合', fail: '超過', bsjReq1: '建築基準法要求 (階目標面積:', atLeastReq: '最低', straightStairs: 'つの直通階段が必要', currentCount: '現在の設置数：', compliant: '適合', insufficient: '不足', escapePrompt: 'チェックを行うには、同階に「主要出入口(1F)」または「階段」等を追加しドアを設置してください。', projectSummary: 'プロジェクト概要', totalItCapacity: '総 IT 容量', farConsumption: '容積率消化', gfaReportTitle: 'GFA 容積検討表', gfaReportDesc: '日本の建築基準法に基づき自動計算 (各階は横並びに変換済み)', spaceCategory: '空間カテゴリー / 項目', total: '合計 (Total)', exportExcel: 'Excel 出力', exportCsv: 'CSV 出力', sectionAnalysis: '断面図分析 (建築断面ジェネレーター)', sectionDesc: '断面線 (X-X\', Y-Y\') をドラッグして対応する位置の空間を取得し、断面図を生成します。', showLimitLines: '高さ制限斜線を表示', showSectionCols: '構造柱を表示/非表示', showSeismicCols: '免震装置を表示/非表示', limitDirSets: '各方向の制限設定', planTop: 'Plan 上部', planBottom: 'Plan 下部', planLeft: 'Plan 左部', planRight: 'Plan 右部', noLimit: '制限なし', roadLimit: '道路斜線', neighborLimit: '隣地斜線', northLimit: '北側斜線', roadLimitParams: '道路斜線パラメータ', neighborLimitParams: '隣地斜線パラメータ', northLimitParams: '北側斜線パラメータ', roadW: '道路幅(mm)', setback: '後退(mm)', slope: '勾配', baseH: '基準高(mm)', infoViz: '情報可視化 (3D 空間分解図)', infoVizDesc: '全エリアの建物を 3D アイソメトリック図に自動展開します。', explodeSpacing: '展開高さ間隔', totalRackCapacity: '全エリア総ラック容量', floorSwitch: 'フロア切替', displaySettings: '表示設定', sectionLine: '断面線', walkingLine: '歩行線', undo: '元に戻す', redo: 'やり直し', measure: '測定', snap: 'スナップ', load: '読込', save: '保存', export: 'エクスポート', expPng: '透過 PNG', expPptx: 'PPTX出力', expExcel: 'Excel出力', expCsv: 'CSV出力', expPlanDxf: '平面 DXF', expSecDxf: '断面 DXF', opTips: '操作ヒント', hideTips: 'ヒント非表示', opSop: '操作 SOP', hideSop: 'SOP非表示', mouseShortcuts: 'マウスとショートカット操作', cancelMeasure: '測定キャンセル', zoomCanvas: 'ズーム', panCanvas: 'パン', rotateSpace: '空間回転', toggleDoor: 'ドア位置切替', currentSop: '現在の操作 SOP', aboutTool: 'このツールについて', legend: '空間凡例 (Legend)', sop1_title: '1. 基本設定', sop1_1: '(1) DXFをインポートし、建物範囲と敷地を定義します。', sop1_2: '(2) 敷地面積、建蔽率、容積率を設定します。', sop1_3: '(3) 階層リストと免震層の属性を設定します。', sop1_4: '(4) 延床面積が法規上限に適合するか確認します。', sop2_1_title: '2. 構造システム', sop2_1_1: '(1) 階ごとの柱スパンを設定。全階同期や個別調整が可能。', sop2_1_2: '(2) 独立階の柱列設定と全階への適用。', sop2_2_title: '3-1 サーバ室設定', sop2_2_1: '(1) ラック当たり消費電力と通路寸法を調整。', sop2_2_2: '(2) ドラッグで部屋のサイズ、位置、角度を調整。', sop2_2_3: '(3) 周辺廊下幅とドアを設置。', sop2_2_4: '(4) ラックは構造柱を避けて自動配置されます。', sop3_title: '3-2 空間計画', sop3_1: '(1) 付属空間(MEP、オフィス、倉庫等)を配置。', sop3_2: '(2) Z軸で天井高の調整や中二階を設定。', sop3_3: '(3) 空間端の「＋/－」で専用廊下を素早く切替。', sop3_4: '(4) 階段配置時に歩行/重複距離を自動チェック。', sop3_5: '(5) 吹抜(Void)やピット(Sunken)を設定可能。', sop3_6: '(6) ワンクリックで他階へ空間をコピー。', sop4_title: '4. 面積表と出力', sop4_1: '(1) 各階と全エリアの容積検討表を確認。', sop4_2: '(2) 法定容積不算入項目を自動控除。', sop4_3: '(3) CSV出力で後続作業に活用。', sop5_title: '5. 断面分析', sop5_1: '(1) 平面図上で赤/黄の断面線(X,Y軸)をドラッグ。', sop5_2: '(2) 自動生成されたリアルタイム断面図を確認。', sop5_3: '(3) 各方向の高さ制限斜線を有効化・調整。', sop5_4: '(4) 1.構造柱 2.免震装置 3.高さ制限斜線の表示/非表示を切り替え可能。', sop6_title: '6. 情報可視化', sop6_1: '(1) 全エリアを3Dアイソメトリック図に展開。', sop6_2: '(2) 高さを調整し設備配管や階層を確認。', sop6_3: '(3) 右上の凡例で空間機能を確認。', info1: 'FS(フィージビリティスタディ)用の簡易ツールです。', info2: 'データセンター検討において、時間をかけず迅速に全体状況を把握できます。', info3: '平面から断面、可視化まで直感的に操作でき、成果をBIMへと展開可能です。', developedBy: 'Developed by Wu Chieh Chun', emergencyText: '非常用', verticalPenetrate: '垂直貫通 (他の階へコピー)', penetrateAll: '全階に貫通', toFloor: 'へ '
         };
+
+        const I18N = {
+            tw: { ...I18N_JP_BASE },
+            jp: { ...I18N_JP_BASE }
+        };
+
         I18N.tw.step7 = '7. 屋外搬入\n(断面同步)';
         I18N.tw.step8 = '8. 室內動線\n檢討';
         I18N.tw.logisticsTitle = '設備搬入動線模擬';
@@ -76,8 +82,15 @@
         I18N.jp.logisticsDesc = '大型設備と台車の搬入ルートと垂直高さの干渉をシミュレーションします。';
         I18N.jp.startManualDrive = '手動運転 (WASD)';
 
+        // Merge translations instead of overwriting to preserve existing keys
+        I18N.tw = Object.assign(I18N.tw || {}, {
+            appTitle: 'DC PLANNER', pro: 'PRO', step1: '1. 基本設定', step2: '2. 結構系統', step3: '3. 空間規劃', step4: '4. 面積表', step5: '5. 斷面圖\n分析', step6: '6. 資訊\n可視化', langToggle: 'JP', importDxf: '匯入建築底圖 (DXF)', importDxfBtn: '點擊上傳 DXF 檔案', confirmUnit: '確認圖面單位', unitMm: '公釐 (mm)', unitCm: '公分 (cm)', unitM: '公尺 (m)', confirmBoundary: '確認建築室內邊界', maxWidth: '最大寬度 (mm)', maxDepth: '最大深度 (mm)'
+        });
+        I18N.jp = Object.assign(I18N.jp || {}, {
+            appTitle: 'データセンター プランナー', pro: 'PRO', step1: '1. 基本設定', step2: '2. 構造システム', step3: '3. 空間計画', step4: '4. 面積表', step5: '5. 断面図\n分析', step6: '6. 情報\n可視化', langToggle: 'TW', importDxf: '建築図面インポート (DXF)', importDxfBtn: 'DXF ファイルをインポート', confirmUnit: '図面単位の確認', unitMm: 'ミリメートル (mm)', unitCm: 'センチメートル (cm)', unitM: 'メートル (m)'
+        });
         const SPACE_COLORS = { IT: '#7690B3', UPS: '#ECBC76', IDF: '#B6E0CD', AHU: '#70927B', CHILLER: '#908180', LV: '#EFE19D', SHV_HV: '#ECB66D', GEN: '#3F3E4C', OFFICE: '#F6F2D1', STORAGE: '#D9CFCB', STAIRS: '#504E5D', WATER: '#B6E0CD', EV_LOBBY: '#D9CFCB', PARKING: '#F3EBE9', COOLING_TOWER: '#7690B3', PS: '#908180', DS: '#A39C9B', OUTDOOR: '#B6E0CD', SEMI_OUTDOOR: '#F3EBE9', SUNKEN: '#D9CFCB', VOID: '#FFFFFF', CUSTOM: '#D09590', MAIN_EXIT: '#10B981' };
-        const SPACE_TEXT_COLORS = { IT: '#FFFFFF', UPS: '#1E293B', IDF: '#1E293B', AHU: '#FFFFFF', CHILLER: '#FFFFFF', LV: '#1E293B', SHV_HV: '#1E293B', GEN: '#FFFFFF', OFFICE: '#1E293B', STORAGE: '#1E293B', STAIRS: '#FFFFFF', WATER: '#1E293B', EV_LOBBY: '#1E293B', PARKING: '#1E293B', COOLING_TOWER: '#FFFFFF', PS: '#FFFFFF', DS: '#FFFFFF', OUTDOOR: '#1E293B', SEMI_OUTDOOR: '#1E293B', SUNKEN: '#1E293B', VOID: '#1E293B', CUSTOM: '#FFFFFF', MAIN_EXIT: '#FFFFFF' };
+               const SPACE_TEXT_COLORS = { IT: '#FFFFFF', UPS: '#1E293B', IDF: '#1E293B', AHU: '#FFFFFF', CHILLER: '#FFFFFF', LV: '#1E293B', SHV_HV: '#1E293B', GEN: '#FFFFFF', OFFICE: '#1E293B', STORAGE: '#1E293B', STAIRS: '#FFFFFF', WATER: '#1E293B', EV_LOBBY: '#1E293B', PARKING: '#1E293B', COOLING_TOWER: '#FFFFFF', PS: '#FFFFFF', DS: '#FFFFFF', OUTDOOR: '#1E293B', SEMI_OUTDOOR: '#1E293B', SUNKEN: '#1E293B', VOID: '#1E293B', CUSTOM: '#FFFFFF', MAIN_EXIT: '#FFFFFF' };
         const DEF_CORRIDORS = { top: !1, bottom: !1, left: !1, right: !1 }, DEF_IT_CORRIDORS = { top: !1, bottom: !1, left: !1, right: !1 }, DEF_CORRIDOR_W = { top: 1800, bottom: 1800, left: 1800, right: 1800 };
 
         const calcPolyArea = p => { if (!p || p.length < 3) return 0; let a = 0; for (let i = 0, j = p.length - 1; i < p.length; j = i++)a += (p[j].x + p[i].x) * (p[j].y - p[i].y); return Math.abs(a / 2) / 1e6 };
@@ -134,11 +147,11 @@
                     for (let r = 0; r < nRX; r++) { 
                         isV(cx, cY, params.rackW, params.rackD) && (rInP.push({ x: cx, y: cY, w: params.rackW, h: params.rackD }), rCnt++); 
                         isV(cx, cY + params.rackD + params.inA, params.rackW, params.rackD) && (rInP.push({ x: cx, y: cY + params.rackD + params.inA, w: params.rackW, h: params.rackD }), rCnt++); 
-                        cx += params.rackW 
+                        cx += params.rackW; 
                     } 
                     rInP.length && pods.push({ x: sX, y: cY, w: nRX * params.rackW, h: pH, racks: rInP, originalY: cY, originalH: pH, itRoomId: it.id, floor: it.floor }); 
-                    cY += pH + params.mA 
-                } 
+                    cY += pH + params.mA; 
+                }
                 itRes.push({ id: it.id, racks: rCnt }); 
                 tRacks += rCnt 
             });
@@ -272,8 +285,7 @@
                 
                 const hasL = ['IT', 'UPS', 'LV', 'SHV_HV', 'GEN', 'CHILLER', 'CUSTOM'].includes(s.type) || isItRoom;
 
-                // 紀錄門的「方位 (edge)」以便判斷轉折點
-                const sDs = (s.doors?.length ? s.doors : [{ edge: 'center' }]).map(d => d.edge === 'top' ? { x: s.x + (d.offset || 0) + (d.width || 0) / 2, y: s.y, edge: 'top' } : d.edge === 'bottom' ? { x: s.x + (d.offset || 0) + (d.width || 0) / 2, y: s.y + s.h, edge: 'bottom' } : d.edge === 'left' ? { x: s.x, y: s.y + (d.offset || 0) + (d.width || 0) / 2, edge: 'left' } : d.edge === 'right' ? { x: s.x + s.w, y: s.y + (d.offset || 0) + (d.width || 0) / 2, edge: 'right' } : { x: s.x + s.w / 2, y: s.y + s.h / 2, edge: 'center' });
+                const sDs = (s.doors?.length ? s.doors : [{ edge: 'center' }]).map(d => d.edge === 'top' ? { x: s.x + (d.offset || 0) + (d.width || 0) / 2, y: s.y, edge: 'top' } : d.edge === 'bottom' ? { x: s.x + (d.offset || 0) + (d.width || 0) / 2, y: s.y + s.h, edge: 'bottom' } : d.edge === 'left' ? { x: s.x, y: s.y + (d.offset || 0) + (d.width || 0) / 2, edge: 'left' } : d.edge === 'right' ? { x: s.x + s.w, y: s.y + (d.offset || 0) + (d.width || 0) / 2, edge: 'right' } : { x: s.x + s.w / 2, y: s.y + s.h / 2, edge: 'center' }); 
                 
                 const iX = Math.min(600, eW / 4), iY = Math.min(600, eH / 4);
                 const crs = [{ x: eX + iX, y: eY + iY }, { x: eX + eW - iX, y: eY + iY }, { x: eX + iX, y: eY + eH - iY }, { x: eX + eW - iX, y: eY + eH - iY }];
@@ -288,9 +300,7 @@
                         } else { 
                             crs.forEach(c => { 
                                 const d = hasL ? (Math.abs(c.x - sd.x) + Math.abs(c.y - sd.y)) : Math.hypot(c.x - sd.x, c.y - sd.y); 
-                                // 💡 智慧繞行邏輯：如果門在上下牆，先走垂直(側邊走道)；如果門在左右牆，先走水平(上下走道)
                                 const isTB = sd.edge === 'top' || sd.edge === 'bottom';
-                                // 對齊門的軸線再走向門，避免起點貼牆
                                 const mPt = hasL ? (isTB ? { x: sd.x, y: c.y } : { x: c.x, y: sd.y }) : sd;
 
                                 if (d > mID) { mID = d; cIDStart = c; cIDMid = mPt; } 
@@ -301,7 +311,6 @@
                     tgts.forEach(t => { 
                         const tDs = (t.doors?.length ? t.doors : [{ edge: 'center' }]).map(d => d.edge === 'top' ? { x: t.x + (d.offset || 0) + (d.width || 0) / 2, y: t.y } : d.edge === 'bottom' ? { x: t.x + (d.offset || 0) + (d.width || 0) / 2, y: t.y + t.h } : d.edge === 'left' ? { x: t.x, y: t.y + (d.offset || 0) + (d.width || 0) / 2 } : d.edge === 'right' ? { x: t.x + t.w, y: t.y + (d.offset || 0) + (d.width || 0) / 2 } : { x: t.x + t.w / 2, y: t.y + t.h / 2 }); 
                         tDs.forEach(td => { 
-                            // 💡 外部走廊：永遠保持直角計算 (Manhattan)
                             const d = Math.abs(sd.x - td.x) + Math.abs(sd.y - td.y); 
                             if (d < mOD) { mOD = d; cODEnd = td; } 
                         }); 
@@ -321,7 +330,6 @@
                         sDs.forEach(sd => { 
                             const d = hasL ? (Math.abs(c.x - sd.x) + Math.abs(c.y - sd.y)) : Math.hypot(c.x - sd.x, c.y - sd.y); 
                             const isTB = sd.edge === 'top' || sd.edge === 'bottom';
-                            // 對齊門的軸線再走向門，避免起點貼牆
                             const mPt = hasL ? (isTB ? { x: sd.x, y: c.y } : { x: c.x, y: sd.y }) : sd;
                             
                             if (d < minCToDoor) { minCToDoor = d; bestDoorForC = sd; bestMidForC = mPt; } 
@@ -522,7 +530,7 @@
                                 )
                             })()}
                             <div className="mt-2">
-                                <button onClick={() => { if (window.confirm('確定要將現有空間遷移到棟別並計算區域座標 (lx,ly) 嗎？')) a.migrateLegacy(true); else a.migrateLegacy(false); }} className="w-full py-2 bg-yellow-500 text-black rounded-lg font-bold hover:bg-yellow-600 transition">遷移既有空間到棟別 (預覽/執行)</button>
+                                <button onClick={() => { if (window.confirm('確定要將現有空間遷移到棟別並計算區域座標 (lx,ly) 嗎？')) a.migrateLegacy(true); else a.migrateLegacy(false); }} className="w-full py-2 bg-gray-300 text-black rounded-lg font-bold hover:bg-gray-400 transition">遷移既有空間到棟別 (預覽/執行)</button>
                             </div>
                         </div>
                     </div>
@@ -555,23 +563,23 @@
                             <div className="grid grid-cols-2 gap-3 bg-gray-50 p-4 rounded-lg border border-gray-200"><div><label className="block text-xs font-bold text-gray-600 mb-1">{t('locatedFloor')}</label><select value={r.floor} onChange={e => setR(p => p.map(x => x.id === r.id ? { ...x, floor: e.target.value } : x))} className="w-full bg-white border border-gray-300 rounded px-2 py-1.5 outline-none text-sm focus:border-black font-bold text-black">{eFs.map(f => <option key={f} value={f}>{f}</option>)}</select></div><div /><div><label className="block text-xs font-bold text-gray-600 mb-1">{t('roomW')}</label><input type="number" value={r.w} onChange={e => setR(p => p.map(x => x.id === r.id ? { ...x, w: Number(e.target.value) } : x))} className="w-full bg-white border border-gray-300 rounded px-2 py-1.5 outline-none focus:border-black text-sm font-mono" /></div><div><label className="block text-xs font-bold text-gray-600 mb-1">{t('roomH')}</label><input type="number" value={r.h} onChange={e => setR(p => p.map(x => x.id === r.id ? { ...x, h: Number(e.target.value) } : x))} className="w-full bg-white border border-gray-300 rounded px-2 py-1.5 outline-none focus:border-black text-sm font-mono" /></div></div>
                             <div className="grid grid-cols-2 gap-3 bg-gray-50 p-4 rounded-lg border border-gray-200"><div><label className="block text-[10px] font-bold text-gray-600 mb-1">{t('zOffset')}</label><input type="number" value={r.zOffset || 0} onChange={e => setR(p => p.map(x => x.id === r.id ? { ...x, zOffset: Number(e.target.value) } : x))} className="w-full bg-white border border-gray-300 rounded px-2 py-1.5 outline-none focus:border-black text-xs font-mono" /></div><div><label className="block text-[10px] font-bold text-gray-600 mb-1">{t('zHeight')}</label><input type="number" value={r.zHeight || 0} onChange={e => setR(p => p.map(x => x.id === r.id ? { ...x, zHeight: Number(e.target.value) } : x))} className="w-full bg-white border border-gray-300 rounded px-2 py-1.5 outline-none focus:border-black text-xs font-mono" /></div></div>
                             {isIt && <div className="space-y-4 pt-2">
-                                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 flex items-center justify-between"><div className="font-bold text-blue-900 text-sm">{t('kwPerRackEst')}</div><div className="flex items-center gap-2 bg-white rounded border border-blue-300 px-1 py-1 shadow-sm"><input type="number" step="0.1" value={params.kw} onChange={e => a.setParams(p => ({ ...p, kw: Number(e.target.value) }))} className="w-14 border-none text-right font-mono text-sm outline-none text-blue-900 font-bold" /><span className="text-xs font-bold text-blue-700 pr-1">kW</span></div></div>
-                                <div className="grid grid-cols-2 gap-2 bg-blue-50/50 p-3 rounded-lg border border-blue-100">
-                                    <div className="col-span-2 text-xs font-bold text-blue-900 mb-1 flex justify-between"><span>{t('rackAisleSize')}</span><span className="font-mono text-xs">{res?.racks || 0} Racks | {mw} MW</span></div>
-                                    <div><label className="block text-[10px] text-blue-700 font-bold mb-1">{t('rackW')}</label><input type="number" value={params.rackW} onChange={e => a.setParams(p => ({ ...p, rackW: Number(e.target.value) }))} className="w-full border border-blue-200 rounded px-2 py-1 outline-none focus:border-blue-500 font-mono text-xs" /></div>
-                                    <div><label className="block text-[10px] text-blue-700 font-bold mb-1">{t('rackD')}</label><input type="number" value={params.rackD} onChange={e => a.setParams(p => ({ ...p, rackD: Number(e.target.value) }))} className="w-full border border-blue-200 rounded px-2 py-1 outline-none focus:border-blue-500 font-mono text-xs" /></div>
-                                    <div><label className="block text-[10px] text-blue-700 font-bold mb-1">{t('hotAisle')}</label><input type="number" value={params.inA} onChange={e => a.setParams(p => ({ ...p, inA: Number(e.target.value) }))} className="w-full border border-blue-200 rounded px-2 py-1 outline-none focus:border-blue-500 font-mono text-xs" /></div>
-                                    <div><label className="block text-[10px] text-blue-700 font-bold mb-1">{t('coldAisle')}</label><input type="number" value={params.mA} onChange={e => a.setParams(p => ({ ...p, mA: Number(e.target.value) }))} className="w-full border border-blue-200 rounded px-2 py-1 outline-none focus:border-blue-500 font-mono text-xs" /></div>
+                                <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 flex items-center justify-between"><div className="font-bold text-gray-800 text-sm">{t('kwPerRackEst')}</div><div className="flex items-center gap-2 bg-white rounded border border-gray-300 px-1 py-1 shadow-sm"><input type="number" step="0.1" value={params.kw} onChange={e => a.setParams(p => ({ ...p, kw: Number(e.target.value) }))} className="w-14 border-none text-right font-mono text-sm outline-none text-gray-800 font-bold" /><span className="text-xs font-bold text-gray-700 pr-1">kW</span></div></div>
+                                <div className="grid grid-cols-2 gap-2 bg-gray-50/50 p-3 rounded-lg border border-gray-100">
+                                    <div className="col-span-2 text-xs font-bold text-gray-800 mb-1 flex justify-between"><span>{t('rackAisleSize')}</span><span className="font-mono text-xs">{res?.racks || 0} Racks | {mw} MW</span></div>
+                                    <div><label className="block text-[10px] text-gray-800 font-bold mb-1">{t('rackW')}</label><input type="number" value={params.rackW} onChange={e => a.setParams(p => ({ ...p, rackW: Number(e.target.value) }))} className="w-full border border-gray-200 rounded px-2 py-1 outline-none focus:border-black font-mono text-xs" /></div>
+                                    <div><label className="block text-[10px] text-gray-800 font-bold mb-1">{t('rackD')}</label><input type="number" value={params.rackD} onChange={e => a.setParams(p => ({ ...p, rackD: Number(e.target.value) }))} className="w-full border border-gray-200 rounded px-2 py-1 outline-none focus:border-black font-mono text-xs" /></div>
+                                    <div><label className="block text-[10px] text-gray-800 font-bold mb-1">{t('hotAisle')}</label><input type="number" value={params.inA} onChange={e => a.setParams(p => ({ ...p, inA: Number(e.target.value) }))} className="w-full border border-gray-200 rounded px-2 py-1 outline-none focus:border-black font-mono text-xs" /></div>
+                                    <div><label className="block text-[10px] text-gray-800 font-bold mb-1">{t('coldAisle')}</label><input type="number" value={params.mA} onChange={e => a.setParams(p => ({ ...p, mA: Number(e.target.value) }))} className="w-full border border-gray-200 rounded px-2 py-1 outline-none focus:border-black font-mono text-xs" /></div>
                                 </div>
-                                <div className="bg-blue-50/50 p-3 rounded-lg border border-blue-100 flex items-center justify-between">
-                                    <label className="flex items-center gap-2 cursor-pointer font-bold text-xs text-blue-900"><input type="checkbox" checked={params.fwu} onChange={e => a.setParams(p => ({ ...p, fwu: e.target.checked }))} className="accent-blue-600" /> {t('sideFwuAhu')}</label>
-                                    {params.fwu && <div className="flex items-center gap-1"><span className="text-[10px] text-blue-700 font-bold">{t('depthMm')}</span><input type="number" value={params.fwuW} onChange={e => a.setParams(p => ({ ...p, fwuW: Number(e.target.value) }))} className="w-14 border border-blue-200 rounded px-1 py-1 font-mono text-xs outline-none focus:border-blue-500 text-center" /></div>}
+                                <div className="bg-gray-50/50 p-3 rounded-lg border border-gray-100 flex items-center justify-between">
+                                    <label className="flex items-center gap-2 cursor-pointer font-bold text-xs text-gray-800"><input type="checkbox" checked={params.fwu} onChange={e => a.setParams(p => ({ ...p, fwu: e.target.checked }))} className="accent-black" /> {t('sideFwuAhu')}</label>
+                                    {params.fwu && <div className="flex items-center gap-1"><span className="text-[10px] text-gray-800 font-bold">{t('depthMm')}</span><input type="number" value={params.fwuW} onChange={e => a.setParams(p => ({ ...p, fwuW: Number(e.target.value) }))} className="w-14 border border-gray-200 rounded px-1 py-1 font-mono text-xs outline-none focus:border-black text-center" /></div>}
                                 </div>
                                 <div className={`p-2 rounded text-[10px] font-bold border flex justify-between items-center ${eD.noDoor ? 'bg-gray-50 border-gray-200' : (eD.isCompliant ? 'bg-white border-green-200' : 'bg-white border-red-200')}`}><span className="flex items-center gap-1 text-gray-800"><Icon name="Footprints" size={12} /> {t('walkDupLimit')}</span><span className={`flex items-center gap-1 ${eD.noDoor ? 'text-gray-500' : (eD.isCompliant ? 'text-green-600' : 'text-red-600')}`}>{eD.noDoor ? t('noDoorSet') : `DH內 ${(eD.intDist / 1000).toFixed(1)}m | 總 ${(eD.walkDist / 1000).toFixed(1)}m ${eD.isCompliant ? '✓' : ''}`}{!eD.noDoor && !eD.isCompliant && <Icon name="AlertTriangle" size={12} />}</span></div>
                             </div>}
                             {r.type === 'UPS' && <div className="space-y-4 pt-2">
-    <div className="bg-orange-50 p-4 rounded-lg border border-orange-200 flex items-center justify-between"><div className="font-bold text-orange-900 text-sm flex items-center gap-2"><Icon name="BatteryCharging" size={16} /> UPS/電池櫃 配置</div></div>
-    <div className="grid grid-cols-2 gap-2 bg-orange-50/50 p-3 rounded-lg border border-orange-100">
+    <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 flex items-center justify-between"><div className="font-bold text-gray-800 text-sm flex items-center gap-2"><Icon name="BatteryCharging" size={16} /> UPS/電池櫃 配置</div></div>
+    <div className="grid grid-cols-2 gap-2 bg-gray-50/50 p-3 rounded-lg border border-gray-100">
         <div className="col-span-2 text-xs font-bold text-orange-900 mb-1 flex justify-between"><span>設備與通道尺寸 (mm)</span><span className="font-mono text-xs text-orange-600">總數量: {layout.upsPods?.filter(p => p.roomId === r.id).reduce((sum, pod) => sum + pod.items.length, 0) || 0} 組</span></div>
         <div><label className="block text-[10px] text-orange-700 font-bold mb-1">設備寬 (W)</label><input type="number" value={params.upsW || 800} onChange={e => a.setParams(p => ({ ...p, upsW: Number(e.target.value) }))} className="w-full border border-orange-200 rounded px-2 py-1 outline-none focus:border-orange-500 font-mono text-xs" /></div>
         <div><label className="block text-[10px] text-orange-700 font-bold mb-1">設備深 (D)</label><input type="number" value={params.upsD || 800} onChange={e => a.setParams(p => ({ ...p, upsD: Number(e.target.value) }))} className="w-full border border-orange-200 rounded px-2 py-1 outline-none focus:border-orange-500 font-mono text-xs" /></div>
@@ -580,8 +588,8 @@
     </div>
 </div>}
                             {['LV', 'SHV_HV'].includes(r.type) && <div className="space-y-4 pt-2">
-    <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200 flex items-center justify-between"><div className="font-bold text-yellow-900 text-sm flex items-center gap-2"><Icon name="Zap" size={16} /> 電氣盤 (沿牆) 配置</div></div>
-    <div className="grid grid-cols-2 gap-2 bg-yellow-50/50 p-3 rounded-lg border border-yellow-100">
+    <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 flex items-center justify-between"><div className="font-bold text-gray-800 text-sm flex items-center gap-2"><Icon name="Zap" size={16} /> 電氣盤 (沿牆) 配置</div></div>
+    <div className="grid grid-cols-2 gap-2 bg-gray-50/50 p-3 rounded-lg border border-gray-100">
         <div className="col-span-2 text-xs font-bold text-yellow-900 mb-1 flex justify-between"><span>設備沿牆尺寸 (mm)</span><span className="font-mono text-xs text-yellow-600">總數量: {layout.lvPods?.filter(p => p.roomId === r.id).reduce((sum, pod) => sum + pod.items.length, 0) || 0} 盤</span></div>
         <div><label className="block text-[10px] text-yellow-700 font-bold mb-1">沿牆寬度 (W)</label><input type="number" value={params.lvW || 800} onChange={e => a.setParams(p => ({ ...p, lvW: Number(e.target.value) }))} className="w-full border border-yellow-200 rounded px-2 py-1 outline-none focus:border-yellow-500 font-mono text-xs" /></div>
         <div><label className="block text-[10px] text-yellow-700 font-bold mb-1">突出深度 (D)</label><input type="number" value={params.lvD || 800} onChange={e => a.setParams(p => ({ ...p, lvD: Number(e.target.value) }))} className="w-full border border-yellow-200 rounded px-2 py-1 outline-none focus:border-yellow-500 font-mono text-xs" /></div>
@@ -607,8 +615,8 @@
     </div>
 </div>}
                             {r.type === 'CUSTOM' && <div className="space-y-4 pt-2">
-    <div className="bg-purple-50 p-4 rounded-lg border border-purple-200 flex items-center justify-between"><div className="font-bold text-purple-900 text-sm flex items-center gap-2"><Icon name="Settings" size={16} /> 自定義設備排佈</div></div>
-    <div className="grid grid-cols-2 gap-2 bg-purple-50/50 p-3 rounded-lg border border-purple-100">
+    <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 flex items-center justify-between"><div className="font-bold text-gray-800 text-sm flex items-center gap-2"><Icon name="Settings" size={16} /> 自定義設備排佈</div></div>
+    <div className="grid grid-cols-2 gap-2 bg-gray-50/50 p-3 rounded-lg border border-gray-100">
         <div className="col-span-2 text-xs font-bold text-purple-900 mb-1 flex justify-between">
             <span>排佈策略</span>
             <span className="font-mono text-xs text-purple-600">總數量: {(layout.upsPods?.filter(p => p.roomId === r.id).reduce((s, p) => s + p.items.length, 0) || 0) + (layout.lvPods?.filter(p => p.roomId === r.id).reduce((s, p) => s + p.items.length, 0) || 0) + (layout.genPods?.filter(p => p.roomId === r.id).reduce((s, p) => s + p.items.length, 0) || 0)}</span>
@@ -635,8 +643,8 @@
                             {r.type === 'STAIRS' && ['combo', 'elevator'].includes(r.stairLayout || 'combo') && <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 space-y-3"><div className="flex justify-between items-center"><label className="font-bold text-black text-xs">{t('elevatorSizeSet')}</label><label className="flex items-center gap-1 text-[10px] whitespace-nowrap cursor-pointer text-gray-700 font-bold"><input type="checkbox" checked={r.isEmergency || !1} onChange={e => setR(p => p.map(x => x.id === r.id ? { ...x, isEmergency: e.target.checked } : x))} className="accent-black" /> {t('emergencyElevator')}</label></div><div className="grid grid-cols-2 gap-3"><div><label className="text-[10px] text-gray-600 font-bold mb-1 block">{t('evW')}</label><input type="number" value={r.evW || 2500} onChange={e => setR(p => p.map(x => x.id === r.id ? { ...x, evW: Number(e.target.value) } : x))} className="w-full bg-white border border-gray-300 rounded px-2 py-1.5 text-xs outline-none focus:border-black font-mono" /></div><div><label className="text-[10px] text-gray-600 font-bold mb-1 block">{t('evH')}</label><input type="number" value={r.evH || 2500} onChange={e => setR(p => p.map(x => x.id === r.id ? { ...x, evH: Number(e.target.value) } : x))} className="w-full bg-white border border-gray-300 rounded px-2 py-1.5 text-xs outline-none focus:border-black font-mono" /></div></div></div>}
                             {r.type === 'EV_LOBBY' && (() => { const evTypes = [{ id: 'custom', label: '自定義尺寸 (Custom)', w: null, h: null }, { id: 'pass_11', label: '客運 11人乘 (1.8x1.8m)', w: 1800, h: 1800 }, { id: 'pass_15', label: '客運 15人乘 (2.0x2.0m)', w: 2000, h: 2000 }, { id: 'pass_17', label: '客運 17人乘 (2.2x2.0m)', w: 2200, h: 2000 }, { id: 'emergency', label: '非常用電梯 (2.5x2.5m)', w: 2500, h: 2500 }, { id: 'cargo_2t', label: '貨物電梯 2噸 (3.0x3.0m)', w: 3000, h: 3000 }, { id: 'cargo_3t', label: '貨物電梯 3噸 (3.5x3.5m)', w: 3500, h: 3500 }]; return <div className="space-y-3"><div className="flex justify-between items-center"><span className="text-xs font-bold text-black">電梯清單 (Elevators)</span><button onClick={() => a.addAncEv(r.id)} className="flex items-center gap-1 text-xs bg-black text-white hover:bg-gray-800 px-3 py-1.5 rounded transition font-bold shadow-sm"><Icon name="Plus" size={14} /> {t('addBtn')}</button></div>{(r.elevators?.length > 0 || r.evW) ? <div className="space-y-3 max-h-56 overflow-y-auto pr-1 scrollbar-hide">{(r.elevators || [{ id: r.id + '_legacy', w: r.evW || 2500, h: r.evH || 2500, dx: Math.max(0, r.w - (r.evW || 2500) - 500), dy: 500, isEmergency: r.isEmergency }]).map((ev, evi) => <div key={ev.id} className="bg-gray-50 p-3 rounded-lg border border-gray-200 flex flex-col gap-2"><div className="flex justify-between items-center"><span className="text-xs font-bold text-gray-800">電梯 {evi + 1}</span><button onClick={() => setR(p => p.map(x => x.id === r.id ? { ...x, elevators: (x.elevators || [{ id: x.id + '_legacy', w: x.evW || 2500, h: x.evH || 2500, dx: Math.max(0, x.w - (x.evW || 2500) - 500), dy: 500, isEmergency: x.isEmergency }]).filter(y => y.id !== ev.id) } : x))} className="text-gray-400 hover:text-black transition"><Icon name="Trash2" size={14} /></button></div><select value={ev.evType || 'custom'} onChange={e => { const tp = evTypes.find(t => t.id === e.target.value); setR(p => p.map(x => x.id === r.id ? { ...x, elevators: (x.elevators || [{ id: x.id + '_legacy', w: x.evW || 2500, h: x.evH || 2500, dx: Math.max(0, x.w - (x.evW || 2500) - 500), dy: 500, isEmergency: x.isEmergency }]).map(y => y.id === ev.id ? { ...y, evType: tp.id, w: tp.w || y.w, h: tp.h || y.h, isEmergency: tp.id === 'emergency' ? !0 : (tp.id === 'custom' ? y.isEmergency : !1) } : y) } : x)) }} className="w-full rounded border border-gray-300 px-1.5 py-1.5 text-xs outline-none focus:border-black bg-white font-bold text-gray-800">{evTypes.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}</select><div className="flex items-center gap-1 text-[10px] whitespace-nowrap cursor-pointer text-gray-700 font-bold mb-1"><input type="checkbox" checked={ev.isEmergency || false} onChange={e => setR(p => p.map(x => x.id === r.id ? { ...x, elevators: (x.elevators || [{ id: x.id + '_legacy', w: x.evW || 2500, h: x.evH || 2500, dx: Math.max(0, x.w - (x.evW || 2500) - 500), dy: 500, isEmergency: x.isEmergency }]).map(y => y.id === ev.id ? { ...y, isEmergency: e.target.checked, evType: 'custom' } : y) } : x))} className="accent-black" /> {t('emergencyElevator')}</div><div className="grid grid-cols-2 gap-2 text-xs text-black"><div className="flex items-center bg-white border border-gray-300 rounded px-2 focus-within:border-black transition"><span className="text-gray-500 font-bold py-1.5 whitespace-nowrap mr-1 shrink-0">{t('evW')}</span><input type="number" value={Math.round(ev.w)} onChange={e => setR(p => p.map(x => x.id === r.id ? { ...x, elevators: (x.elevators || [{ id: x.id + '_legacy', w: x.evW || 2500, h: x.evH || 2500, dx: Math.max(0, x.w - (x.evW || 2500) - 500), dy: 500, isEmergency: x.isEmergency }]).map(y => y.id === ev.id ? { ...y, w: Number(e.target.value), evType: 'custom' } : y) } : x))} className="w-full bg-transparent outline-none py-1.5 font-mono" /></div><div className="flex items-center bg-white border border-gray-300 rounded px-2 focus-within:border-black transition"><span className="text-gray-500 font-bold py-1.5 whitespace-nowrap mr-1 shrink-0">{t('evH')}</span><input type="number" value={Math.round(ev.h)} onChange={e => setR(p => p.map(x => x.id === r.id ? { ...x, elevators: (x.elevators || [{ id: x.id + '_legacy', w: x.evW || 2500, h: x.evH || 2500, dx: Math.max(0, x.w - (x.evW || 2500) - 500), dy: 500, isEmergency: x.isEmergency }]).map(y => y.id === ev.id ? { ...y, h: Number(e.target.value), evType: 'custom' } : y) } : x))} className="w-full bg-transparent outline-none py-1.5 font-mono" /></div></div></div>)}</div> : <div className="text-[10px] text-gray-400 text-center py-2 bg-gray-50 rounded border border-dashed border-gray-200">無電梯設定</div>}</div> })()}
                             {!o && <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 space-y-3"><label className="font-bold text-black text-xs">{t('corridorWSet')}</label><div className="grid grid-cols-4 gap-2">{['top', 'bottom', 'left', 'right'].map(eg => <div key={eg} className="flex flex-col items-center"><label className="text-[10px] text-gray-500 mb-1 uppercase tracking-wider font-bold">{eg}</label><input type="number" value={cw[eg]} onChange={e => setR(p => p.map(x => x.id === r.id ? { ...x, corridorW: { ...cw, [eg]: Number(e.target.value) } } : x))} className="w-full bg-white text-black border border-gray-300 rounded px-1 py-1.5 text-center outline-none text-xs focus:border-black font-mono" /></div>)}</div></div>}
-                            {!o && <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 space-y-3"><label className="font-bold text-blue-900 text-xs flex items-center gap-1"><Icon name="Move" size={14} /> 內部走廊距離 (Inner Corridor)</label><div className="grid grid-cols-4 gap-2">{['top', 'bottom', 'left', 'right'].map(eg => { const icw = r.innerCorridorW || { top: 0, bottom: 0, left: 0, right: 0 }; return <div key={`ic-${eg}`} className="flex flex-col items-center"><label className="text-[10px] text-blue-500 mb-1 uppercase tracking-wider font-bold">{eg}</label><input type="number" value={icw[eg]} onChange={e => setR(p => p.map(x => x.id === r.id ? { ...x, innerCorridorW: { ...(x.innerCorridorW || { top: 0, bottom: 0, left: 0, right: 0 }), [eg]: Number(e.target.value) } } : x))} className="w-full bg-white text-blue-900 border border-blue-300 rounded px-1 py-1.5 text-center outline-none text-xs focus:border-blue-500 font-mono" /></div> })}</div></div>}
-                            {['STAIRS', 'EV_LOBBY', 'PS', 'DS', 'VOID'].includes(r.type) && <div className="bg-indigo-50 p-4 rounded-lg border border-indigo-200 space-y-3"><label className="font-bold text-indigo-900 text-xs flex items-center gap-1"><Icon name="ArrowUp" size={14} /> {t('verticalPenetrate')}</label><div className="flex flex-wrap gap-2"><button onClick={() => a.penAnc(r, eFs.filter(f => f !== r.floor))} className="bg-indigo-600 text-white text-[10px] px-2 py-1.5 rounded font-bold shadow-sm hover:bg-indigo-700 transition">{t('penetrateAll')}</button>{eFs.filter(f => f !== r.floor).map(f => <button key={f} onClick={() => a.penAnc(r, [f])} className="bg-white border border-indigo-300 text-indigo-700 hover:bg-indigo-100 text-[10px] px-2 py-1.5 rounded transition font-bold shadow-sm">{t('toFloor')}{f}</button>)}</div></div>}
+                            {!o && <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 space-y-3"><label className="font-bold text-gray-800 text-xs flex items-center gap-1"><Icon name="Move" size={14} /> 內部走廊距離 (Inner Corridor)</label><div className="grid grid-cols-4 gap-2">{['top', 'bottom', 'left', 'right'].map(eg => { const icw = r.innerCorridorW || { top: 0, bottom: 0, left: 0, right: 0 }; return <div key={`ic-${eg}`} className="flex flex-col items-center"><label className="text-[10px] text-gray-600 mb-1 uppercase tracking-wider font-bold">{eg}</label><input type="number" value={icw[eg]} onChange={e => setR(p => p.map(x => x.id === r.id ? { ...x, innerCorridorW: { ...(x.innerCorridorW || { top: 0, bottom: 0, left: 0, right: 0 }), [eg]: Number(e.target.value) } } : x))} className="w-full bg-white text-gray-800 border border-gray-300 rounded px-1 py-1.5 text-center outline-none text-xs focus:border-black font-mono" /></div> })}</div></div>}
+                            {['STAIRS', 'EV_LOBBY', 'PS', 'DS', 'VOID'].includes(r.type) && <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 space-y-3"><label className="font-bold text-gray-800 text-xs flex items-center gap-1"><Icon name="ArrowUp" size={14} /> {t('verticalPenetrate')}</label><div className="flex flex-wrap gap-2"><button onClick={() => a.penAnc(r, eFs.filter(f => f !== r.floor))} className="bg-gray-700 text-white text-[10px] px-2 py-1.5 rounded font-bold shadow-sm hover:bg-gray-800 transition">{t('penetrateAll')}</button>{eFs.filter(f => f !== r.floor).map(f => <button key={f} onClick={() => a.penAnc(r, [f])} className="bg-white border border-gray-300 text-gray-700 hover:bg-gray-100 text-[10px] px-2 py-1.5 rounded transition font-bold shadow-sm">{t('toFloor')}{f}</button>)}</div></div>}
                             {r.type !== 'OUTDOOR' && <div className="space-y-3"><div className="flex justify-between items-center"><span className="text-xs font-bold text-black">{t('doorList')}</span><button onClick={() => (isIt ? a.addItDoor(r.id) : a.addAncDr(r.id))} className="flex items-center gap-1 text-xs bg-black text-white hover:bg-gray-800 px-3 py-1.5 rounded transition font-bold shadow-sm"><Icon name="Plus" size={14} /> {t('addBtn')}</button></div>{r.doors?.length > 0 ? <div className="space-y-3 max-h-48 overflow-y-auto pr-1 scrollbar-hide">{r.doors.map((d, di) => <div key={d.id} className="bg-gray-50 p-3 rounded-lg border border-gray-200 flex flex-col gap-2"><div className="flex justify-between items-center"><span className="text-xs font-bold text-gray-800">{t('doorNum')}{di + 1}</span><button onClick={() => setR(p => p.map(x => x.id === r.id ? { ...x, doors: x.doors.filter(y => y.id !== d.id) } : x))} className="text-gray-400 hover:text-black transition"><Icon name="Trash2" size={14} /></button></div><div className="grid grid-cols-4 gap-2 text-xs text-black"><select value={d.edge} onChange={e => setR(p => p.map(x => x.id === r.id ? { ...x, doors: x.doors.map(y => y.id === d.id ? { ...y, edge: e.target.value } : y) } : x))} className="rounded border border-gray-300 px-1 py-1.5 focus:border-black outline-none"><option value="top">{t('topWall')}</option><option value="bottom">{t('bottomWall')}</option><option value="left">{t('leftWall')}</option><option value="right">{t('rightWall')}</option></select><select value={d.type} onChange={e => setR(p => p.map(x => x.id === r.id ? { ...x, doors: x.doors.map(y => y.id === d.id ? { ...y, type: e.target.value } : y) } : x))} className="rounded border border-gray-300 px-1 py-1.5 focus:border-black outline-none"><option value="single">{t('singleDoor')}</option><option value="double">{t('doubleDoor')}</option><option value="sliding">{t('slidingDoor')}</option></select><select value={d.direction || 'in'} onChange={e => setR(p => p.map(x => x.id === r.id ? { ...x, doors: x.doors.map(y => y.id === d.id ? { ...y, direction: e.target.value } : y) } : x))} className="rounded border border-gray-300 px-1 py-1.5 focus:border-black outline-none"><option value="in">{t('openIn')}</option><option value="out">{t('openOut')}</option></select><select value={d.swing || 'left'} onChange={e => setR(p => p.map(x => x.id === r.id ? { ...x, doors: x.doors.map(y => y.id === d.id ? { ...y, swing: e.target.value } : y) } : x))} className="rounded border border-gray-300 px-1 py-1.5 focus:border-black outline-none"><option value="left">{t('swingLeft')}</option><option value="right">{t('swingRight')}</option></select></div><div className="grid grid-cols-2 gap-2 text-xs text-black mt-1"><div className="flex items-center bg-white border border-gray-300 rounded px-2 focus-within:border-black transition"><span className="text-gray-500 font-bold py-1.5 whitespace-nowrap mr-1 shrink-0">{t('doorW')}</span><input type="number" value={Math.round(d.width)} onChange={e => setR(p => p.map(x => x.id === r.id ? { ...x, doors: x.doors.map(y => y.id === d.id ? { ...y, width: Number(e.target.value) } : y) } : x))} className="w-full bg-transparent outline-none py-1.5 font-mono" /></div><div className="flex items-center bg-white border border-gray-300 rounded px-2 focus-within:border-black transition"><span className="text-gray-500 font-bold py-1.5 whitespace-nowrap mr-1 shrink-0">{t('doorDist')}</span><input type="number" value={Math.round(d.offset)} onChange={e => setR(p => p.map(x => x.id === r.id ? { ...x, doors: x.doors.map(y => y.id === d.id ? { ...y, offset: Number(e.target.value) } : y) } : x))} className="w-full bg-transparent outline-none py-1.5 font-mono" /></div></div></div>)}</div> : <div className="text-[10px] text-gray-400 text-center py-2 bg-gray-50 rounded border border-dashed border-gray-200">{t('noDoorSetting')}</div>}</div>}</div>
                     </div>
                 </div>;
@@ -659,7 +667,7 @@
                                 {typeOpen && (
                                     <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-2xl z-50 max-h-64 overflow-y-auto py-1 custom-scrollbar">
                                         {Object.keys(nT).map(k => (
-                                            <div key={k} onClick={() => { a.setNewRm(p => ({ ...p, type: k, name: nT[k] || p.name })); setTypeOpen(false); }} className="flex items-center gap-2 px-3 py-2 hover:bg-blue-50 cursor-pointer transition-colors border-b border-gray-50 last:border-0">
+                                            <div key={k} onClick={() => { a.setNewRm(p => ({ ...p, type: k, name: nT[k] || p.name })); setTypeOpen(false); }} className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 cursor-pointer transition-colors border-b border-gray-50 last:border-0">
                                                 <div className="w-4 h-4 rounded-sm border border-black/20 shrink-0 shadow-inner" style={{ backgroundColor: SPACE_COLORS[k] || '#ccc' }}></div>
                                                 <span className="text-xs font-bold text-gray-700">{nT[k]}</span>
                                             </div>
@@ -692,7 +700,7 @@
         const Step4 = memo(({ s, a, t }) => {
             const { layout, bChk, areaRep, params } = s;
             return <div className="space-y-5 animate-in fade-in duration-300">
-                <div><div className="flex items-center gap-2 text-gray-500 mb-3"><Icon name="Target" size={16} /><span className="font-bold text-sm tracking-wide">{t('projectSummary')}</span></div><div className="grid grid-cols-2 gap-4"><div className="bg-[#151923] text-white p-5 rounded-2xl shadow-sm flex flex-col justify-center"><div className="text-xs text-gray-400 mb-2 font-medium">{t('totalItCapacity')}</div><div className="flex items-baseline gap-1.5 mb-1"><span className="text-4xl font-black">{layout.totalRacks}</span><span className="text-sm font-bold">Racks</span></div><div className="text-xs text-gray-400 font-mono">≒ {(layout.totalRacks * params.kw / 1000).toFixed(2)} MW</div></div><div className="bg-[#4F5EE4] text-white p-5 rounded-2xl shadow-sm flex flex-col justify-center"><div className="text-xs text-white/70 mb-2 font-medium">{t('farConsumption')}</div><div className="flex items-baseline gap-1 mb-1"><span className="text-4xl font-black">{bChk.maxFarArea > 0 ? (areaRep.volumeAreaTotal / bChk.maxFarArea * 100).toFixed(1) : 0}</span><span className="text-xl font-bold">%</span></div><div className="text-xs text-white/70 font-mono">{areaRep.volumeAreaTotal.toFixed(0)} / {bChk.maxFarArea.toFixed(0)} m²</div></div></div></div>
+                <div><div className="flex items-center gap-2 text-gray-500 mb-3"><Icon name="Target" size={16} /><span className="font-bold text-sm tracking-wide">{t('projectSummary')}</span></div><div className="grid grid-cols-2 gap-4"><div className="bg-[#151923] text-white p-5 rounded-2xl shadow-sm flex flex-col justify-center"><div className="text-xs text-gray-400 mb-2 font-medium">{t('totalItCapacity')}</div><div className="flex items-baseline gap-1.5 mb-1"><span className="text-4xl font-black">{layout.totalRacks}</span><span className="text-sm font-bold">Racks</span></div><div className="text-xs text-gray-400 font-mono">≒ {(layout.totalRacks * params.kw / 1000).toFixed(2)} MW</div></div><div className="bg-[#9CA3AF] text-white p-5 rounded-2xl shadow-sm flex flex-col justify-center"><div className="text-xs text-white/70 mb-2 font-medium">{t('farConsumption')}</div><div className="flex items-baseline gap-1 mb-1"><span className="text-4xl font-black">{bChk.maxFarArea > 0 ? (areaRep.volumeAreaTotal / bChk.maxFarArea * 100).toFixed(1) : 0}</span><span className="text-xl font-bold">%</span></div><div className="text-xs text-white/70 font-mono">{areaRep.volumeAreaTotal.toFixed(0)} / {bChk.maxFarArea.toFixed(0)} m²</div></div></div></div>
                 <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex justify-between items-center"><div><h2 className="text-sm font-bold text-black flex items-center gap-2"><Icon name="FileSpreadsheet" size={18} /> {t('gfaReportTitle')}</h2><p className="text-xs text-gray-500 mt-1">{t('gfaReportDesc')}</p></div></div>
                 <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden text-xs relative"><div className="overflow-x-auto overflow-y-auto custom-scrollbar max-h-[65vh]"><table className="w-full text-left border-collapse whitespace-nowrap"><thead className="bg-gray-50 text-gray-800 sticky top-0 shadow-sm z-20"><tr><th className="p-3 border-b border-r border-gray-200 bg-gray-100 font-bold sticky left-0 z-30 w-40 shadow-[1px_0_0_#e5e7eb]">{t('spaceCategory')}</th>{areaRep.matrix.map(r => <th key={r.floor} className="p-3 border-b border-r border-gray-200 text-center font-bold min-w-[70px]">{r.floor}</th>)}<th className="p-3 border-b border-gray-200 bg-gray-100 text-center font-bold min-w-[90px]">{t('total')}</th></tr></thead><tbody className="divide-y divide-gray-100">{areaRep.typeCategories.map(c => <tr key={c.id} className="hover:bg-gray-50 transition-colors"><td className="p-2 border-r border-gray-200 font-bold text-gray-700 bg-white sticky left-0 z-10 whitespace-pre-line leading-tight shadow-[1px_0_0_#e5e7eb]">{c.label}</td>{areaRep.matrix.map(r => <td key={`${r.floor}-${c.id}`} className="p-2 border-r border-gray-100 text-right font-mono text-gray-600">{r.data[c.id] > 0 ? r.data[c.id].toFixed(0) : <span className="text-gray-300">-</span>}</td>)}<td className="p-2 border-l border-gray-200 text-right font-bold font-mono bg-gray-50 text-black">{areaRep.totals[c.id] > 0 ? areaRep.totals[c.id].toFixed(0) : <span className="text-gray-300">-</span>}</td></tr>)}<tr className="bg-gray-100 border-y-2 border-gray-300"><td className="p-3 font-bold text-black border-r border-gray-300 sticky left-0 z-10 bg-gray-200 shadow-[1px_0_0_#d1d5db]">GFA 延床面積 合計</td>{areaRep.matrix.map(r => <td key={`gfa-${r.floor}`} className="p-3 text-right font-mono font-bold text-black border-r border-gray-200 bg-gray-100">{r.gfa.toFixed(0)}</td>)}<td className="p-3 text-right font-mono font-black text-black border-l border-gray-300 bg-gray-300 text-base">{areaRep.gfaTotal.toFixed(0)}</td></tr><tr className="bg-gray-50"><td colSpan={areaRep.matrix.length + 2} className="p-1 border-y border-gray-200 bg-gray-200 text-[10px] font-bold text-gray-500 text-center tracking-widest sticky left-0 z-10">Excluded Floor Area 容積対象外 (m²)</td></tr>{[{ id: 'ups', label: 'UPS/Batt (1/50)' }, { id: 'gen', label: 'GEN (1/100)' }, { id: 'water', label: 'Water Tank (1/100)' }, { id: 'lift', label: 'Lift 電梯' }, { id: 'parking', label: 'Parking 停車場' }].map(x => <tr key={x.id} className="hover:bg-gray-100 text-gray-500"><td className="p-2 border-r border-gray-200 bg-gray-50 sticky left-0 z-10 font-medium shadow-[1px_0_0_#e5e7eb]">{x.label}</td>{areaRep.matrix.map(r => <td key={`exc-${r.floor}-${x.id}`} className="p-2 text-right font-mono border-r border-gray-100 bg-gray-50/50">{r.excluded[x.id] > 0 ? r.excluded[x.id].toFixed(0) : <span className="text-gray-300">-</span>}</td>)}<td className="p-2 text-right font-mono border-l border-gray-200 bg-gray-100 text-gray-400">-</td></tr>)}<tr className="bg-gray-100 border-y-2 border-black"><td className="p-3 font-bold text-black border-r border-gray-300 sticky left-0 z-10 bg-gray-100 leading-tight shadow-[1px_0_0_#d1d5db]">Volume Floor Area<br />容積率対象 延床面積</td>{areaRep.matrix.map(r => <td key={`vol-${r.floor}`} className="p-3 text-right font-mono font-black text-black border-r border-gray-200">{r.volumeArea.toFixed(0)}</td>)}<td className="p-3 text-right font-mono font-black text-black border-l border-gray-300 bg-gray-200 text-base">{areaRep.volumeAreaTotal.toFixed(0)}</td></tr><tr className="bg-white border-b-2 border-gray-200"><td className="p-3 font-bold text-blue-800 border-r border-gray-200 sticky left-0 z-10 bg-blue-50 shadow-[1px_0_0_#e5e7eb]">電力容量 (MW)</td>{areaRep.matrix.map(r => <td key={`mw-${r.floor}`} className="p-3 text-right font-mono font-bold text-blue-700 border-r border-gray-100 bg-blue-50/30">{r.mw > 0 ? r.mw : <span className="text-gray-300">-</span>}</td>)}<td className="p-3 text-right font-mono font-black text-blue-700 border-l border-blue-200 bg-blue-100 text-sm">{(layout.totalRacks * params.kw / 1000).toFixed(2)}</td></tr></tbody></table></div></div>
                 <div className="flex justify-end gap-2 pt-2 pb-6"><button onClick={a.expExcel} className="flex items-center gap-2 bg-[#107C41] text-white px-5 py-2.5 rounded-xl font-bold shadow-md hover:bg-[#0B5A2F] transition shrink-0"><Icon name="FileSpreadsheet" size={18} /> {t('exportExcel')}</button><button onClick={a.expCSV} className="flex items-center gap-2 bg-black text-white px-5 py-2.5 rounded-xl font-bold shadow-md hover:bg-gray-800 transition shrink-0"><Icon name="DownloadCloud" size={18} /> {t('exportCsv')}</button></div>
@@ -815,6 +823,22 @@
 
         const Toolbar = memo(({ s, a, t }) => {
             const { step, floors, fVis, aFlr, secs, showEsc, hist, ui, meas, buildings, activeBuilding } = s, eFs = floors.filter(f => !f.isSeismic && (f.buildingId || 'B1') === activeBuilding).map(f => f.name);
+
+            // 👇 新增：浮動面板的拖曳狀態與事件 👇
+            const [panelPos, setPanelPos] = useState({ x: 80, y: 80 });
+            const [dragging, setDragging] = useState(false);
+            const [rel, setRel] = useState({ x: 0, y: 0 });
+            const onDown = (e) => { e.stopPropagation(); e.target.setPointerCapture(e.pointerId); setDragging(true); setRel({ x: e.clientX - panelPos.x, y: e.clientY - panelPos.y }); };
+            const onMove = (e) => { if (!dragging) return; e.stopPropagation(); setPanelPos({ x: e.clientX - rel.x, y: e.clientY - rel.y }); };
+            const onUp = (e) => { if (!dragging) return; e.stopPropagation(); setDragging(false); e.target.releasePointerCapture(e.pointerId); };
+
+            // 👇 新增：右上角主工具列的拖曳狀態與事件 👇
+            const [toolPos, setToolPos] = useState({ x: typeof window !== 'undefined' ? window.innerWidth - 500 : 800, y: 20 });
+            const [toolDragging, setToolDragging] = useState(false);
+            const [toolRel, setToolRel] = useState({ x: 0, y: 0 });
+            const onToolDown = (e) => { e.stopPropagation(); e.target.setPointerCapture(e.pointerId); setToolDragging(true); setToolRel({ x: e.clientX - toolPos.x, y: e.clientY - toolPos.y }); };
+            const onToolMove = (e) => { if (!toolDragging) return; e.stopPropagation(); setToolPos({ x: e.clientX - toolRel.x, y: e.clientY - toolRel.y }); };
+            const onToolUp = (e) => { if (!toolDragging) return; e.stopPropagation(); setToolDragging(false); e.target.releasePointerCapture(e.pointerId); };
             return <>
                 <div className="absolute top-5 left-5 z-10 flex flex-col gap-3">
                     <div className="flex gap-2">
@@ -839,7 +863,7 @@
                                 <label className="flex items-center justify-between cursor-pointer text-xs font-bold text-gray-700 hover:text-black"><span className="flex items-center gap-1.5"><Icon name="Server" size={14} /> 顯示機櫃與設備</span><input type="checkbox" checked={ui.showEq !== false} onChange={() => a.setUi(p => ({ ...p, showEq: p.showEq === false ? true : false }))} className="accent-black w-4 h-4" /></label>
                             </div>}</div>}
                 </div>
-                <div className="absolute top-5 right-5 z-10 flex flex-wrap justify-end gap-2 max-w-[600px]">
+                <div onPointerDown={onToolDown} onPointerMove={onToolMove} onPointerUp={onToolUp} style={{ left: toolPos.x, top: toolPos.y, position: 'absolute' }} className="z-10 flex flex-wrap justify-end gap-2 max-w-[600px] cursor-grab">
                     <button onClick={a.undo} disabled={hist.idx <= 0} className="bg-white px-3 py-2 rounded-xl shadow-sm border border-gray-200 text-xs font-bold text-gray-700 hover:text-black hover:bg-gray-50 disabled:opacity-40 transition flex items-center justify-center w-8" title={t('undo')}><Icon name="Undo" size={16} /></button>
                     <button onClick={a.redo} disabled={hist.idx >= hist.lst.length - 1} className="bg-white px-3 py-2 rounded-xl shadow-sm border border-gray-200 text-xs font-bold text-gray-700 hover:text-black hover:bg-gray-50 disabled:opacity-40 transition flex items-center justify-center w-8" title={t('redo')}><Icon name="Redo" size={16} /></button>
                     {![5, 6].includes(step) && <button onClick={() => a.setUi(p => ({ ...p, meas: !p.meas }))} className={`px-3 py-2 rounded-xl shadow-sm border text-xs font-bold transition flex items-center gap-1 ${ui.meas ? 'bg-black text-white border-black shadow-md' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50 hover:text-black'}`}><Icon name="Ruler" size={14} /> {t('measure')}</button>}
@@ -855,6 +879,24 @@
                     <div className="flex items-center gap-2">
                         <button onClick={() => a.setUi(p => ({ ...p, tips: !p.tips }))} className={`flex items-center gap-2 px-3 py-2 rounded-xl shadow-sm border text-xs font-bold transition ${ui.tips ? 'bg-black text-white border-black shadow-md' : 'bg-white/95 backdrop-blur text-gray-700 border-gray-200 hover:text-black hover:bg-gray-50'}`}><Icon name="LayoutDashboard" size={14} /> {ui.tips ? t('hideTips') : t('opTips')}</button>
                         <button onClick={() => a.setUi(p => ({ ...p, sop: !p.sop }))} className={`flex items-center gap-2 px-3 py-2 rounded-xl shadow-sm border text-xs font-bold transition ${ui.sop ? 'bg-black text-white border-black shadow-md' : 'bg-white/95 backdrop-blur text-gray-700 border-gray-200 hover:text-black hover:bg-gray-50'}`}><Icon name="FileSpreadsheet" size={14} /> {ui.sop ? t('hideSop') : t('opSop')}</button>
+                        {/* 👇 新增：棟別與檢查 (上拉選單) 👇 */}
+                        <div className="relative">
+                                <button onClick={() => a.setUi(p => ({ ...p, valMenu: !p.valMenu }))} className={`flex items-center gap-2 px-3 py-2 rounded-xl shadow-sm border text-xs font-bold transition ${ui.valMenu ? 'bg-black text-white border-black shadow-md' : 'bg-white/95 backdrop-blur text-gray-700 border-gray-200 hover:text-black hover:bg-gray-50'}`}>
+                                <Icon name="Settings" size={14} /> 棟別與檢查 <Icon name={ui.valMenu ? "ChevronDown" : "ChevronUp"} size={14} />
+                            </button>
+                            {ui.valMenu && (
+                                <div className="absolute bottom-full left-0 mb-2 bg-white/95 backdrop-blur border border-gray-200 shadow-xl rounded-xl p-3 flex flex-col gap-2 w-[240px] animate-in fade-in slide-in-from-bottom-2 z-50">
+                                    <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1 px-1">當前棟別</div>
+                                    <select value={s.activeBuilding} onChange={e => a.setActiveBuilding(e.target.value)} className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm font-bold bg-gray-50 outline-none mb-1">
+                                        {s.buildings.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                                    </select>
+                                    <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1 px-1 mt-1">檢查與自動修正</div>
+                                    <button onClick={() => { a.runValidation(); a.setUpStatus({ m: '✅ 檢查完成，請查看側邊結果', t: 'success' }); a.setUi(p => ({ ...p, valMenu: false })); }} className="w-full text-left text-xs bg-gray-700 text-white px-3 py-2.5 rounded-lg font-bold shadow-sm hover:bg-gray-800 transition">執行法規與重疊檢查</button>
+                                    <button onClick={() => { a.previewAutoFix(); a.setUpStatus({ m: '⚠️ 已產生預覽修正，按套用以執行', t: 'info' }); a.setUi(p => ({ ...p, valMenu: false })); }} className="w-full text-left text-xs bg-gray-300 text-black px-3 py-2.5 rounded-lg font-bold shadow-sm hover:bg-gray-350 transition">預覽自動修正</button>
+                                    <button onClick={() => { if (window.confirm('確定套用自動修正並儲存快照？')) { a.applyAutoFix(true); a.setUi(p => ({ ...p, valMenu: false })); } }} className="w-full text-left text-xs bg-gray-700 text-white px-3 py-2.5 rounded-lg font-bold shadow-sm hover:bg-gray-800 transition">套用修正並存檔</button>
+                                </div>
+                            )}
+                        </div>
                     </div>
                     <div className="flex items-end gap-3">
                         {ui.tips && <div className="bg-white/95 backdrop-blur p-5 rounded-xl shadow-xl border border-gray-200 w-64 animate-in fade-in slide-in-from-bottom-2 text-xs"><div className="font-bold text-black mb-3 border-b border-gray-200 pb-2">{t('mouseShortcuts')}</div><ul className="space-y-3 text-gray-600 font-medium"><li className="flex justify-between items-center"><span>{t('cancelMeasure')}</span><kbd className="bg-gray-100 px-2 py-1 rounded border border-gray-200 shadow-sm text-[10px] font-mono text-black">Esc / 右鍵</kbd></li><li className="flex justify-between items-center"><span>{t('zoomCanvas')}</span><kbd className="bg-gray-100 px-2 py-1 rounded border border-gray-200 shadow-sm text-[10px] font-mono text-black">滾輪</kbd></li><li className="flex justify-between items-center"><span>{t('panCanvas')}</span><kbd className="bg-gray-100 px-2 py-1 rounded border border-gray-200 shadow-sm text-[10px] font-mono text-black">拖曳空白</kbd></li><li className="flex justify-between items-center"><span>{t('rotateSpace')}</span><kbd className="bg-gray-100 px-2 py-1 rounded border border-gray-200 shadow-sm text-[10px] font-mono text-black">拖曳圓點</kbd></li><li className="flex justify-between items-center"><span>{t('toggleDoor')}</span><kbd className="bg-gray-100 px-2 py-1 rounded border border-gray-200 shadow-sm text-[10px] font-mono text-black">雙擊門片</kbd></li></ul></div>}
@@ -1089,8 +1131,6 @@
                         visited.add(key); prev[key] = `${cx},${cy}`; q.push([nx, ny]);
                     }
                 }
-
-                let path = [];
                 if (found) {
                     let cur = `${eX},${eY}`;
                     while (cur && cur !== `${sX},${sY}`) {
@@ -1197,7 +1237,7 @@
                     <pattern id="rkP" patternUnits="userSpaceOnUse" width="100" height="100" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="100" stroke="#f97316" strokeWidth="20" opacity="0.4" /></pattern>
                     <pattern id="odP" patternUnits="userSpaceOnUse" width="400" height="400" patternTransform="rotate(45)"><path d="M 0,0 L 400,0 M 0,200 L 400,200" stroke="#86efac" strokeWidth="10" strokeDasharray="50,50" opacity="0.5" /></pattern>
                     <pattern id="soP" patternUnits="userSpaceOnUse" width="100" height="100" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="100" stroke="#94a3b8" strokeWidth="10" opacity="0.4" /></pattern>
-                    <pattern id="skP" patternUnits="userSpaceOnUse" width="100" height="100" patternTransform="rotate(45)"><rect width="100" height="100" fill="#cbd5e1" opacity="0.3" /><line x1="0" y1="0" x2="0" y2="100" stroke="#64748b" strokeWidth="20" opacity="0.5" /></pattern>
+                    <pattern id="skP" patternUnits="userSpaceOnUse" width="100" height="100" patternTransform="rotate(45)"><rect width="100" height="100" fill="#cbd5e1" opacity="0.3" /><line x1="0" y1="0" x2="0" y2="100" stroke="#9CA3AF" strokeWidth="20" opacity="0.5" /></pattern>
                     <pattern id="bldgHatch" patternUnits="userSpaceOnUse" width="400" height="400" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="400" stroke="#3b82f6" strokeWidth="20" opacity="0.2" /></pattern>
                     {dxf.clip && buildings.map(b => <clipPath key={`dxC-${b.id}`} id={`dxC-${b.id}`}><g transform={`rotate(${-b.rotation}) translate(${-b.x}, ${-b.y}) translate(${-(bdOffset?.x || 0)}, ${-(bdOffset?.y || 0)})`}><path d={dxf.clip} /></g></clipPath>)}
                     {effPoly.length > 2 && buildings.map(b => <clipPath key={`blC-${b.id}`} id={`blC-${b.id}`}><g transform={`rotate(${-b.rotation}) translate(${-b.x}, ${-b.y}) translate(${-(bdOffset?.x || 0)}, ${-(bdOffset?.y || 0)})`}><polygon points={pS(effPoly)} /></g></clipPath>)}
@@ -1250,8 +1290,8 @@
                                 : [];
                             return (
                                 <g key={`b-${b.id}`} transform={`translate(${b.x}, ${b.y}) rotate(${b.rotation})`}>
-                        <g className="total-dimensions pointer-events-none"><line x1={0} y1={0} x2={0} y2={-4200} stroke="#94a3b8" strokeWidth="10" strokeDasharray="50,50" /><line x1={room.w} y1={0} x2={room.w} y2={-4200} stroke="#94a3b8" strokeWidth="10" strokeDasharray="50,50" /><line x1={0} y1={-3500} x2={room.w} y2={-3500} stroke="#475569" strokeWidth="15" /><circle cx={0} cy={-3500} r="60" fill="#1e293b" /><circle cx={room.w} cy={-3500} r="60" fill="#1e293b" /><text x={room.w / 2} y={-3800} fill="#1e293b" fontSize="1400" fontWeight="bold" textAnchor="middle">{room.w}</text><line x1={0} y1={0} x2={-4200} y2={0} stroke="#94a3b8" strokeWidth="10" strokeDasharray="50,50" /><line x1={0} y1={room.h} x2={-4200} y2={room.h} stroke="#94a3b8" strokeWidth="10" strokeDasharray="50,50" /><line x1={-3500} y1={0} x2={-3500} y2={room.h} stroke="#475569" strokeWidth="15" /><circle cx={-3500} cy={0} r="60" fill="#1e293b" /><circle cx={-3500} cy={room.h} r="60" fill="#1e293b" /><text x={-3800} y={room.h / 2} fill="#1e293b" fontSize="1400" fontWeight="bold" textAnchor="middle" dominantBaseline="middle" transform={`rotate(-90, -3800, ${room.h / 2})`}>{room.h}</text></g>
-                        <rect x="0" y="0" width={room.w} height={room.h} fill="none" stroke="#334155" strokeWidth="80" strokeDasharray="400,200" opacity="0.3" className="pointer-events-none" />
+                        <g className="total-dimensions pointer-events-none"><line x1={0} y1={0} x2={0} y2={-4200} stroke="#94a3b8" strokeWidth="10" strokeDasharray="50,50" /><line x1={room.w} y1={0} x2={room.w} y2={-4200} stroke="#94a3b8" strokeWidth="10" strokeDasharray="50,50" /><line x1={0} y1={-3500} x2={room.w} y2={-3500} stroke="#475569" strokeWidth="15" /><circle cx={0} cy={-3500} r="60" fill="#1e293b" /><circle cx={room.w} cy={-3500} r="60" fill="#1e293b" /><text x={room.w / 2} y={-3800} fill="#1e293b" fontSize="1000" fontWeight="bold" textAnchor="middle">{room.w}</text><line x1={0} y1={0} x2={-4200} y2={0} stroke="#94a3b8" strokeWidth="10" strokeDasharray="50,50" /><line x1={0} y1={room.h} x2={-4200} y2={room.h} stroke="#94a3b8" strokeWidth="10" strokeDasharray="50,50" /><line x1={-3500} y1={0} x2={-3500} y2={room.h} stroke="#475569" strokeWidth="15" /><circle cx={-3500} cy={0} r="60" fill="#1e293b" /><circle cx={-3500} cy={room.h} r="60" fill="#1e293b" /><text x={-3800} y={room.h / 2} fill="#1e293b" fontSize="1000" fontWeight="bold" textAnchor="middle" dominantBaseline="middle" transform={`rotate(-90, -3800, ${room.h / 2})`}>{room.h}</text></g>
+                        <rect x="0" y="0" width={room.w} height={room.h} fill="none" stroke="#374151" strokeWidth="80" strokeDasharray="400,200" opacity="0.3" className="pointer-events-none" />
                         {(() => { const fIdx = floors.findIndex(f => f.name === aFlr), belowFlr = fIdx >= 1 ? floors[fIdx - 1] : null; return belowFlr ? <rect x={0} y={0} width={belowFlr.w || 45000} height={belowFlr.h || 35000} fill="none" stroke="#94a3b8" strokeWidth="40" strokeDasharray="100,100" opacity="0.8" clipPath={cpU} className="pointer-events-none" /> : null })()}
                         
                         {step === 1 && !ui.info && (
@@ -1270,21 +1310,21 @@
                                 )}
                                 
                                 {/* 保留整棟平移與旋轉的控制點 */}
-                                <circle cx={0} cy={0} r="500" fill="#ffffff" stroke="#64748b" strokeWidth="60" className="cursor-move hover:scale-110 hover:shadow-2xl transition-all z-50 drop-shadow-md" style={{ pointerEvents: 'auto' }} onPointerDown={e => { e.stopPropagation(); e.target.setPointerCapture(e.pointerId); const pp = a.pt(e); a.setUi(p => ({ ...p, dragBd: b.id, offX: pp.x - (s.bdOffset?.x || 0) - b.x, offY: pp.y - (s.bdOffset?.y || 0) - b.y })) }} />
+                                <circle cx={0} cy={0} r="500" fill="#ffffff" stroke="#9CA3AF" strokeWidth="60" className="cursor-move hover:scale-110 hover:shadow-2xl transition-all z-50 drop-shadow-md" style={{ pointerEvents: 'auto' }} onPointerDown={e => { e.stopPropagation(); e.target.setPointerCapture(e.pointerId); const pp = a.pt(e); a.setUi(p => ({ ...p, dragBd: b.id, offX: pp.x - (s.bdOffset?.x || 0) - b.x, offY: pp.y - (s.bdOffset?.y || 0) - b.y })) }} />
 
-                                <line x1={room.w / 2} y1={0} x2={room.w / 2} y2={-2500} stroke="#8b5cf6" strokeWidth="40" />
-                                <circle cx={room.w / 2} cy={-2500} r="400" fill="#8b5cf6" stroke="#fff" strokeWidth="80"
+                                <line x1={room.w / 2} y1={0} x2={room.w / 2} y2={-2500} stroke="#9CA3AF" strokeWidth="40" />
+                                <circle cx={room.w / 2} cy={-2500} r="400" fill="#9CA3AF" stroke="#fff" strokeWidth="80"
                                     className="cursor-pointer hover:opacity-80 transition"
                                     style={{ pointerEvents: 'auto' }}
                                     onPointerDown={e => { e.stopPropagation(); e.target.setPointerCapture(e.pointerId); a.setUi(p => ({ ...p, dragBldgRot: { id: b.id, cx: b.x + room.w / 2, cy: b.y + room.h / 2 } })) }} />
                                 <text x={room.w / 2} y={-2500} fill="#fff" fontSize="350" fontWeight="bold" textAnchor="middle" dominantBaseline="middle" className="pointer-events-none">↻</text>
-                                <text x={room.w / 2 + 600} y={-2500} fill="#8b5cf6" fontSize="700" fontWeight="bold" textAnchor="start" dominantBaseline="middle" className="pointer-events-none">{b.rotation}°</text>
+                                <text x={room.w / 2 + 600} y={-2500} fill="#9CA3AF" fontSize="700" fontWeight="bold" textAnchor="start" dominantBaseline="middle" className="pointer-events-none">{b.rotation}°</text>
                             </g>
                         )}
                     {step >= 2 && params.col && bGrid.x?.length > 0 && bGrid.y?.length > 0 && <g><line x1={bGrid.x[0]} y1={-2000} x2={bGrid.x[bGrid.x.length - 1]} y2={-2000} stroke="#64748b" strokeWidth="10" className="pointer-events-none" /><line x1={-2000} y1={bGrid.y[0]} x2={-2000} y2={bGrid.y[bGrid.y.length - 1]} stroke="#64748b" strokeWidth="10" className="pointer-events-none" />{gY.spans.map((sp, i) => sp > 0 && <text key={`ys-${i}`} x={-2300} y={gY.sorted[i] + sp / 2} fill="#334155" fontSize="1000" fontWeight="bold" textAnchor="middle" dominantBaseline="middle" transform={`rotate(-90, -2300, ${gY.sorted[i] + sp / 2})`} className="cursor-pointer hover:fill-blue-600" style={{pointerEvents: 'auto'}} onClick={(e) => { e.stopPropagation(); const n = prompt('請輸入新間距 (Y軸):', sp); if(n && !isNaN(n)){ const diff = Number(n) - sp; a.setGrid(p => { const ng = {...p}; const arr = [...(ng[b.id]?.[aFlr]?.y || [])].sort((a,b)=>a-b); for(let k=i+1; k<arr.length; k++) arr[k] += diff; ng[b.id][aFlr].y = arr; return ng; }) } }}>{sp}</text>)}{bGrid.y.map((y, i) => <g key={`gy-${i}`}><line x1={-6500} y1={y} x2={room.w} y2={y} stroke="#818cf8" strokeWidth="15" strokeDasharray="100,50" opacity="0.6" className="pointer-events-none" />{step === 2 && <line x1={-6500} y1={y} x2={room.w} y2={y} stroke="transparent" strokeWidth="300" className={ui.dragG?.axis === 'y' && ui.dragG?.idx === i && ui.dragG?.buildingId === b.id ? "cursor-grabbing" : "cursor-ns-resize"} onPointerDown={e => { e.stopPropagation(); e.target.setPointerCapture(e.pointerId); a.setUi(p => ({ ...p, dragG: { axis: 'y', idx: i, buildingId: b.id } })) }} />}<circle cx={-5500} cy={y} r="300" fill="#fff" stroke="#6366f1" strokeWidth="20" className="pointer-events-none" /><text x={-5500} y={y} fill="#4f46e5" fontSize="250" fontWeight="bold" textAnchor="middle" dominantBaseline="middle" className="pointer-events-none">Y{i}</text><circle cx={-2000} cy={y} r="50" fill="#1e293b" className="pointer-events-none" />{[2, 3].includes(step) && <g style={{ pointerEvents: 'auto' }}><g className="cursor-pointer hover:opacity-70" onPointerDown={e => { e.stopPropagation(); a.setGrid(p => { const bk = b.id; const prevB = p[bk] || {}; const prevF = prevB[aFlr] || { x: [], y: [] }; return { ...p, [bk]: { ...prevB, [aFlr]: { ...prevF, y: prevF.y.filter((_, j) => j !== i) } } }; }) }}><circle cx={-6300} cy={y} r="180" fill="#ef4444" /><text x={-6300} y={y + 20} fill="#fff" fontSize="300" fontWeight="bold" textAnchor="middle" dominantBaseline="middle">×</text></g><g className="cursor-pointer hover:opacity-70" onPointerDown={e => { e.stopPropagation(); a.setGrid(p => { const bk = b.id; const prevB = p[bk] || {}; const prevF = prevB[aFlr] || { x: [], y: [] }; return { ...p, [bk]: { ...prevB, [aFlr]: { ...prevF, y: [...new Set([...prevF.y, y + 6000])].sort((a, b) => a - b) } } }; }) }}><circle cx={-6800} cy={y} r="180" fill="#22c55e" /><text x={-6800} y={y + 20} fill="#fff" fontSize="300" fontWeight="bold" textAnchor="middle" dominantBaseline="middle">＋</text></g></g>}</g>)}{gX.spans.map((sp, i) => sp > 0 && <text key={`xs-${i}`} x={gX.sorted[i] + sp / 2} y={-2300} fill="#334155" fontSize="1000" fontWeight="bold" textAnchor="middle" className="cursor-pointer hover:fill-blue-600" style={{pointerEvents: 'auto'}} onClick={(e) => { e.stopPropagation(); const n = prompt('請輸入新間距 (X軸):', sp); if(n && !isNaN(n)){ const diff = Number(n) - sp; a.setGrid(p => { const ng = {...p}; const arr = [...(ng[b.id]?.[aFlr]?.x || [])].sort((a,b)=>a-b); for(let k=i+1; k<arr.length; k++) arr[k] += diff; ng[b.id][aFlr].x = arr; return ng; }) } }}>{sp}</text>)}{bGrid.x.map((x, i) => <g key={`gx-${i}`}><line x1={x} y1={-6500} x2={x} y2={room.h} stroke="#818cf8" strokeWidth="15" strokeDasharray="100,50" opacity="0.6" className="pointer-events-none" />{step === 2 && <line x1={x} y1={-6500} x2={x} y2={room.h} stroke="transparent" strokeWidth="300" className={ui.dragG?.axis === 'x' && ui.dragG?.idx === i && ui.dragG?.buildingId === b.id ? "cursor-grabbing" : "cursor-ew-resize"} onPointerDown={e => { e.stopPropagation(); e.target.setPointerCapture(e.pointerId); a.setUi(p => ({ ...p, dragG: { axis: 'x', idx: i, buildingId: b.id } })) }} />}<circle cx={x} cy={-4500} r="300" fill="#fff" stroke="#6366f1" strokeWidth="20" className="pointer-events-none" /><text x={x} y={-4500} fill="#4f46e5" fontSize="250" fontWeight="bold" textAnchor="middle" dominantBaseline="middle" className="pointer-events-none">X{i}</text><circle cx={x} cy={-2000} r="50" fill="#1e293b" className="pointer-events-none" />{[2, 3].includes(step) && <g style={{ pointerEvents: 'auto' }}><g className="cursor-pointer hover:opacity-70" onPointerDown={e => { e.stopPropagation(); a.setGrid(p => { const bk = b.id; const prevB = p[bk] || {}; const prevF = prevB[aFlr] || { x: [], y: [] }; return { ...p, [bk]: { ...prevB, [aFlr]: { ...prevF, x: prevF.x.filter((_, j) => j !== i) } } }; }) }}><circle cx={x} cy={-5300} r="180" fill="#ef4444" /><text x={x} y={-5280} fill="#fff" fontSize="300" fontWeight="bold" textAnchor="middle" dominantBaseline="middle">×</text></g><g className="cursor-pointer hover:opacity-70" onPointerDown={e => { e.stopPropagation(); a.setGrid(p => { const bk = b.id; const prevB = p[bk] || {}; const prevF = prevB[aFlr] || { x: [], y: [] }; return { ...p, [bk]: { ...prevB, [aFlr]: { ...prevF, x: [...new Set([...prevF.x, x + 6000])].sort((a, b) => a - b) } } }; }) }}><circle cx={x} cy={-5800} r="180" fill="#22c55e" /><text x={x} y={-5780} fill="#fff" fontSize="300" fontWeight="bold" textAnchor="middle" dominantBaseline="middle">＋</text></g></g>}</g>)}</g>}
 
                     {dSpc && anc.filter(r => (r.buildingId || 'B1') === b.id && r.type === 'OUTDOOR').map(r => { const v = fVis[r.floor] || 'hidden', int = v === 'active' && step >= 2; if (v === 'hidden') return null; return <g key={`o-${r.id}`} opacity={v === 'active' ? 1 : 0.2} className={step === 3 && int ? "cursor-move" : "pointer-events-none"} onPointerDown={step === 3 && int ? e => { e.stopPropagation(); e.target.setPointerCapture(e.pointerId); const pp = a.ptLocal(e, b.id); a.setUi(p => ({ ...p, drag: r.id, offX: pp.x - r.x, offY: pp.y - r.y })); a.setSelRm(r.id) } : undefined}><g transform={`rotate(${r.rotation || 0}, ${r.x + r.w / 2}, ${r.y + r.h / 2})`}><rect x={r.x} y={r.y} width={r.w} height={r.h} fill="url(#odP)" /><rect x={r.x} y={r.y} width={r.w} height={r.h} fill={SPACE_COLORS[r.type] || r.color} opacity="0.4" stroke={s.selRm === r.id ? "#2563eb" : "#22c55e"} strokeWidth="20" strokeDasharray="100,100" />{r.doors?.map(d => rDr(r, d, step, ui, a, !1))}</g></g> })}
-                    {dSpc && anc.filter(r => (r.buildingId || 'B1') === b.id && r.type === 'SEMI_OUTDOOR').map(r => { const v = fVis[r.floor] || 'hidden', int = v === 'active' && step >= 2; if (v === 'hidden') return null; return <g key={`so-${r.id}`} opacity={v === 'active' ? 1 : 0.2} className={step === 3 && int ? "cursor-move" : "pointer-events-none"} onPointerDown={step === 3 && int ? e => { e.stopPropagation(); e.target.setPointerCapture(e.pointerId); const pp = a.ptLocal(e, b.id); a.setUi(p => ({ ...p, drag: r.id, offX: pp.x - r.x, offY: pp.y - r.y })); a.setSelRm(r.id) } : undefined}><g transform={`rotate(${r.rotation || 0}, ${r.x + r.w / 2}, ${r.y + r.h / 2})`}><rect x={r.x} y={r.y} width={r.w} height={r.h} fill="url(#soP)" /><rect x={r.x} y={r.y} width={r.w} height={r.h} fill={SPACE_COLORS[r.type] || r.color} opacity="0.6" stroke={s.selRm === r.id ? "#2563eb" : "#64748b"} strokeWidth={s.selRm === r.id ? "40" : "20"} strokeDasharray="100,50" />{r.doors?.map(d => rDr(r, d, step, ui, a, !1))}</g></g> })}
+                    {dSpc && anc.filter(r => (r.buildingId || 'B1') === b.id && r.type === 'SEMI_OUTDOOR').map(r => { const v = fVis[r.floor] || 'hidden', int = v === 'active' && step >= 2; if (v === 'hidden') return null; return <g key={`so-${r.id}`} opacity={v === 'active' ? 1 : 0.2} className={step === 3 && int ? "cursor-move" : "pointer-events-none"} onPointerDown={step === 3 && int ? e => { e.stopPropagation(); e.target.setPointerCapture(e.pointerId); const pp = a.ptLocal(e, b.id); a.setUi(p => ({ ...p, drag: r.id, offX: pp.x - r.x, offY: pp.y - r.y })); a.setSelRm(r.id) } : undefined}><g transform={`rotate(${r.rotation || 0}, ${r.x + r.w / 2}, ${r.y + r.h / 2})`}><rect x={r.x} y={r.y} width={r.w} height={r.h} fill="url(#soP)" /><rect x={r.x} y={r.y} width={r.w} height={r.h} fill={SPACE_COLORS[r.type] || r.color} opacity="0.6" stroke={s.selRm === r.id ? "#2563eb" : "#9CA3AF"} strokeWidth={s.selRm === r.id ? "40" : "20"} strokeDasharray="100,50" />{r.doors?.map(d => rDr(r, d, step, ui, a, !1))}</g></g> })}
 
                     <mask id={`cMk-${bId}`} maskUnits="userSpaceOnUse">
                         <rect x="-100000" y="-100000" width="300000" height="300000" fill="white" />
@@ -1297,8 +1337,99 @@
                         {dSpc && bRooms.map(r => { const v = fVis[r.floor] || 'hidden'; if (v === 'hidden') return null; const c = r.corridors || DEF_IT_CORRIDORS, cw = r.corridorW || DEF_CORRIDOR_W, eC = { t: c.top && !isCB(r, 'top', room.w, room.h, bRooms, bAnc), b: c.bottom && !isCB(r, 'bottom', room.w, room.h, bRooms, bAnc), l: c.left && !isCB(r, 'left', room.w, room.h, bRooms, bAnc), rg: c.right && !isCB(r, 'right', room.w, room.h, bRooms, bAnc) }; return <g key={`itc-${r.id}`} opacity={v === 'active' ? 1 : 0.15} className="pointer-events-none"><g clipPath={cpU}><g transform={`rotate(${r.rotation || 0}, ${r.x + r.w / 2}, ${r.y + r.h / 2})`}>{[eC.t && { x: r.x, y: r.y - cw.top, w: r.w, h: cw.top }, eC.b && { x: r.x, y: r.y + r.h, w: r.w, h: cw.bottom }, eC.l && { x: r.x - cw.left, y: r.y, w: cw.left, h: r.h }, eC.rg && { x: r.x + r.w, y: r.y, w: cw.right, h: r.h }].filter(Boolean).map((z, i) => <rect key={`icz-${r.id}-${i}`} x={z.x} y={z.y} width={z.w} height={z.h} fill="#e2e8f0" stroke="#cbd5e1" strokeWidth="10" strokeDasharray="50,50" />)}{eC.t && eC.l && <rect x={r.x - cw.left} y={r.y - cw.top} width={cw.left} height={cw.top} fill="#e2e8f0" />}{eC.t && eC.rg && <rect x={r.x + r.w} y={r.y - cw.top} width={cw.right} height={cw.top} fill="#e2e8f0" />}{eC.b && eC.l && <rect x={r.x - cw.left} y={r.y + r.h} width={cw.left} height={cw.bottom} fill="#e2e8f0" />}{eC.b && eC.rg && <rect x={r.x + r.w} y={r.y + r.h} width={cw.right} height={cw.bottom} fill="#e2e8f0" />}</g></g></g> })}
                     </g>
 
-                    {dSpc && bAnc.filter(r => !['OUTDOOR', 'SEMI_OUTDOOR'].includes(r.type)).map(r => { const v = fVis[r.floor] || 'hidden', int = v === 'active' && step >= 2, c = r.corridors || DEF_CORRIDORS, cw = r.corridorW || DEF_CORRIDOR_W, iS = s.selRm === r.id; if (v === 'hidden') return null; return <g key={`r-${r.id}`} opacity={v === 'active' ? 1 : 0.2} className={step === 3 && int ? (ui.drag === r.id ? "cursor-grabbing" : "cursor-move") : "pointer-events-none"} onPointerDown={step === 3 && int ? e => { e.stopPropagation(); e.target.setPointerCapture(e.pointerId); const pp = a.ptLocal(e, b.id); a.setUi(p => ({ ...p, drag: r.id, offX: pp.x - r.x, offY: pp.y - r.y })); a.setSelRm(r.id) } : undefined}><g clipPath={cpU}><g transform={`rotate(${r.rotation || 0}, ${r.x + r.w / 2}, ${r.y + r.h / 2})`}><rect x={r.x} y={r.y} width={r.w} height={r.h} fill={r.type === 'SUNKEN' ? 'url(#skP)' : r.type === 'VOID' ? '#f8fafc' : (SPACE_COLORS[r.type] || r.color)} stroke={iS ? "#2563eb" : r.type === 'VOID' ? "#ef4444" : "#1e293b"} strokeWidth={iS ? "40" : "20"} strokeDasharray={r.type === 'VOID' ? "100,100" : ""} />{['SUNKEN', 'VOID'].includes(r.type) && <path d={`M ${r.x},${r.y} L ${r.x + r.w},${r.y + r.h} M ${r.x + r.w},${r.y} L ${r.x},${r.y + r.h}`} stroke={r.type === 'VOID' ? "#ef4444" : "#64748b"} strokeWidth="15" strokeDasharray="50,50" opacity="0.6" />}{rStDet(r, floors.find(f => f.name === r.floor)?.height || 5000, step, ui, a, floors, bAnc)}</g></g><g transform={`rotate(${r.rotation || 0}, ${r.x + r.w / 2}, ${r.y + r.h / 2})`}>{r.doors?.map(d => rDr(r, d, step, ui, a, !1))}</g>{step === 3 && int && <g transform={`rotate(${r.rotation || 0}, ${r.x + r.w / 2}, ${r.y + r.h / 2})`}>{[{ k: 'top', a: c.top, cx: r.x + r.w / 2, cy: c.top ? r.y - cw.top / 2 : r.y - 300, blk: isCB(r, 'top', room.w, room.h, bRooms, bAnc) }, { k: 'bottom', a: c.bottom, cx: r.x + r.w / 2, cy: c.bottom ? r.y + r.h + cw.bottom / 2 : r.y + r.h + 300, blk: isCB(r, 'bottom', room.w, room.h, bRooms, bAnc) }, { k: 'left', a: c.left, cx: c.left ? r.x - cw.left / 2 : r.x - 300, cy: r.y + r.h / 2, blk: isCB(r, 'left', room.w, room.h, bRooms, bAnc) }, { k: 'right', a: c.right, cx: c.right ? r.x + r.w + cw.right / 2 : r.x + r.w + 300, cy: r.y + r.h / 2, blk: isCB(r, 'right', room.w, room.h, bRooms, bAnc) }].filter(z => !z.blk).map(z => <g key={`br-${r.id}-${z.k}`} onPointerDown={e => { e.stopPropagation(); e.preventDefault(); a.setAnc(p => p.map(x => x.id !== r.id ? x : { ...x, corridors: { ...c, [z.k]: !c[z.k] } })) }} className="cursor-pointer hover:opacity-80"><circle cx={z.cx} cy={z.cy} r="200" fill={z.a ? "#64748b" : "#94a3b8"} stroke="#fff" strokeWidth="15" /><text x={z.cx} y={z.cy + 20} fill="#fff" fontSize="250" fontWeight="bold" textAnchor="middle" dominantBaseline="middle">{z.a ? '－' : '＋'}</text></g>)}<g className="cursor-se-resize" onPointerDown={e => { e.stopPropagation(); e.target.setPointerCapture(e.pointerId); const pp = a.ptLocal(e, b.id); a.setUi(p => ({ ...p, resId: { id: r.id, t: 'anc' }, startW: r.w, startH: r.h, mX: pp.x, mY: pp.y })) }} style={{ pointerEvents: 'auto' }}><rect x={r.x + r.w - 1500} y={r.y + r.h - 1500} width="3000" height="3000" fill="transparent" /><circle cx={r.x + r.w} cy={r.y + r.h} r="300" fill="#1e293b" stroke="#ffffff" strokeWidth="60" /></g><g className="cursor-pointer" onPointerDown={e => { e.stopPropagation(); e.target.setPointerCapture(e.pointerId); a.setUi(p => ({ ...p, rotId: { id: r.id, t: 'anc' } })) }} style={{ pointerEvents: 'auto' }}><line x1={r.x + r.w / 2} y1={r.y} x2={r.x + r.w / 2} y2={r.y - 1500} stroke="#64748b" strokeWidth="40" /><circle cx={r.x + r.w / 2} cy={r.y - 1500} r="300" fill="#fff" stroke="#64748b" strokeWidth="60" /></g></g>}</g> })}
-                        {dSpc && bRooms.map(r => { const v = fVis[r.floor] || 'hidden', int = v === 'active' && step >= 2, c = r.corridors || DEF_IT_CORRIDORS, cw = r.corridorW || DEF_CORRIDOR_W, iD = ui.dragIt === r.id; if (v === 'hidden') return null; return <g key={`ir-${r.id}`} opacity={v === 'active' ? 1 : 0.2} className={step >= 2 && int ? (iD ? "cursor-grabbing" : "cursor-move") : "pointer-events-none"} onPointerDown={step >= 2 && int ? e => { e.stopPropagation(); e.target.setPointerCapture(e.pointerId); const pp = a.ptLocal(e, b.id); a.setUi(p => ({ ...p, dragIt: r.id, offX: pp.x - r.x, offY: pp.y - r.y })) } : undefined}><g clipPath={cpU}><g transform={`rotate(${r.rotation || 0}, ${r.x + r.w / 2}, ${r.y + r.h / 2})`}><rect x={r.x} y={r.y} width={r.w} height={r.h} fill={SPACE_COLORS['IT']} stroke={iD ? "#2563eb" : "#3b82f6"} strokeWidth={iD ? "50" : "30"} opacity={iD ? "0.7" : "0.5"} /></g></g><g transform={`rotate(${r.rotation || 0}, ${r.x + r.w / 2}, ${r.y + r.h / 2})`} className="pointer-events-none"><g style={{ pointerEvents: 'auto' }}>{r.doors?.map(d => rDr(r, d, step, ui, a, !0))}</g>{(() => { const eD = escPath?.[r.id]; return showEsc && eD && eD.intStart && eD.intDoor ? <g className="pointer-events-none"><path d={`M ${eD.intStart.x} ${eD.intStart.y}  ${eD.intIsL && eD.intMid ? `L ${eD.intMid.x} ${eD.intMid.y}` : ''} L ${eD.intDoor.x} ${eD.intDoor.y}`} fill="none" stroke="#3b82f6" strokeWidth="40" strokeDasharray="100,50" /><circle cx={eD.intStart.x} cy={eD.intStart.y} r="250" fill="#3b82f6" /></g> : null })()}</g>{step >= 2 && int && <g transform={`rotate(${r.rotation || 0}, ${r.x + r.w / 2}, ${r.y + r.h / 2})`}>{[{ k: 'top', a: c.top, cx: r.x + r.w / 2, cy: c.top ? r.y - cw.top / 2 : r.y - 300, blk: isCB(r, 'top', room.w, room.h, bRooms, bAnc) }, { k: 'bottom', a: c.bottom, cx: r.x + r.w / 2, cy: c.bottom ? r.y + r.h + cw.bottom / 2 : r.y + r.h + 300, blk: isCB(r, 'bottom', room.w, room.h, bRooms, bAnc) }, { k: 'left', a: c.left, cx: c.left ? r.x - cw.left / 2 : r.x - 300, cy: r.y + r.h / 2, blk: isCB(r, 'left', room.w, room.h, bRooms, bAnc) }, { k: 'right', a: c.right, cx: c.right ? r.x + r.w + cw.right / 2 : r.x + r.w + 300, cy: r.y + r.h / 2, blk: isCB(r, 'right', room.w, room.h, bRooms, bAnc) }].filter(z => !z.blk).map(z => <g key={`bi-${r.id}-${z.k}`} onPointerDown={e => { e.stopPropagation(); e.preventDefault(); a.setRooms(p => p.map(x => x.id !== r.id ? x : { ...x, corridors: { ...c, [z.k]: !c[z.k] } })) }} className="cursor-pointer hover:opacity-80"><circle cx={z.cx} cy={z.cy} r="200" fill={z.a ? "#3b82f6" : "#94a3b8"} stroke="#fff" strokeWidth="15" /><text x={z.cx} y={z.cy + 20} fill="#fff" fontSize="250" fontWeight="bold" textAnchor="middle" dominantBaseline="middle">{z.a ? '－' : '＋'}</text></g>)}<g className="cursor-se-resize" onPointerDown={e => { e.stopPropagation(); e.target.setPointerCapture(e.pointerId); const pp = a.ptLocal(e, b.id); a.setUi(p => ({ ...p, resId: { id: r.id, t: 'it' }, startW: r.w, startH: r.h, mX: pp.x, mY: pp.y })) }} style={{ pointerEvents: 'auto' }}><rect x={r.x + r.w - 1500} y={r.y + r.h - 1500} width="3000" height="3000" fill="transparent" /><circle cx={r.x + r.w} cy={r.y + r.h} r="400" fill="#3b82f6" stroke="#ffffff" strokeWidth="100" /></g><g className="cursor-pointer" onPointerDown={e => { e.stopPropagation(); e.target.setPointerCapture(e.pointerId); a.setUi(p => ({ ...p, rotId: { id: r.id, t: 'it' } })) }} style={{ pointerEvents: 'auto' }}><line x1={r.x + r.w / 2} y1={r.y} x2={r.x + r.w / 2} y2={r.y - 1500} stroke="#3b82f6" strokeWidth="40" /><circle cx={r.x + r.w / 2} cy={r.y - 1500} r="300" fill="#fff" stroke="#3b82f6" strokeWidth="60" /></g></g>}</g> })}
+                    {dSpc && bAnc.filter(r => !['OUTDOOR', 'SEMI_OUTDOOR'].includes(r.type)).map(r => {
+                                                const v = fVis[r.floor] || 'hidden';
+                                                const int = v === 'active' && step >= 2;
+                                                const c = r.corridors || DEF_CORRIDORS;
+                                                const cw = r.corridorW || DEF_CORRIDOR_W;
+                                                const iS = s.selRm === r.id;
+                                                if (v === 'hidden') return null;
+                                                return (
+                                                    <g key={`r-${r.id}`} opacity={v === 'active' ? 1 : 0.2} className={step === 3 && int ? (ui.drag === r.id ? 'cursor-grabbing' : 'cursor-move') : 'pointer-events-none'} onPointerDown={step === 3 && int ? e => { e.stopPropagation(); e.target.setPointerCapture(e.pointerId); const pp = a.ptLocal(e, b.id); a.setUi(p => ({ ...p, drag: r.id, offX: pp.x - r.x, offY: pp.y - r.y })); a.setSelRm(r.id) } : undefined}>
+                                                        <g clipPath={cpU}>
+                                                            <g transform={`rotate(${r.rotation || 0}, ${r.x + r.w / 2}, ${r.y + r.h / 2})`}>
+                                                                <rect x={r.x} y={r.y} width={r.w} height={r.h} fill={r.type === 'SUNKEN' ? 'url(#skP)' : r.type === 'VOID' ? '#f8fafc' : (SPACE_COLORS[r.type] || r.color)} stroke={iS ? '#2563eb' : r.type === 'VOID' ? '#ef4444' : '#1e293b'} strokeWidth={iS ? '150' : '100'} strokeDasharray={r.type === 'VOID' ? '100,100' : ''} />
+                                                                {['SUNKEN', 'VOID'].includes(r.type) && <path d={`M ${r.x},${r.y} L ${r.x + r.w},${r.y + r.h} M ${r.x + r.w},${r.y} L ${r.x},${r.y + r.h}`} stroke={r.type === 'VOID' ? '#ef4444' : '#9CA3AF'} strokeWidth="15" strokeDasharray='50,50' opacity='0.6' />}
+                                                                {rStDet(r, floors.find(f => f.name === r.floor)?.height || 5000, step, ui, a, floors, bAnc)}
+
+                                                                {/* 👇 新增：拖曳與縮放時顯示即時藍色尺寸膠囊 (附屬空間) 👇 */}
+                                                                {(ui.resId?.id === r.id || ui.drag === r.id) && (
+                                                                    <g className="pointer-events-none z-50">
+                                                                        <rect x={r.x + r.w/2 - 2500} y={r.y + r.h + 300} width="5000" height="1200" fill="#94a3b8" rx="600" opacity="0.9" />
+                                                                        <text x={r.x + r.w/2} y={r.y + r.h + 1150} fill="#ffffff" fontSize="800" fontWeight="bold" textAnchor="middle">W: {Math.round(r.w)}</text>
+                                                                        <rect x={r.x + r.w + 300} y={r.y + r.h/2 - 2500} width="1200" height="5000" fill="#94a3b8" rx="600" opacity="0.9" />
+                                                                        <text x={r.x + r.w + 900} y={r.y + r.h/2} fill="#ffffff" fontSize="800" fontWeight="bold" textAnchor="middle" dominantBaseline="middle" transform={`rotate(-90, ${r.x + r.w + 900}, ${r.y + r.h/2})`}>H: {Math.round(r.h)}</text>
+                                                                    </g>
+                                                                )}
+                                                            </g>
+                                                        </g>
+
+                                                        <g transform={`rotate(${r.rotation || 0}, ${r.x + r.w / 2}, ${r.y + r.h / 2})`}>{r.doors?.map(d => rDr(r, d, step, ui, a, !1))}</g>
+                                                        {step === 3 && int && (
+                                                            <g transform={`rotate(${r.rotation || 0}, ${r.x + r.w / 2}, ${r.y + r.h / 2})`}>
+                                                                {[{ k: 'top', a: c.top, cx: r.x + r.w / 2, cy: c.top ? r.y - cw.top / 2 : r.y - 300, blk: isCB(r, 'top', room.w, room.h, bRooms, bAnc) }, { k: 'bottom', a: c.bottom, cx: r.x + r.w / 2, cy: c.bottom ? r.y + r.h + cw.bottom / 2 : r.y + r.h + 300, blk: isCB(r, 'bottom', room.w, room.h, bRooms, bAnc) }, { k: 'left', a: c.left, cx: c.left ? r.x - cw.left / 2 : r.x - 300, cy: r.y + r.h / 2, blk: isCB(r, 'left', room.w, room.h, bRooms, bAnc) }, { k: 'right', a: c.right, cx: c.right ? r.x + r.w + cw.right / 2 : r.x + r.w + 300, cy: r.y + r.h / 2, blk: isCB(r, 'right', room.w, room.h, bRooms, bAnc) }]
+                                                                    .filter(z => !z.blk)
+                                                                    .map(z => <g key={`br-${r.id}-${z.k}`} onPointerDown={e => { e.stopPropagation(); e.preventDefault(); a.setAnc(p => p.map(x => x.id !== r.id ? x : { ...x, corridors: { ...c, [z.k]: !c[z.k] } })) }} className="cursor-pointer hover:opacity-80"><circle cx={z.cx} cy={z.cy} r="200" fill={z.a ? '#64748b' : '#94a3b8'} stroke="#fff" strokeWidth="15" /><text x={z.cx} y={z.cy + 20} fill="#fff" fontSize="250" fontWeight="bold" textAnchor="middle" dominantBaseline="middle">{z.a ? '－' : '＋'}</text></g>)
+                                                                }
+                                                                <g className="cursor-se-resize" onPointerDown={e => { e.stopPropagation(); e.target.setPointerCapture(e.pointerId); const pp = a.ptLocal(e, b.id); a.setUi(p => ({ ...p, resId: { id: r.id, t: 'anc' }, startW: r.w, startH: r.h, mX: pp.x, mY: pp.y })) }} style={{ pointerEvents: 'auto' }}><rect x={r.x + r.w - 1500} y={r.y + r.h - 1500} width="3000" height="3000" fill="transparent" /><circle cx={r.x + r.w} cy={r.y + r.h} r="300" fill="#1e293b" stroke="#ffffff" strokeWidth="60" /></g>
+                                                                <g className="cursor-pointer" onPointerDown={e => { e.stopPropagation(); e.target.setPointerCapture(e.pointerId); a.setUi(p => ({ ...p, rotId: { id: r.id, t: 'anc' } })) }} style={{ pointerEvents: 'auto' }}><line x1={r.x + r.w / 2} y1={r.y} x2={r.x + r.w / 2} y2={r.y - 1500} stroke="#9CA3AF" strokeWidth="40" /><circle cx={r.x + r.w / 2} cy={r.y - 1500} r="300" fill="#fff" stroke="#9CA3AF" strokeWidth="60" /></g>
+                                                            </g>
+                                                        )}
+                                                    </g>
+                                                );
+                                            })}
+                        {dSpc && bRooms.map(r => {
+                                                    const v = fVis[r.floor] || 'hidden';
+                                                    const int = v === 'active' && step >= 2;
+                                                    const c = r.corridors || DEF_IT_CORRIDORS;
+                                                    const cw = r.corridorW || DEF_CORRIDOR_W;
+                                                    const iD = ui.dragIt === r.id;
+                                                    if (v === 'hidden') return null;
+                                                    return (
+                                                        <g key={`ir-${r.id}`} opacity={v === 'active' ? 1 : 0.2} className={step >= 2 && int ? (iD ? 'cursor-grabbing' : 'cursor-move') : 'pointer-events-none'} onPointerDown={step >= 2 && int ? e => { e.stopPropagation(); e.target.setPointerCapture(e.pointerId); const pp = a.ptLocal(e, b.id); a.setUi(p => ({ ...p, dragIt: r.id, offX: pp.x - r.x, offY: pp.y - r.y })) } : undefined}>
+                                                            <g clipPath={cpU}>
+                                                                <g transform={`rotate(${r.rotation || 0}, ${r.x + r.w / 2}, ${r.y + r.h / 2})`}>
+                                                                    <rect x={r.x} y={r.y} width={r.w} height={r.h} fill={SPACE_COLORS['IT']} stroke={iD ? '#2563eb' : '#3b82f6'} strokeWidth={iD ? '150' : '100'} opacity={iD ? '0.7' : '0.5'} />
+                                                                </g>
+                                                            </g>
+
+                                                            <g transform={`rotate(${r.rotation || 0}, ${r.x + r.w / 2}, ${r.y + r.h / 2})`} className="pointer-events-none">
+                                                                <g style={{ pointerEvents: 'auto' }}>{r.doors?.map(d => rDr(r, d, step, ui, a, !0))}</g>
+                                                                {(() => {
+                                                                    const eD = escPath?.[r.id] || escPath?.[r.id?.toString()];
+                                                                    if (!showEsc || !eD) return null;
+                                                                    // support per-room multi-point intPath or legacy intStart/intMid/intDoor
+                                                                    const ip = eD.path || eD.intPath || (eD.intStart && eD.intDoor ? [eD.intStart, eD.intIsL && eD.intMid ? eD.intMid : null, eD.intDoor].filter(Boolean) : null);
+                                                                    if (!ip || !ip.length) return null;
+                                                                    const d = `M ${ip.map(pt => `${pt.x} ${pt.y}`).join(' L ')}`;
+                                                                    const s = ip[0];
+                                                                    return <g className="pointer-events-none"><path d={d} fill="none" stroke="#3b82f6" strokeWidth="40" strokeDasharray="100,50" /><circle cx={s.x} cy={s.y} r="250" fill="#3b82f6" /></g>;
+                                                                })()}
+
+                                                            {/* 👇 新增：拖曳與縮放時顯示即時藍色尺寸膠囊 (機房/IT) 👇 */}
+                                                            {(ui.resId?.id === r.id || iD) && (
+                                                                <g className="pointer-events-none z-50">
+                                                                    <rect x={r.x + r.w/2 - 2500} y={r.y + r.h + 300} width="5000" height="1200" fill="#9CA3AF" rx="600" opacity="0.9" />
+                                                                    <text x={r.x + r.w/2} y={r.y + r.h + 1150} fill="#ffffff" fontSize="800" fontWeight="bold" textAnchor="middle">W: {Math.round(r.w)}</text>
+                                                                    <rect x={r.x + r.w + 300} y={r.y + r.h/2 - 2500} width="1200" height="5000" fill="#9CA3AF" rx="600" opacity="0.9" />
+                                                                    <text x={r.x + r.w + 900} y={r.y + r.h/2} fill="#ffffff" fontSize="800" fontWeight="bold" textAnchor="middle" dominantBaseline="middle" transform={`rotate(-90, ${r.x + r.w + 900}, ${r.y + r.h/2})`}>H: {Math.round(r.h)}</text>
+                                                                </g>
+                                                            )}
+
+                                                            {step >= 2 && int && (
+                                                                <g transform={`rotate(${r.rotation || 0}, ${r.x + r.w / 2}, ${r.y + r.h / 2})`}>
+                                                                    {[{ k: 'top', a: c.top, cx: r.x + r.w / 2, cy: c.top ? r.y - cw.top / 2 : r.y - 300, blk: isCB(r, 'top', room.w, room.h, bRooms, bAnc) }, { k: 'bottom', a: c.bottom, cx: r.x + r.w / 2, cy: c.bottom ? r.y + r.h + cw.bottom / 2 : r.y + r.h + 300, blk: isCB(r, 'bottom', room.w, room.h, bRooms, bAnc) }, { k: 'left', a: c.left, cx: c.left ? r.x - cw.left / 2 : r.x - 300, cy: r.y + r.h / 2, blk: isCB(r, 'left', room.w, room.h, bRooms, bAnc) }, { k: 'right', a: c.right, cx: c.right ? r.x + r.w + cw.right / 2 : r.x + r.w + 300, cy: r.y + r.h / 2, blk: isCB(r, 'right', room.w, room.h, bRooms, bAnc) }]
+                                                                        .filter(z => !z.blk)
+                                                                        .map(z => <g key={`bi-${r.id}-${z.k}`} onPointerDown={e => { e.stopPropagation(); e.preventDefault(); a.setRooms(p => p.map(x => x.id !== r.id ? x : { ...x, corridors: { ...c, [z.k]: !c[z.k] } })) }} className="cursor-pointer hover:opacity-80"><circle cx={z.cx} cy={z.cy} r="200" fill={z.a ? '#3b82f6' : '#94a3b8'} stroke="#fff" strokeWidth="15" /><text x={z.cx} y={z.cy + 20} fill="#fff" fontSize="250" fontWeight="bold" textAnchor="middle" dominantBaseline="middle">{z.a ? '－' : '＋'}</text></g>)
+                                                                    }
+                                                                    <g className="cursor-se-resize" onPointerDown={e => { e.stopPropagation(); e.target.setPointerCapture(e.pointerId); const pp = a.ptLocal(e, b.id); a.setUi(p => ({ ...p, resId: { id: r.id, t: 'it' }, startW: r.w, startH: r.h, mX: pp.x, mY: pp.y })) }} style={{ pointerEvents: 'auto' }}><rect x={r.x + r.w - 1500} y={r.y + r.h - 1500} width="3000" height="3000" fill="transparent" /><circle cx={r.x + r.w} cy={r.y + r.h} r="400" fill="#3b82f6" stroke="#ffffff" strokeWidth="100" /></g>
+                                                                    <g className="cursor-pointer" onPointerDown={e => { e.stopPropagation(); e.target.setPointerCapture(e.pointerId); a.setUi(p => ({ ...p, rotId: { id: r.id, t: 'it' } })) }} style={{ pointerEvents: 'auto' }}><line x1={r.x + r.w / 2} y1={r.y} x2={r.x + r.w / 2} y2={r.y - 1500} stroke="#3b82f6" strokeWidth="40" /><circle cx={r.x + r.w / 2} cy={r.y - 1500} r="300" fill="#fff" stroke="#3b82f6" strokeWidth="60" /></g>
+                                                                </g>
+                                                            )}
+                                                        </g>
+                                                    </g>
+                                                    );
+                                                })}
                     {step >= 2 && params.col && bCols.length > 0 && <g clipPath={cpU} style={{ zIndex: 50 }}>{bCols.map(c => { 
                         const v = fVis[c.floor] || 'hidden'; 
                         if (v === 'hidden') return null; 
@@ -1312,23 +1443,24 @@
                             <rect key={`bc-${c.id}`} x={c.x} y={c.y} width={c.w} height={c.h} opacity={v === 'active' ? 1 : 0.2} className={i ? "fill-slate-800 hover:fill-red-500 cursor-pointer transition-colors" : "fill-slate-800 pointer-events-none"} onClick={i ? delColFn : undefined} style={{ pointerEvents: i ? 'auto' : 'none' }} />
                         );
                     })}</g>}
-                    {bId === activeBuilding && showEsc && escPath?.start && escPath?.door && escPath?.end && dSpc && (() => {
-                        const pSt = escPath.intStart || escPath.start;
-                        const pMidIn = escPath.intIsL && escPath.intMid ? escPath.intMid : null;
-                        const pDr = escPath.door;
-                        const pEnd = escPath.end;
-                        
-                        // 根據門的方向決定走廊上的轉折點 (直直走出門，避免貼著外牆滑行)
-                        const isLR = pDr.edge === 'left' || pDr.edge === 'right';
-                        const outTurnX = isLR ? pEnd.x : pDr.x;
-                        const outTurnY = isLR ? pDr.y : pEnd.y;
-                        
+                    {bId === activeBuilding && showEsc && escPath && dSpc && (() => {
+                        // support both legacy fields and new BFS-based engine which may return per-room multi-point `path` arrays
+                        const e = escPath;
+                        // when escPath is a mapping of roomId => { path: [{x,y}, ...], isCompliant }
+                        const globalPath = e.path || (e.start && e.door && e.end ? [e.start, e.door, e.end] : null);
+                        // prefer per-room entry when available
+                        const forRoom = e?.[bId] || null; // not likely, fallback
+                        const p = forRoom && forRoom.path && forRoom.path.length ? forRoom.path : (globalPath && globalPath.length ? globalPath : null);
+                        if (!p || !p.length) return null;
+                        const stroke = (e.isCompliant || (forRoom && forRoom.isCompliant)) ? "#22c55e" : "#ef4444";
+                        const d = `M ${p.map(pt => `${pt.x} ${pt.y}`).join(' L ')}`;
+                        const startPt = p[0];
+                        const endPt = p[p.length - 1];
                         return (
                             <g className="pointer-events-none">
-                                <circle cx={pSt.x} cy={pSt.y} r="400" fill="#ef4444" className="animate-pulse" />
-                                <path d={`M ${pSt.x} ${pSt.y} ${pMidIn ? `L ${pMidIn.x} ${pMidIn.y}` : ''} L ${pDr.x} ${pDr.y} L ${outTurnX} ${outTurnY} L ${pEnd.x} ${pEnd.y}`} 
-                                      fill="none" stroke={escPath.isCompliant ? "#22c55e" : "#ef4444"} strokeWidth="60" strokeDasharray="200,100" />
-                                <circle cx={pEnd.x} cy={pEnd.y} r="500" fill={escPath.isCompliant ? "#22c55e" : "#ef4444"} />
+                                {startPt && <circle cx={startPt.x} cy={startPt.y} r="400" fill="#ef4444" className="animate-pulse" />}
+                                <path d={d} fill="none" stroke={stroke} strokeWidth="60" strokeDasharray="200,100" />
+                                {endPt && <circle cx={endPt.x} cy={endPt.y} r="500" fill={stroke} />}
                             </g>
                         );
                     })()}
@@ -1357,13 +1489,38 @@
                         {/* 柱子獨立出來，不受隱藏設備影響 */}
                         {bLayout.columns && bLayout.columns.length > 0 && bLayout.columns.map((c, i) => { const v = fVis[c.floor] || 'hidden'; if (v === 'hidden') return null; const isS = floors.find(f => f.name === c.floor)?.isSeismic; return isS ? (<circle key={`bcol-${b.id}-${i}`} cx={c.cx} cy={c.cy} r={Math.max(c.w, c.h) / 2} fill="#ef4444" stroke="#1e293b" strokeWidth="20" opacity={v === 'active' ? 1 : 0.2} className="pointer-events-none" />) : (<rect key={`bcol-${b.id}-${i}`} x={c.x} y={c.y} width={c.w} height={c.h} opacity={v === 'active' ? 1 : 0.2} className="pointer-events-none" fill="#0f172a" />); })}
 
-                        {/* text-top layer removed per request */}
+                        {/* 👇 新增：文字置頂層 (確保空間名稱與面積永遠顯示在最上層) 👇 */}
+                        {dSpc && (
+                            <g className="pointer-events-none">
+                                {bAnc.filter(r => !['OUTDOOR', 'SEMI_OUTDOOR'].includes(r.type)).map(r => {
+                                    const v = fVis[r.floor] || 'hidden';
+                                    if (v === 'hidden') return null;
+                                    return (
+                                        <g key={`txt-a-${r.id}`} transform={`rotate(${r.rotation || 0}, ${r.x + r.w / 2}, ${r.y + r.h / 2})`} opacity={v === 'active' ? 1 : 0.2}>
+                                            <text x={r.x + r.w / 2} y={r.y + r.h / 2 - 200} fill={SPACE_TEXT_COLORS[r.type] || '#1E293B'} fontSize="800" fontWeight="bold" textAnchor="middle" dominantBaseline="middle">{r.name}</text>
+                                            <text x={r.x + r.w / 2} y={r.y + r.h / 2 + 600} fill={SPACE_TEXT_COLORS[r.type] || '#1E293B'} fontSize="600" fontWeight="bold" textAnchor="middle" dominantBaseline="middle" className="opacity-80">{(r.w * r.h / 1e6).toFixed(1)} m²</text>
+                                        </g>
+                                    );
+                                })}
+                                {bRooms.map(r => {
+                                    const v = fVis[r.floor] || 'hidden';
+                                    if (v === 'hidden') return null;
+                                    return (
+                                        <g key={`txt-r-${r.id}`} transform={`rotate(${r.rotation || 0}, ${r.x + r.w / 2}, ${r.y + r.h / 2})`} opacity={v === 'active' ? 1 : 0.2}>
+                                            <text x={r.x + r.w / 2} y={r.y + r.h / 2 - 200} fill={SPACE_TEXT_COLORS['IT']} fontSize="1000" fontWeight="bold" textAnchor="middle" dominantBaseline="middle">{r.name}</text>
+                                            <text x={r.x + r.w / 2} y={r.y + r.h / 2 + 800} fill={SPACE_TEXT_COLORS['IT']} fontSize="700" fontWeight="bold" textAnchor="middle" dominantBaseline="middle" className="opacity-80">{(r.w * r.h / 1e6).toFixed(1)} m²</text>
+                                        </g>
+                                    );
+                                })}
+                            </g>
+                        )}
                     </g>}
                         {/* 斷面線（綁定至當前建築） */}
                         {bId === activeBuilding && secs.show && ![5, 6].includes(step) && (
                             <g className="pointer-events-none">
                                 <g className={ui.dragS === 'x' ? 'cursor-grabbing' : 'cursor-ew-resize'} onPointerDown={e => { e.stopPropagation(); e.target.setPointerCapture(e.pointerId); a.setUi(p => ({ ...p, dragS: 'x' })) }} style={{ pointerEvents: 'auto' }}>
                                     
+                                    <line x1={secs.x} y1={-7000} x2={secs.x} y2={room.h + 7000} stroke="#ef4444" strokeWidth="40" strokeDasharray="200,100" />
                                     <line x1={secs.x} y1={-7000} x2={secs.x} y2={room.h + 7000} stroke="transparent" strokeWidth="500" />
                                     <circle cx={secs.x} cy={-7000} r="400" fill="#ef4444" />
                                     <circle cx={secs.x} cy={room.h + 7000} r="400" fill="#ef4444" />
@@ -1372,6 +1529,7 @@
                                 </g>
                                 <g className={ui.dragS === 'y' ? 'cursor-grabbing' : 'cursor-ns-resize'} onPointerDown={e => { e.stopPropagation(); e.target.setPointerCapture(e.pointerId); a.setUi(p => ({ ...p, dragS: 'y' })) }} style={{ pointerEvents: 'auto' }}>
                                     
+                                    <line x1={-7000} y1={secs.y} x2={room.w + 7000} y2={secs.y} stroke="#f59e0b" strokeWidth="40" strokeDasharray="200,100" />
                                     <line x1={-7000} y1={secs.y} x2={room.w + 7000} y2={secs.y} stroke="transparent" strokeWidth="500" />
                                     <circle cx={-7000} cy={secs.y} r="400" fill="#f59e0b" />
                                     <circle cx={room.w + 7000} cy={secs.y} r="400" fill="#f59e0b" />
@@ -1393,9 +1551,27 @@
                         {/* 👇 新增：繪製 Step 8 保存的搬運路徑 👇 */}
                         {ui.showLogPath !== false && (logistics?.paths || []).filter(p => p.floor === aFlr).map(p => (
                             <g key={`logp-${p.id}`} className="pointer-events-none" transform={`translate(${aBldg?.x || 0}, ${aBldg?.y || 0})`}>
-                                <path d={`M ${p.path.map(pt => `${pt.x} ${pt.y}`).join(' L ')}`} fill="none" stroke="#22c55e" strokeWidth="80" strokeDasharray="150,100" opacity="0.8" />
-                                {p.path.length > 0 && <circle cx={p.path[0].x} cy={p.path[0].y} r="250" fill="#3b82f6" />}
-                                {p.path.length > 0 && <circle cx={p.path[p.path.length-1].x} cy={p.path[p.path.length-1].y} r="250" fill="#ef4444" />}
+                                {(() => {
+                                    const pts = p.path || [];
+                                    if (!pts || pts.length < 2) return null;
+                                    const d = `M ${pts.map(pt => `${pt.x} ${pt.y}`).join(' L ')}`;
+                                    // thick translucent swept-path envelope
+                                    return <g>
+                                        <path d={d} fill="none" stroke="#60a5fa" strokeWidth="600" strokeLinecap="round" strokeLinejoin="round" opacity="0.12" />
+                                        <path d={d} fill="none" stroke="#22c55e" strokeWidth="80" strokeDasharray="150,100" opacity="0.95" strokeLinecap="round" strokeLinejoin="round" />
+                                        {/* draw sampled vehicle footprints along path */}
+                                        {pts.filter((_,i)=> i % Math.max(1, Math.floor(pts.length/8)) === 0).map((pt, i) => {
+                                            const next = pts[Math.min(pts.length-1, i * Math.max(1, Math.floor(pts.length/8)) + 1)];
+                                            const angle = Math.atan2((next?.y||pt.y) - pt.y, (next?.x||pt.x) - pt.x) * 180 / Math.PI;
+                                            const w = p.vehicleWidth || 3000, l = p.vehicleLength || 6000;
+                                            return <g key={`vb-${i}`} transform={`translate(${pt.x}, ${pt.y}) rotate(${angle})`} opacity="0.95">
+                                                <rect x={-l/2} y={-w/2} width={l} height={w} fill="#bfdbfe" stroke="#3b82f6" strokeWidth="20" rx="200" />
+                                            </g>
+                                        })}
+                                        <circle cx={pts[0].x} cy={pts[0].y} r="300" fill="#3b82f6" />
+                                        <circle cx={pts[pts.length-1].x} cy={pts[pts.length-1].y} r="300" fill="#ef4444" />
+                                    </g>;
+                                })()}
                             </g>
                         ))}
                         {meas?.map((m, i) => { const d = Math.hypot(m.x2 - m.x1, m.y2 - m.y1), bw = Math.max(1500, Math.min(3000, d / 2 + 500)); return <g key={`m-${i}`}><line x1={m.x1} y1={m.y1} x2={m.x2} y2={m.y2} stroke="#f43f5e" strokeWidth="20" strokeDasharray="100,50" /><circle cx={m.x1} cy={m.y1} r="50" fill="#f43f5e" /><circle cx={m.x2} cy={m.y2} r="50" fill="#f43f5e" /><rect x={(m.x1 + m.x2) / 2 - bw / 2} y={(m.y1 + m.y2) / 2 - 400} width={bw} height="800" fill="#fff" stroke="#f43f5e" strokeWidth="10" rx="100" /><text x={(m.x1 + m.x2) / 2} y={(m.y1 + m.y2) / 2} fill="#f43f5e" fontSize="500" fontWeight="bold" textAnchor="middle" dominantBaseline="middle">{d.toFixed(0)} mm</text></g> })}
@@ -1419,7 +1595,8 @@
                                    onPointerDown={e => {
                                        e.stopPropagation();
                                        e.target.setPointerCapture(e.pointerId);
-                                       a.setUi(p => ({ ...p, dragCraneId: c.id }));
+                                       const pp = a.pt(e); // 記錄點擊的絕對座標
+                                       a.setUi(p => ({ ...p, dragCraneId: c.id, offX: pp.x - (c.x || 0), offY: pp.y - (c.y || 0) }));
                                    }}>
                                     {/* 吊臂半徑 (Boom Range - 虛線) */}
                                     <circle cx={c.x || 0} cy={c.y || 0} r={c.boomLen || c.radius || 0} fill="none" stroke="#94a3b8" strokeWidth="40" strokeDasharray="200,200" className="pointer-events-none" />
@@ -1427,19 +1604,31 @@
                                     <circle cx={c.x || 0} cy={c.y || 0} r={c.radius || 0} fill={c.color || '#3b82f6'} opacity="0.1" stroke={c.color || '#3b82f6'} strokeWidth="60" strokeDasharray="400,200" className="pointer-events-none" />
                                     {/* 吊車本體 */}
                                     <rect x={(c.x || 0) - 1500} y={(c.y || 0) - 3000} width={3000} height={6000} fill="#1e293b" rx="400" className="pointer-events-none" />
+                                    
                                     {/* 明顯的拖曳點 (Drag Handle) */}
                                     <g className={ui.dragCraneId === c.id ? "cursor-grabbing" : "cursor-move"}
                                        style={{ pointerEvents: 'auto' }}
-                                       onPointerDown={e => { e.stopPropagation(); e.target.setPointerCapture(e.pointerId); a.setUi(p => ({ ...p, dragCraneId: c.id })); }}>
+                                       onPointerDown={e => { 
+                                           e.stopPropagation(); 
+                                           e.target.setPointerCapture(e.pointerId); 
+                                           const pp = a.pt(e);
+                                           a.setUi(p => ({ ...p, dragCraneId: c.id, offX: pp.x - (c.x || 0), offY: pp.y - (c.y || 0) })); 
+                                       }}>
                                         <circle cx={c.x || 0} cy={c.y || 0} r={1000} fill="#ffffff" stroke="#f59e0b" strokeWidth="200" className="hover:scale-110 transition-transform" />
                                         <Icon name="Move" size={600} className="text-gray-800" />
                                     </g>
+                                    
                                     {/* 👇 新增：半徑調整控制點 (Drag Radius Handle) 👇 */}
                                     <g className={ui.dragCraneHookId === c.id ? "cursor-ew-resize" : "cursor-pointer"}
                                        style={{ pointerEvents: 'auto' }}
-                                       onPointerDown={e => { e.stopPropagation(); e.target.setPointerCapture(e.pointerId); a.setUi(p => ({ ...p, dragCraneHookId: c.id })); }}>
+                                       onPointerDown={e => { 
+                                           e.stopPropagation(); 
+                                           e.target.setPointerCapture(e.pointerId); 
+                                           const pp = a.pt(e); // 記錄點擊時的滑鼠位置與初始半徑
+                                           a.setUi(p => ({ ...p, dragCraneHookId: c.id, startR: c.radius, mX: pp.x })); 
+                                       }}>
                                         <circle cx={(c.x || 0) + (c.radius || 0)} cy={c.y || 0} r={400} fill="#3b82f6" stroke="#ffffff" strokeWidth="80" className="hover:scale-125 transition-transform" />
-                                    </g>
+                                    </g>   
                                     {/* 吊車中心點 */}
                                     <circle cx={c.x || 0} cy={c.y || 0} r={800} fill="#f59e0b" className="pointer-events-none" />
                                     {/* 吊臂方向 */}
@@ -1453,13 +1642,9 @@
 
                         {/* --- 下半部：同步斷面圖 (推到平面圖的下方 room.h + 40000 處) --- */}
                         <g transform={`translate(0, ${room.h + 40000})`}>
-                            <text x={room.w/2} y={-secData.totalAboveH - 5000} fontSize="3000" fontWeight="900" fill="#ef4444" textAnchor="middle">SECTION: 垂直動線檢討</text>
+                            {/* 1. 地平線 GL 與 建築樓層區塊 (最底層) */}
+                            <line x1={-15000} y1={0} x2={room.w + 15000} y2={0} stroke="#374151" strokeWidth={150} />
                             
-                            {/* 地平線 GL */}
-                            <line x1={-15000} y1={0} x2={room.w + 15000} y2={0} stroke="#334155" strokeWidth={150} />
-                            <text x={-15000} y={-500} fill="#334155" fontSize={1500} fontWeight="bold">GL ±0</text>
-
-                            {/* 建築樓層區塊 */}
                             {secData.blocks.map(fb => {
                                 const sy = -fb.bottomY - fb.h;
                                 return (
@@ -1469,8 +1654,67 @@
                                     </g>
                                 );
                             })}
+
+                            {/* 2. 斷面圖同步繪製吊車 (中間層：高擬真版 - 包含金屬轉軸) */}
+                            {(outLogistics?.cranes || []).map(c => {
+                                const boomLen = c.boomLen || Math.max((c.radius || 0), 20000);
+                                const boomAngle = Math.atan2(-20000, (c.boomLen || c.radius || 0)) * 180 / Math.PI;
+                                return (
+                                <g key={`crane-sec-${c.id}`} transform={`translate(${c.x || 0}, 0)`}>
+                                    {/* swept radius */}
+                                    <circle cx={0} cy={0} r={(c.radius || 0)} fill="none" stroke="#60a5fa" strokeWidth="40" strokeDasharray="400,200" opacity="0.12" />
+
+                                    {/* outriggers */}
+                                    <g className="pointer-events-none">
+                                        <rect x={-2200} y={-140} width={400} height={160} fill="#f59e0b" rx="40" />
+                                        <rect x={1800} y={-140} width={400} height={160} fill="#f59e0b" rx="40" />
+                                        <path d="M -1000 -500 L -1500 0 M 1000 -500 L 1500 0" stroke="#f59e0b" strokeWidth="160" strokeLinecap="round" />
+                                    </g>
+
+                                    {/* chassis */}
+                                    <rect x={-2600} y={-1500} width={5200} height={1000} fill="#0f172a" rx="220" />
+                                    <g className="pointer-events-none">
+                                        <circle cx={-1600} cy={-500} r={560} fill="#0b1220" stroke="#94a3b8" strokeWidth="120" />
+                                        <circle cx={1600} cy={-500} r={560} fill="#0b1220" stroke="#94a3b8" strokeWidth="120" />
+                                    </g>
+
+                                    {/* cab */}
+                                    <g transform={`translate(-2200, -1500)`}> 
+                                        <rect x={0} y={-1200} width={1000} height={1200} rx={160} fill="#f59e0b" />
+                                        <rect x={140} y={-1100} width={720} height={540} fill="#e2e8f0" />
+                                    </g>
+
+                                    {/* turntable and pivot */}
+                                    <g transform={`translate(500, -1500)`}> 
+                                        <ellipse cx={0} cy={0} rx={900} ry={280} fill="#ef4444" opacity="0.06" />
+                                        <circle cx={0} cy={0} r={460} fill="#ea580c" />
+                                        <circle cx={0} cy={0} r={120} fill="#0f172a" stroke="#94a3b8" strokeWidth="40" />
+
+                                        {/* lattice boom (stylized) */}
+                                        <g transform={`rotate(${boomAngle})`}>
+                                            <rect x={0} y={-80} width={boomLen} height={160} fill="#fbbf24" rx={80} opacity="0.95" />
+                                            {Array.from({length: Math.max(3, Math.floor(boomLen/3000))}).map((_,i) => (
+                                                <line key={i} x1={i*(boomLen/5)} y1={-120} x2={i*(boomLen/5)+ (boomLen/5)} y2={120} stroke="#1f2937" strokeWidth="40" strokeOpacity="0.12" />
+                                            ))}
+                                            <rect x={Math.max(0, boomLen-1200)} y={-180} width={1200} height={360} fill="#f59e0b" rx={120} />
+                                        </g>
+                                    </g>
+
+                                    {/* cable, hook and load */}
+                                    <g className="pointer-events-none">
+                                        <line x1={(c.radius || 0)} y1={-20000} x2={(c.radius || 0)} y2={-2500} stroke="#111827" strokeWidth="28" strokeLinecap="round" opacity="0.9" />
+                                        <g transform={`translate(${(c.radius || 0)}, -2500)`}> 
+                                            <circle cx={0} cy={0} r={220} fill="#111827" />
+                                            <rect x={-900} y={200} width={1800} height={600} fill="#bae6fd" stroke="#0284c7" strokeWidth="36" rx="40" />
+                                        </g>
+                                    </g>
+                                </g>
+                            )})}
+
+                            {/* 3. 標題文字、GL標籤 與 搬入階段箭頭 (最上層：永遠不被吊車擋住) */}
+                            <text x={room.w/2} y={-secData.totalAboveH - 5000} fontSize="3000" fontWeight="900" fill="#ef4444" textAnchor="middle">SECTION: 垂直動線檢討</text>
+                            <text x={-15000} y={-500} fill="#374151" fontSize={1500} fontWeight="bold">GL ±0</text>
                             
-                            {/* 搬入階段箭頭 */}
                             {(outLogistics?.phases || []).map((p, i) => {
                                 const targetF = secData.blocks.find(f => f.floor === p.targetFloor);
                                 const targetY = targetF ? (-targetF.bottomY - targetF.h/2) : 0;
@@ -1482,40 +1726,6 @@
                                     </g>
                                 );
                             })}
-                            {/* 斷面圖同步繪製吊車 */}
-                            {/* 斷面圖同步繪製吊車 (高擬真版) */}
-                            {(outLogistics?.cranes || []).map(c => {
-                                const boomLen = c.boomLen || Math.hypot((c.radius || 0), 20000);
-                                const boomAngle = Math.atan2(-20000, (c.boomLen || c.radius || 0)) * 180 / Math.PI;
-                                return (
-                                <g key={`crane-sec-${c.id}`} transform={`translate(${c.x || 0}, 0)`}>
-                                    {/* 兩側液壓支撐架 (Outriggers) */}
-                                    <path d="M -1000 -500 L -1500 0 M 1000 -500 L 1500 0" stroke="#f59e0b" strokeWidth="200" strokeLinecap="round" />
-                                    <rect x="-1800" y="-150" width="600" height="150" fill="#f59e0b" />
-                                    <rect x="1200" y="-150" width="600" height="150" fill="#f59e0b" />
-                                    {/* 吊車底盤 (Chassis) */}
-                                    <rect x="-2500" y="-1500" width="5000" height="1000" fill="#334155" rx="200" />
-                                    {/* 輪胎 (Wheels) */}
-                                    <circle cx="-1500" cy="-500" r="500" fill="#1e293b" stroke="#94a3b8" strokeWidth="150" />
-                                    <circle cx="1500" cy="-500" r="500" fill="#1e293b" stroke="#94a3b8" strokeWidth="150" />
-                                    {/* 前方駕駛艙 (Cab) */}
-                                    <path d="M -2500 -1500 L -2500 -3000 L -1500 -3000 L -1000 -1500 Z" fill="#f59e0b" />
-                                    <rect x="-2300" y="-2800" width="600" height="1000" fill="#e2e8f0" />
-                                    {/* 旋轉底座與油壓吊臂 (Crane Base & Boom) */}
-                                    <g transform="translate(500, -1500)">
-                                        <rect x="-800" y="-1500" width="1600" height="1500" fill="#f59e0b" rx="200" />
-                                        <g transform={`rotate(${boomAngle})`}>
-                                            <rect x="-400" y="-600" width={boomLen} height="1200" fill="#f59e0b" rx="200" />
-                                            <rect x="200" y="-400" width={boomLen} height="800" fill="#fbbf24" rx="100" />
-                                        </g>
-                                    </g>
-                                    {/* 吊繩、吊鉤與搬運物 (Hook and Load) */}
-                                    <line x1={(c.radius || 0)} y1="-20000" x2={(c.radius || 0)} y2="-2000" stroke="#64748b" strokeWidth="30" strokeDasharray="100,100" />
-                                    <path d={`M ${(c.radius || 0) - 200} -2000 L ${(c.radius || 0) + 200} -2000 L ${(c.radius || 0)} -1500 Z`} fill="#f59e0b" />
-                                    <path d={`M ${(c.radius || 0)} -1500 Q ${(c.radius || 0) + 300} -1000 ${(c.radius || 0)} -500 Q ${(c.radius || 0) - 200} -1000 ${(c.radius || 0)} -1200`} fill="none" stroke="#1e293b" strokeWidth="80" strokeLinecap="round" />
-                                    <rect x={(c.radius || 0) - 1000} y="-500" width="2000" height="500" fill="#bae6fd" stroke="#0284c7" strokeWidth="40" />
-                                </g>
-                            )})}
                         </g>
                     </g>
                 )}
@@ -1523,7 +1733,7 @@
                 {step === 5 && <g>
                     <g transform="translate(0, 0)">
                         <text x={room.h / 2} y={-secData.totalAboveH - 5000} fontSize="3000" fontWeight="bold" fill="#ef4444" textAnchor="middle">X-X' 剖面圖</text>
-                        <line x1={-15000} y1={0} x2={room.h + 15000} y2={0} stroke="#334155" strokeWidth={150} />
+                        <line x1={-15000} y1={0} x2={room.h + 15000} y2={0} stroke="#374151" strokeWidth={150} />
                         <text x={-15000} y={-500} fill="#334155" fontSize={1500} fontWeight="bold">GL ±0</text>
                         <line x1={-8000} y1={0} x2={-8000} y2={-secData.totalAboveH} stroke="#ef4444" strokeWidth={30} strokeDasharray="200,100" />
                         <text x={-8500} y={-secData.totalAboveH} fill="#ef4444" fontSize={2500} fontWeight="bold" textAnchor="end">▼ {(secData.totalAboveH / 1000).toFixed(2)}m</text>
@@ -1555,7 +1765,7 @@
 
                     <g transform={`translate(0, ${tH + 40000})`}>
                         <text x={room.w / 2} y={-secData.totalAboveH - 5000} fontSize="3000" fontWeight="bold" fill="#f59e0b" textAnchor="middle">Y-Y' 剖面圖</text>
-                        <line x1={-15000} y1={0} x2={room.w + 15000} y2={0} stroke="#334155" strokeWidth={150} />
+                        <line x1={-15000} y1={0} x2={room.w + 15000} y2={0} stroke="#374151" strokeWidth={150} />
                         <text x={-15000} y={-500} fill="#334155" fontSize={1500} fontWeight="bold">GL ±0</text>
                         <line x1={-8000} y1={0} x2={-8000} y2={-secData.totalAboveH} stroke="#ef4444" strokeWidth={30} strokeDasharray="200,100" />
                         <text x={-8500} y={-secData.totalAboveH} fill="#ef4444" fontSize={2500} fontWeight="bold" textAnchor="end">▼ {(secData.totalAboveH / 1000).toFixed(2)}m</text>
@@ -1749,11 +1959,11 @@
             }), { pods: [], fwuChunks: [], columns: [], totalRacks: 0, itResults: [], upsPods: [], lvPods: [], genPods: [] }), [layoutsByBuilding]);
             const areaRep = useAreaEngine(floors, rooms, anc, layout, params, room, f => getBP(f), dxf.poly);
             const secData = useSectionEngine(floors, activeBuilding);
-            const escPath = useEscapeEngine(rooms, anc, step, params, aFlr, activeBuilding);
+            const escPath = useEscapeEngine(rooms, anc, step, params, aFlr, activeBuilding, layout);
             const vRooms = useMemo(() => (rooms || []).filter(r => (r.buildingId || 'B1') === activeBuilding), [rooms, activeBuilding]);
             const vAnc = useMemo(() => (anc || []).filter(r => (r.buildingId || 'B1') === activeBuilding), [anc, activeBuilding]);
 
-            const [ui, setUi] = useState({ info: !1, vb: { x: -8000, y: -8000, w: 65000, h: 55000 }, pan: !1, drag: null, dragR: null, dragIt: null, dragD: null, dragG: null, dragS: null, resId: null, rotId: null, dragBd: !1, vMenu: !1, eMenu: !1, tips: !1, sop: !1, meas: !1, snap: !0, dragCraneId: null, dragCraneHookId: null, minToolbar: true });
+            const [ui, setUi] = useState({ info: !1, vb: { x: -8000, y: -8000, w: 65000, h: 55000 }, pan: !1, drag: null, dragR: null, dragIt: null, dragD: null, dragG: null, dragS: null, resId: null, rotId: null, dragBd: !1, vMenu: !1, eMenu: !1, tips: !1, sop: !1, meas: !1, snap: !0, dragCraneId: null, dragCraneHookId: null, minToolbar: true, valMenu: false });
             const svgRef = useRef(null);
             const pointers = useRef(new Map());
             const touchState = useRef(null);
@@ -2228,19 +2438,20 @@
                 if ([5, 6].includes(step)) return;
                 const p = pt(e);
                 const lp = ptLocal(e);
-                // 👇 [新增] Step 7 吊車拖曳邏輯
+                // 👇 [修復] Step 7 吊車拖曳邏輯：加入 React 狀態延遲防護
                 if (ui.dragCraneId) {
+                    if (ui.offX === undefined || ui.offY === undefined) return; // 狀態尚未寫入前，強制阻擋移動事件
                     setOutLogistics(prev => ({
                         ...prev,
-                        cranes: (prev.cranes || []).map(c => c.id === ui.dragCraneId ? { ...c, x: p.x, y: p.y } : c)
+                        cranes: (prev.cranes || []).map(c => c.id === ui.dragCraneId ? { ...c, x: p.x - ui.offX, y: p.y - ui.offY } : c)
                     }));
                 }
                 else if (ui.dragCraneHookId) {
                     const cid = ui.dragCraneHookId; const crane = (outLogistics.cranes || []).find(cc => cc.id === cid);
                     if (crane) {
-                        const dx = p.x - (crane.x || 0), dy = p.y - (crane.y || 0);
-                        const dist = Math.hypot(dx, dy);
-                        const newR = Math.max(5000, Math.round(dist / 500) * 500);
+                        if (ui.mX === undefined || ui.startR === undefined) return; // 狀態尚未寫入前，強制阻擋半徑計算
+                        const dx = p.x - ui.mX;
+                        const newR = Math.max(5000, Math.round((ui.startR + dx) / 100) * 100);
                         setOutLogistics(prev => ({ ...prev, cranes: (prev.cranes || []).map(c => c.id === cid ? { ...c, radius: newR } : c) }));
                     }
                 }
@@ -2313,7 +2524,7 @@
                 else if (ui.dragEv) { const isIt = ui.dragEv.isIt, obj = isIt ? rooms.find(r => r.id === ui.dragEv.roomId) : anc.find(r => r.id === ui.dragEv.roomId); if (obj) { const op = ptLocal(e, obj.buildingId || 'B1'); const ev = (obj.elevators || [{ id: obj.id + '_legacy', w: obj.evW || 2500, h: obj.evH || 2500, dx: Math.max(0, obj.w - (obj.evW || 2500) - 500), dy: 500, isEmergency: obj.isEmergency }]).find(x => x.id === ui.dragEv.evId); if (ev) { const nx = Math.round(Math.max(0, Math.min(op.x - obj.x - (ui.offX ?? ev.w / 2), obj.w - ev.w))), ny = Math.round(Math.max(0, Math.min(op.y - obj.y - (ui.offY ?? ev.h / 2), obj.h - ev.h))), newEvs = (obj.elevators || [{ id: obj.id + '_legacy', w: obj.evW || 2500, h: obj.evH || 2500, dx: Math.max(0, obj.w - (obj.evW || 2500) - 500), dy: 500, isEmergency: obj.isEmergency }]).map(x => x.id === ev.id ? { ...x, dx: nx, dy: ny } : x); isIt ? setRooms(prev => prev.map(r => r.id !== obj.id ? r : { ...r, elevators: newEvs })) : setAnc(prev => prev.map(r => r.id !== obj.id ? r : { ...r, elevators: newEvs })) } } }
             }, [step, ui, room, aFlr, pt, ptLocal, rooms, anc, grid, drawMode, sitePoly, bldgPoly, activeBuilding]);
 
-            const ptrUp = useCallback(e => { setUi(p => ({ ...p, pan: !1, drag: null, dragR: null, dragIt: null, dragG: null, dragS: null, resId: null, rotId: null, dragD: null, dragEv: null, dragBd: !1, dragBldgRot: null, snapX: null, snapY: null, dragPt: null, dragCraneId: null, dragCraneHookId: null })); if (ui.dragG) { const bId = ui.dragG.buildingId || activeBuilding; setGrid(p => ({ ...p, [bId]: { ...(p[bId] || {}), [aFlr]: { x: [...new Set(p[bId]?.[aFlr]?.x || [])].sort((a, b) => a - b), y: [...new Set(p[bId]?.[aFlr]?.y || [])].sort((a, b) => a - b) } } })) } }, [ui.dragG, aFlr, activeBuilding]);
+            const ptrUp = useCallback(e => { setUi(p => ({ ...p, pan: !1, drag: null, dragR: null, dragIt: null, dragG: null, dragS: null, resId: null, rotId: null, dragD: null, dragEv: null, dragBd: !1, dragBldgRot: null, snapX: null, snapY: null, dragPt: null, dragCraneId: null, dragCraneHookId: null, offX: undefined, offY: undefined, mX: undefined, startR: undefined })); if (ui.dragG) { const bId = ui.dragG.buildingId || activeBuilding; setGrid(p => ({ ...p, [bId]: { ...(p[bId] || {}), [aFlr]: { x: [...new Set(p[bId]?.[aFlr]?.x || [])].sort((a, b) => a - b), y: [...new Set(p[bId]?.[aFlr]?.y || [])].sort((a, b) => a - b) } } })) } }, [ui.dragG, aFlr, activeBuilding]);
             
             // remove pointer from active multi-touch map and clear touchState when finished
             const _ptrUp = useCallback(e => {
@@ -2429,31 +2640,13 @@
                     <input type="file" accept=".json" ref={jsonRef} className="hidden" onChange={loadCfg} />
                     <input type="file" accept=".dxf" ref={fileRef} className="hidden" onChange={handleUpload} />
                     {/* Desktop sidebar */}
-                    <div className="hidden md:flex"><Sidebar s={{ ui, lang, step, floors, aFlr, layout, params, dxf, room, site, bChk, upStatus, unit, grid, delCol, rooms, anc, selRm, newRm, escPath, areaRep, secs, limitParams, expSpc, refDxf, sitePoly, bldgPoly, drawMode, polyScale, logistics, buildings, activeBuilding }} a={{ setLang, setStep, setUi, setRoom, setSite, setUnit: updUnit, addFlr, addBasementFlr, rmFlr, movFlr, reorderFlr, updFlr, fileRef, setParams, setGrid, setDelCol, setRooms, applyGrid, syncGrid, addItRoom, addItDoor, arrItRoom, dupItRoom, setAnc, setSelRm, setNewRm, addAnc, dupAnc, arrAnc, cpyFlr, penAnc, addAncDr, addAncEv, expCSV, expExcel, setSecs, setLimitParams, setExpSpc, setRefDxf, setSitePoly, setBldgPoly, setDrawMode, setPolyScale, sclP, setLogistics, setBuildings, setActiveBuilding, migrateLegacy }} t={t} /></div>
+                    <div className="hidden md:flex"><Sidebar s={{ ui, lang, step, floors, aFlr, layout, params, dxf, room, site, bChk, upStatus, unit, grid, delCol, rooms, anc, selRm, newRm, escPath, areaRep, secs, limitParams, expSpc, refDxf, sitePoly, bldgPoly, drawMode, polyScale, logistics, buildings, activeBuilding, outLogistics }} a={{ setLang, setStep, setUi, setRoom, setSite, setUnit: updUnit, addFlr, addBasementFlr, rmFlr, movFlr, reorderFlr, updFlr, fileRef, setParams, setGrid, setDelCol, setRooms, applyGrid, syncGrid, addItRoom, addItDoor, arrItRoom, dupItRoom, setAnc, setSelRm, setNewRm, addAnc, dupAnc, arrAnc, cpyFlr, penAnc, addAncDr, addAncEv, expCSV, expExcel, setSecs, setLimitParams, setExpSpc, setRefDxf, setSitePoly, setBldgPoly, setDrawMode, setPolyScale, sclP, setLogistics, setOutLogistics, setBuildings, setActiveBuilding, migrateLegacy }} t={t} /></div>
                     {/* Mobile drawer */}
-                    {ui.vMenu && <div className="md:hidden fixed inset-0 z-50 flex"><div className="absolute inset-0 bg-black/40" onPointerDown={() => setUi(p => ({ ...p, vMenu: false }))} /><div className="relative w-[85%] max-w-sm h-full bg-white border-r border-gray-200 shadow-xl"><Sidebar s={{ ui, lang, step, floors, aFlr, layout, params, dxf, room, site, bChk, upStatus, unit, grid, delCol, rooms, anc, selRm, newRm, escPath, areaRep, secs, limitParams, expSpc, refDxf, sitePoly, bldgPoly, drawMode, polyScale, logistics, buildings, activeBuilding }} a={{ setLang, setStep, setUi, setRoom, setSite, setUnit: updUnit, addFlr, addBasementFlr, rmFlr, movFlr, reorderFlr, updFlr, fileRef, setParams, setGrid, setDelCol, setRooms, applyGrid, syncGrid, addItRoom, addItDoor, arrItRoom, dupItRoom, setAnc, setSelRm, setNewRm, addAnc, dupAnc, arrAnc, cpyFlr, penAnc, addAncDr, addAncEv, expCSV, expExcel, setSecs, setLimitParams, setExpSpc, setRefDxf, setSitePoly, setBldgPoly, setDrawMode, setPolyScale, sclP, setLogistics, setBuildings, setActiveBuilding, migrateLegacy }} t={t} /></div></div>}
+                    {ui.vMenu && <div className="md:hidden fixed inset-0 z-50 flex"><div className="absolute inset-0 bg-black/40" onPointerDown={() => setUi(p => ({ ...p, vMenu: false }))} /><div className="relative w-[85%] max-w-sm h-full bg-white border-r border-gray-200 shadow-xl"><Sidebar s={{ ui, lang, step, floors, aFlr, layout, params, dxf, room, site, bChk, upStatus, unit, grid, delCol, rooms, anc, selRm, newRm, escPath, areaRep, secs, limitParams, expSpc, refDxf, sitePoly, bldgPoly, drawMode, polyScale, logistics, buildings, activeBuilding, outLogistics }} a={{ setLang, setStep, setUi, setRoom, setSite, setUnit: updUnit, addFlr, addBasementFlr, rmFlr, movFlr, reorderFlr, updFlr, fileRef, setParams, setGrid, setDelCol, setRooms, applyGrid, syncGrid, addItRoom, addItDoor, arrItRoom, dupItRoom, setAnc, setSelRm, setNewRm, addAnc, dupAnc, arrAnc, cpyFlr, penAnc, addAncDr, addAncEv, expCSV, expExcel, setSecs, setLimitParams, setExpSpc, setRefDxf, setSitePoly, setBldgPoly, setDrawMode, setPolyScale, sclP, setLogistics, setOutLogistics, setBuildings, setActiveBuilding, migrateLegacy }} t={t} /></div></div>}
                     <div className="flex-1 relative overflow-hidden bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] bg-gray-50 no-touch-scroll" style={{ backgroundSize: '20px 20px', touchAction: 'none', overscrollBehavior: 'none' }} onPointerDown={ptrDwn} onPointerMove={ptrMov} onPointerUp={_ptrUp} onPointerLeave={_ptrUp}>
-                        <Toolbar s={{ step, floors, fVis, aFlr, secs, showEsc, hist, ui, meas, buildings, activeBuilding }} a={{ setUi, togFVis, setSecs, setShowEsc, undo, redo, setMeas, jsonRef, saveCfg, expPng, expPptx, expDxf, expExcel, expCSV, rstVw, setActiveBuilding }} t={t} />
+                        <Toolbar s={{ step, floors, fVis, aFlr, secs, showEsc, hist, ui, meas, buildings, activeBuilding }} a={{ setUi, togFVis, setSecs, setShowEsc, undo, redo, setMeas, jsonRef, saveCfg, expPng, expPptx, expDxf, expExcel, expCSV, rstVw, setActiveBuilding, runValidation, previewAutoFix, applyAutoFix, setUpStatus }} t={t} />
 
-                        {/* Top-left building toolbar (Collapsible) */}
-                        <div className={`absolute left-[220px] z-40 pointer-events-auto flex flex-col items-start transition-all duration-300 ${ui.minToolbar ? 'top-0' : 'top-5'}`}>
-                            {ui.minToolbar ? (
-                                <button onClick={() => setUi(p => ({...p, minToolbar: false}))} className="bg-white/95 backdrop-blur px-4 py-1.5 rounded-b-xl shadow-md border-b border-x border-gray-200 text-gray-500 hover:text-black flex items-center gap-2 text-xs font-bold">
-                                    <Icon name="Settings" size={14} /> 棟別與檢查
-                                    <Icon name="ChevronDown" size={14} />
-                                </button>
-                            ) : (
-                                <div className="flex items-center gap-2 bg-white/95 backdrop-blur rounded-xl px-3 py-2 shadow-xl border border-gray-200">
-                                    <select value={activeBuilding} onChange={e => setActiveBuilding(e.target.value)} className="border border-gray-300 rounded px-2 py-1 text-sm font-bold bg-white outline-none">
-                                        {buildings.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-                                    </select>
-                                    <button onClick={() => { runValidation(); setUpStatus({ m: '✅ 檢查完成，請查看側邊結果', t: 'success' }) }} className="text-xs bg-blue-600 text-white px-3 py-1 rounded font-bold shadow-sm hover:bg-blue-700 transition">檢查</button>
-                                    <button onClick={() => { previewAutoFix(); setUpStatus({ m: '⚠️ 已產生預覽修正，按套用以執行', t: 'info' }) }} className="text-xs bg-yellow-400 text-black px-3 py-1 rounded font-bold shadow-sm hover:bg-yellow-500 transition">預覽修正</button>
-                                    <button onClick={() => { if (window.confirm('確定套用自動修正並儲存快照？')) applyAutoFix(true); }} className="text-xs bg-green-600 text-white px-3 py-1 rounded font-bold shadow-sm hover:bg-green-700 transition">套用修正</button>
-                                    <button onClick={() => setUi(p => ({...p, minToolbar: true}))} className="ml-1 text-gray-400 hover:text-black rounded-lg p-1 hover:bg-gray-100 transition"><Icon name="ChevronUp" size={14} /></button>
-                                </div>
-                            )}
-                        </div>
+                        
 
                         {/* 👇 修正：放置點選的浮動提示移至畫面下方 👇 */}
                         {(ui.placeLog || ui.placeCrane) && (
