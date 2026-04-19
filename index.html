@@ -1126,6 +1126,7 @@
                 const prev = {};
                 const visited = new Set([`${sX},${sY}`]);
                 let found = false;
+                let path = []; // 👉 新增這行：宣告 path 陣列
                 while (q.length) {
                     const [cx, cy] = q.shift();
                     if (cx === eX && cy === eY) { found = true; break; }
@@ -2414,8 +2415,9 @@
                             if (!isNaN(nX) && !isNaN(nY)) {
                                 setUi(pu => {
                                     let so = pu.sideOpen;
-                                    if (nw < room.w * 0.85) so = false;
-                                    else if (nw > room.w * 1.05) so = true;
+                                    // 縮小到 1.1 倍內時隱藏選單，放大超過 1.4 倍(容納完整柱網+餘白)才自動彈出
+                                    if (nw < room.w * 1.1) so = false;
+                                    else if (nw > room.w * 1.4) so = true;
                                     return { ...pu, vb: { x: nX, y: nY, w: nw, h: nh }, sideOpen: so };
                                 });
                             }
@@ -2559,8 +2561,9 @@
                     if (!isNaN(nX) && !isNaN(nY)) {
                         setUi(p => {
                             let so = p.sideOpen;
-                            if (nw < room.w * 0.85) so = false;
-                            else if (nw > room.w * 1.05) so = true;
+                            // 縮小到 1.1 倍內時隱藏選單，放大超過 1.4 倍(容納完整柱網+餘白)才自動彈出
+                            if (nw < room.w * 1.1) so = false;
+                            else if (nw > room.w * 1.4) so = true;
                             return { ...p, vb: { x: nX, y: nY, w: nw, h: nh }, sideOpen: so };
                         });
                     }
@@ -2696,7 +2699,8 @@
                             </div>
                         )}
                         {/* Floating touch buttons for iPad / touch */}
-                        {isTouchCap && (
+                        {/* 只有在支援觸控，且正在測量或手動駕駛時才顯示 */}
+                        {(isTouchCap && (ui.meas || logistics?.mode === 'manual')) && (
                             <div className="absolute bottom-6 right-6 z-40 flex flex-col gap-3 touch-float-btn">
                                 <button onClick={() => { setUi(p => ({ ...p, meas: false, mStart: null })); setUi(p => ({ ...p, vMenu: false })); }} className="bg-white/95 px-4 py-3 rounded-full shadow-lg border border-gray-200 font-bold">取消</button>
                                 <button onClick={() => { if (logistics?.mode === 'manual') { setLogistics(p => ({ ...p, mode: null, paths: [...(p.paths || []), { id: Date.now(), floor: aFlr, path: [] }] })); } }} className="bg-black text-white px-4 py-3 rounded-full shadow-lg border border-black font-bold">完成</button>
