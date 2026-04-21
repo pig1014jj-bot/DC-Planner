@@ -47,8 +47,8 @@
             border: 2px solid #f8fafc
         }
         /* Touch / iPad improvements */
+        #root { touch-action: none; overscroll-behavior: none; }
         .no-touch-scroll { touch-action: none; overscroll-behavior: none; -webkit-touch-callout: none; -webkit-user-select: none; }
-        .touch-float-btn { backdrop-filter: blur(6px); }
     </style>
 </head>
 
@@ -114,6 +114,23 @@
         const isPointInPolygon = (p, vs) => { let i = !1; for (let m = 0, j = vs.length - 1; m < vs.length; j = m++) { const { x: xi, y: yi } = vs[m], { x: xj, y: yj } = vs[j]; ((yi > p.y) !== (yj > p.y)) && (p.x < (xj - xi) * (p.y - yi) / (yj - yi) + xi) && (i = !i) } return i };
         const getSortedSpans = c => { if (!c || !Array.isArray(c)) return { sorted: [], spans: [] }; const s = [...c].sort((a, b) => a - b); return { sorted: s, spans: s.slice(0, -1).map((v, i) => s[i + 1] - v) } };
         const projectIso = (px, py, pz) => ({ cx: (px - py) * 0.866025, cy: (px + py) * 0.5 - pz });
+        const applyChaikin = (pts, iterations = 3) => {
+            if (!pts || pts.length < 3) return pts;
+            let newPts = pts;
+            for (let i = 0; i < iterations; i++) {
+                let tmp = [newPts[0]];
+                for (let j = 0; j < newPts.length - 1; j++) {
+                    const p0 = newPts[j], p1 = newPts[j+1];
+                    tmp.push(
+                        { x: p0.x * 0.75 + p1.x * 0.25, y: p0.y * 0.75 + p1.y * 0.25 },
+                        { x: p0.x * 0.25 + p1.x * 0.75, y: p0.y * 0.25 + p1.y * 0.75 }
+                    );
+                }
+                tmp.push(newPts[newPts.length - 1]);
+                newPts = tmp;
+            }
+            return newPts;
+        };
 
         const chkCol = (id, f, x, y, w, h, rs, an) => { const rt = { x, y, w, h }; return rs.some(r => r.id !== id && r.floor === f && checkRectIntersect(rt, r)) || an.some(r => r.id !== id && r.floor === f && !['OUTDOOR', 'SEMI_OUTDOOR', 'SUNKEN', 'VOID'].includes(r.type) && checkRectIntersect(rt, r)) };
 
@@ -266,109 +283,346 @@
             const blocks = [...bFloors].reverse().map(f => { const bottomY = cY; cY += f.height; return { floor: f.name, h: f.height, bottomY, isSeismic: f.isSeismic, slabThickness: f.slabThickness || 300 } });
             return { blocks, totalAboveH: cY, totalBelowH }
         }, [floors, activeBuilding]);
-        const useEscapeEngine = (rooms, anc, step, params, aFlr, activeBuilding) => useMemo(() => { 
-        if (step < 2) return null; 
+       const useEscapeEngine = (rooms, anc, step, params, aFlr, activeBuilding, layout) => useMemo(() => { 
+        if (step < 2 || !aFlr) return null; 
         const bId = activeBuilding || 'B1';
-        const bRooms = (rooms || []).filter(r => (r.buildingId || 'B1') === bId);
-        const bAnc = (anc || []).filter(r => (r.buildingId || 'B1') === bId);
-        const st = bAnc.filter(r => r.type === 'STAIRS' && r.floor === aFlr), oRs = [...bRooms.filter(r => r.floor === aFlr), ...bAnc.filter(r => r.floor === aFlr && !['STAIRS', 'EV_LOBBY', 'PS', 'WATER', 'COOLING_TOWER', 'OUTDOOR', 'SEMI_OUTDOOR', 'SUNKEN', 'VOID', 'MAIN_EXIT'].includes(r.type))], exits = bAnc.filter(r => r.type === 'MAIN_EXIT' && r.floor === aFlr), isEvacF = exits.length > 0; 
+        const bRooms = (rooms || []).filter(r => (r.buildingId || 'B1') === bId && r.floor === aFlr);
+        const bAnc = (anc || []).filter(r => (r.buildingId || 'B1') === bId && r.floor === aFlr);
+        const st = bAnc.filter(r => r.type === 'STAIRS');
+        const exits = bAnc.filter(r => r.type === 'MAIN_EXIT');
+        const oRs = [...bRooms, ...bAnc.filter(r => !['STAIRS', 'EV_LOBBY', 'PS', 'WATER', 'COOLING_TOWER', 'OUTDOOR', 'SEMI_OUTDOOR', 'SUNKEN', 'VOID', 'MAIN_EXIT'].includes(r.type))];
+        const isEvacF = exits.length > 0; 
+        const tgts = isEvacF ? exits : st;
+
         if ((!isEvacF && !st.length) || !oRs.length) return null; 
+
         let baseL = params.escapeType === 'normal' ? 40000 : params.escapeType === 'windowless' ? 50000 : 60000; 
         if (parseInt(aFlr) >= 15) baseL -= 10000; 
         const wL = baseL, dL = baseL / 2, out = { isEvacF }; 
         
-        const gDs = (srcs, tgts, inD, isEvac) => { 
-            let maxE = -1, wStart = null, wDoor = null, wEnd = null, wIntStart = null, wIntIsL = false, wIntMid = null; 
-            srcs.forEach(s => { 
-                let eX = s.x, eY = s.y, eW = s.w, eH = s.h; 
-                const isItRoom = bRooms.some(rx => rx.id === s.id);
-                if (params.fwu && (s.type === 'IT' || isItRoom)) { eX += params.fwuW; eW -= params.fwuW * 2; } 
-                
-                const hasL = ['IT', 'UPS', 'LV', 'SHV_HV', 'GEN', 'CHILLER', 'CUSTOM'].includes(s.type) || isItRoom;
-
-                const sDs = (s.doors?.length ? s.doors : [{ edge: 'center' }]).map(d => d.edge === 'top' ? { x: s.x + (d.offset || 0) + (d.width || 0) / 2, y: s.y, edge: 'top' } : d.edge === 'bottom' ? { x: s.x + (d.offset || 0) + (d.width || 0) / 2, y: s.y + s.h, edge: 'bottom' } : d.edge === 'left' ? { x: s.x, y: s.y + (d.offset || 0) + (d.width || 0) / 2, edge: 'left' } : d.edge === 'right' ? { x: s.x + s.w, y: s.y + (d.offset || 0) + (d.width || 0) / 2, edge: 'right' } : { x: s.x + s.w / 2, y: s.y + s.h / 2, edge: 'center' }); 
-                
-                const iX = Math.min(600, eW / 4), iY = Math.min(600, eH / 4);
-                const crs = [{ x: eX + iX, y: eY + iY }, { x: eX + eW - iX, y: eY + iY }, { x: eX + iX, y: eY + eH - iY }, { x: eX + eW - iX, y: eY + eH - iY }];
-
-                let minSE = Infinity, bStart = null, bDoor = null, bEnd = null, bMid = null; 
-                sDs.forEach(sd => { 
-                    let mID = 0, cIDStart = { x: eX + eW / 2, y: eY + eH / 2 }, cIDMid = null; 
-                    if (inD) { 
-                        if (!s.doors?.length) { 
-                            mID = hasL ? (eW + eH) : Math.hypot(eW, eH); 
-                            cIDMid = { x: eX + eW / 2, y: eY + eH / 2 };
-                        } else { 
-                            crs.forEach(c => { 
-                                const d = hasL ? (Math.abs(c.x - sd.x) + Math.abs(c.y - sd.y)) : Math.hypot(c.x - sd.x, c.y - sd.y); 
-                                const isTB = sd.edge === 'top' || sd.edge === 'bottom';
-                                const mPt = hasL ? (isTB ? { x: sd.x, y: c.y } : { x: c.x, y: sd.y }) : sd;
-
-                                if (d > mID) { mID = d; cIDStart = c; cIDMid = mPt; } 
-                            }); 
-                        } 
-                    } 
-                    let mOD = Infinity, cODEnd = null; 
-                    tgts.forEach(t => { 
-                        const tDs = (t.doors?.length ? t.doors : [{ edge: 'center' }]).map(d => d.edge === 'top' ? { x: t.x + (d.offset || 0) + (d.width || 0) / 2, y: t.y } : d.edge === 'bottom' ? { x: t.x + (d.offset || 0) + (d.width || 0) / 2, y: t.y + t.h } : d.edge === 'left' ? { x: t.x, y: t.y + (d.offset || 0) + (d.width || 0) / 2 } : d.edge === 'right' ? { x: t.x + t.w, y: t.y + (d.offset || 0) + (d.width || 0) / 2 } : { x: t.x + t.w / 2, y: t.y + t.h / 2 }); 
-                        tDs.forEach(td => { 
-                            const d = Math.abs(sd.x - td.x) + Math.abs(sd.y - td.y); 
-                            if (d < mOD) { mOD = d; cODEnd = td; } 
-                        }); 
-                    }); 
-                    if (mID + mOD < minSE) { minSE = mID + mOD; bStart = cIDStart; bMid = cIDMid; bDoor = sd; bEnd = cODEnd; } 
-                }); 
-                
-                if (minSE > maxE && minSE !== Infinity) { 
-                    maxE = minSE; wStart = bStart; wDoor = bDoor; wEnd = bEnd; wIntStart = bStart; 
-                    wIntIsL = hasL; wIntMid = bMid; 
-                } 
-                
-                let maxIntDist = 0, maxIntStart = null, maxIntDoor = null, maxIntMid = null; 
-                if (inD && sDs.length > 0 && s.doors?.length) { 
-                    crs.forEach(c => { 
-                        let minCToDoor = Infinity, bestDoorForC = null, bestMidForC = null; 
-                        sDs.forEach(sd => { 
-                            const d = hasL ? (Math.abs(c.x - sd.x) + Math.abs(c.y - sd.y)) : Math.hypot(c.x - sd.x, c.y - sd.y); 
-                            const isTB = sd.edge === 'top' || sd.edge === 'bottom';
-                            const mPt = hasL ? (isTB ? { x: sd.x, y: c.y } : { x: c.x, y: sd.y }) : sd;
-                            
-                            if (d < minCToDoor) { minCToDoor = d; bestDoorForC = sd; bestMidForC = mPt; } 
-                        }); 
-                        if (minCToDoor > maxIntDist && minCToDoor !== Infinity) { maxIntDist = minCToDoor; maxIntStart = c; maxIntDoor = bestDoorForC; maxIntMid = bestMidForC; } 
-                    }); 
-                } 
-                if (!s.doors?.length) { 
-                    maxIntDist = hasL ? (eW + eH) : Math.hypot(eW, eH); 
-                    maxIntStart = crs[0]; maxIntDoor = { x: eX + eW / 2, y: eY + eH / 2 }; maxIntMid = maxIntDoor;
-                } 
-                
-                if (s.type === 'IT' || isItRoom || s.id) { 
-                    const L = isEvac ? wL * 2 : (st.length === 1 ? dL : wL); 
-                    out[s.id] = { noDoor: !s.doors?.length, walkDist: minSE === Infinity ? 0 : minSE, overlapDist: minSE === Infinity ? 0 : minSE, isCompliant: minSE <= L, intDist: maxIntDist, intStart: maxIntStart, intDoor: maxIntDoor, intIsL: hasL, intMid: maxIntMid }; 
-                } 
-            }); 
-            return { distance: maxE, start: wStart, door: wDoor, end: wEnd, intStart: wIntStart, intIsL: wIntIsL, intMid: wIntMid }; 
-        }; 
+        // --- 高階 A* 避難引擎 (網格 BFS 掃描) ---
+        const gridS = 500; // 500mm 精度掃描
+        const margin = 2000;
+        let minX = 0, minY = 0, maxX = 50000, maxY = 40000;
+        oRs.forEach(r => { minX = Math.min(minX, r.x); minY = Math.min(minY, r.y); maxX = Math.max(maxX, r.x + r.w); maxY = Math.max(maxY, r.y + r.h); });
+        minX -= margin; minY -= margin; maxX += margin; maxY += margin;
+        const cols = Math.ceil((maxX - minX) / gridS), rows = Math.ceil((maxY - minY) / gridS);
         
+        const obs = new Uint8Array(cols * rows);
+        const setObs = (rx, ry, rw, rh, val = 1) => {
+            const x1 = Math.max(0, Math.floor((rx - minX) / gridS)), x2 = Math.min(cols - 1, Math.floor((rx + rw - minX) / gridS));
+            const y1 = Math.max(0, Math.floor((ry - minY) / gridS)), y2 = Math.min(rows - 1, Math.floor((ry + rh - minY) / gridS));
+            for (let ix = x1; ix <= x2; ix++) for (let iy = y1; iy <= y2; iy++) obs[iy * cols + ix] = val;
+        };
+
+        // 1. 寫入實體柱子
+        if (layout && layout.columns) layout.columns.filter(c => c.floor === aFlr).forEach(c => setObs(c.x, c.y, c.w, c.h));
+        // 2. 寫入機櫃與設備 (核心：繞開機櫃)
+        if (layout && layout.pods) layout.pods.filter(p => p.floor === aFlr).forEach(p => p.racks.forEach(rk => setObs(rk.x, rk.y, rk.w, rk.h)));
+        if (layout && layout.fwuChunks) layout.fwuChunks.filter(c => c.floor === aFlr).forEach(c => setObs(c.x, c.y, c.w, c.h));
+        ['upsPods', 'lvPods', 'genPods'].forEach(k => { if (layout && layout[k]) layout[k].filter(p => p.floor === aFlr).forEach(p => p.items.forEach(eq => setObs(eq.x, eq.y, eq.w, eq.h))); });
+        
+        // 3. 牆壁邊界 (厚度400mm)
+        const wallT = 400;
+        [...bRooms, ...bAnc].forEach(r => { if (['VOID', 'OUTDOOR', 'SEMI_OUTDOOR', 'SUNKEN'].includes(r.type)) return; setObs(r.x, r.y, r.w, wallT); setObs(r.x, r.y + r.h - wallT, r.w, wallT); setObs(r.x, r.y, wallT, r.h); setObs(r.x + r.w - wallT, r.y, wallT, r.h); });
+        
+        // 4. 打開門洞 (挖空牆壁讓 A* 可以走過)
+        [...bRooms, ...bAnc].forEach(r => { if (r.doors) { r.doors.forEach(d => { let dx = r.x, dy = r.y, dw = d.width || 900, dh = d.width || 900; const cD = 1500; if (d.edge === 'top') { dx += d.offset; dy -= cD/2; dh = cD; } else if (d.edge === 'bottom') { dx += d.offset; dy += r.h - cD/2; dh = cD; } else if (d.edge === 'left') { dy += d.offset; dx -= cD/2; dw = cD; } else if (d.edge === 'right') { dy += d.offset; dx += r.w - cD/2; dw = cD; } setObs(dx, dy, dw, dh, 0); }); } });
+
+        const findPath = (start, goals) => {
+            const sx = Math.max(0, Math.min(cols - 1, Math.floor((start.x - minX) / gridS))), sy = Math.max(0, Math.min(rows - 1, Math.floor((start.y - minY) / gridS)));
+            const targetSet = new Set(); goals.forEach(g => { targetSet.add(`${Math.max(0, Math.min(cols - 1, Math.floor((g.x - minX) / gridS)))},${Math.max(0, Math.min(rows - 1, Math.floor((g.y - minY) / gridS)))}`); });
+            const q = [[sx, sy]]; const visited = new Set([`${sx},${sy}`]); const prev = {}; let found = null;
+            const dirs = [[1,0], [-1,0], [0,1], [0,-1], [1,1], [1,-1], [-1,1], [-1,-1]];
+            
+            while(q.length > 0) {
+                const [cx, cy] = q.shift(); const key = `${cx},${cy}`;
+                if (targetSet.has(key)) { found = key; break; }
+                for (const [dx, dy] of dirs) {
+                    const nx = cx + dx, ny = cy + dy;
+                    if (nx < 0 || ny < 0 || nx >= cols || ny >= rows) continue;
+                    if (obs[ny * cols + nx] === 1 && !targetSet.has(`${nx},${ny}`)) continue;
+                    const nKey = `${nx},${ny}`;
+                    if (!visited.has(nKey)) { visited.add(nKey); prev[nKey] = key; q.push([nx, ny]); }
+                }
+            }
+            
+            let dist = 0, path = [];
+            if (found) {
+                let cur = found;
+                while (cur && cur !== `${sx},${sy}`) { const [px, py] = cur.split(',').map(Number); path.push({ x: px * gridS + minX + gridS/2, y: py * gridS + minY + gridS/2 }); cur = prev[cur]; }
+                path.push({ x: start.x, y: start.y }); path.reverse();
+                const [fx, fy] = found.split(',').map(Number);
+                let eG = goals.find(g => Math.floor((g.x - minX)/gridS) === fx && Math.floor((g.y - minY)/gridS) === fy) || goals[0];
+                path[path.length - 1] = { x: eG.x, y: eG.y };
+                for(let i=0; i<path.length-1; i++) dist += Math.hypot(path[i+1].x - path[i].x, path[i+1].y - path[i].y);
+            } else {
+                let minDist = Infinity; goals.forEach(g => { const d = Math.abs(start.x - g.x) + Math.abs(start.y - g.y); if (d < minDist) { minDist = d; path = [start, g]; } }); dist = minDist;
+            }
+            return { dist, path };
+        };
+
+        const gDs = (srcs, tgts, inD, isEvac) => {
+            let maxTotalDist = -1, bestGlobalRes = null;
+            
+            const tPts = [];
+            tgts.forEach(t => {
+                if (t.doors && t.doors.length > 0) {
+                    t.doors.forEach(d => {
+                        if (d.edge === 'top') tPts.push({ x: t.x + (d.offset||0) + (d.width||0)/2, y: t.y });
+                        else if (d.edge === 'bottom') tPts.push({ x: t.x + (d.offset||0) + (d.width||0)/2, y: t.y + t.h });
+                        else if (d.edge === 'left') tPts.push({ x: t.x, y: t.y + (d.offset||0) + (d.width||0)/2 });
+                        else if (d.edge === 'right') tPts.push({ x: t.x + t.w, y: t.y + (d.offset||0) + (d.width||0)/2 });
+                    });
+                } else tPts.push({ x: t.x + t.w/2, y: t.y + t.h/2 });
+            });
+            if (!tPts.length) return { distance: 0, path: [], start: null, end: null };
+
+            srcs.forEach(s => {
+                let eX = s.x, eY = s.y, eW = s.w, eH = s.h;
+                if (params.fwu && s.type === 'IT') { eX += params.fwuW; eW -= params.fwuW * 2; }
+                
+                const sDoors = [];
+                if (s.doors && s.doors.length > 0) {
+                    s.doors.forEach(d => {
+                        if (d.edge === 'top') sDoors.push({ x: s.x + (d.offset||0) + (d.width||0)/2, y: s.y });
+                        else if (d.edge === 'bottom') sDoors.push({ x: s.x + (d.offset||0) + (d.width||0)/2, y: s.y + s.h });
+                        else if (d.edge === 'left') sDoors.push({ x: s.x, y: s.y + (d.offset||0) + (d.width||0)/2 });
+                        else if (d.edge === 'right') sDoors.push({ x: s.x + s.w, y: s.y + (d.offset||0) + (d.width||0)/2 });
+                    });
+                } else sDoors.push({ x: eX + eW/2, y: eY + eH/2 });
+
+                // 內部角落 (模擬最不利步行點)
+                const iX = Math.min(1000, eW / 4), iY = Math.min(1000, eH / 4);
+                const crs = [ { x: eX + iX, y: eY + iY }, { x: eX + eW - iX, y: eY + iY }, { x: eX + iX, y: eY + eH - iY }, { x: eX + eW - iX, y: eY + eH - iY } ];
+
+                let maxIntDist = -1, bestIntPath = [], bestDoorPt = sDoors[0];
+                
+                // 計算室內距離
+                if (inD) {
+                    crs.forEach(c => {
+                        const intRes = findPath(c, sDoors);
+                        if (intRes.dist > maxIntDist) { maxIntDist = intRes.dist; bestIntPath = intRes.path; bestDoorPt = intRes.path.length > 0 ? intRes.path[intRes.path.length - 1] : sDoors[0]; }
+                    });
+                } else {
+                    maxIntDist = 0; bestIntPath = [sDoors[0]]; bestDoorPt = sDoors[0];
+                }
+
+                // 從最遠的門走到安全梯
+                const extRes = findPath(bestDoorPt, tPts);
+                const totalDist = maxIntDist + extRes.dist;
+                
+                let fullPath = [];
+                if (bestIntPath.length > 0 && extRes.path.length > 0) fullPath = [...bestIntPath, ...extRes.path.slice(1)];
+                else fullPath = extRes.path.length > 0 ? extRes.path : bestIntPath;
+
+                if (s.id) {
+                    const L = isEvac ? wL * 2 : (st.length === 1 ? dL : wL);
+                    out[s.id] = { noDoor: !s.doors?.length, walkDist: totalDist, intDist: maxIntDist, isCompliant: totalDist <= L, path: fullPath };
+                }
+                
+                if (totalDist > maxTotalDist && totalDist !== Infinity) {
+                    maxTotalDist = totalDist;
+                    bestGlobalRes = { distance: totalDist, path: fullPath, start: fullPath[0], end: fullPath[fullPath.length - 1] };
+                }
+            });
+            return bestGlobalRes || { distance: 0, path: [], start: null, end: null };
+        };
+
         if (isEvacF) { 
-            const r2eP = gDs(oRs, exits, true, true), s2eP = st.length > 0 ? gDs(st, exits, false, true) : { distance: 0, start: null, door: null, end: null, intStart: null, intIsL: false, intMid: null }, r2eL = wL * 2, s2eL = wL; 
+            const r2eP = gDs(oRs, exits, true, true), s2eP = st.length > 0 ? gDs(st, exits, false, true) : { distance: 0, start: null, end: null, path: [] };
+            const r2eL = wL * 2, s2eL = wL; 
             out.distances = { roomToExit: { distance: r2eP.distance, limit: r2eL, isCompliant: r2eP.distance <= r2eL }, stairToExit: { distance: s2eP.distance, limit: s2eL, isCompliant: s2eP.distance === 0 || s2eP.distance <= s2eL } }; 
             out.isCompliant = r2eP.distance <= r2eL && (s2eP.distance === 0 || s2eP.distance <= s2eL); 
-            out.start = r2eP.start; out.door = r2eP.door; out.end = r2eP.end; 
-            out.intStart = r2eP.intStart; out.intIsL = r2eP.intIsL; out.intMid = r2eP.intMid;
+            out.start = r2eP.start; out.end = r2eP.end; out.path = r2eP.path;
         } else { 
             const isS = st.length === 1, limit = isS ? dL : wL, r2sP = gDs(oRs, st, true, false); 
             out.distance = r2sP.distance; out.limit = limit; out.isCompliant = r2sP.distance <= limit; out.isSingleEscape = isS; 
-            out.start = r2sP.start; out.door = r2sP.door; out.end = r2sP.end; 
-            out.intStart = r2sP.intStart; out.intIsL = r2sP.intIsL; out.intMid = r2sP.intMid;
+            out.start = r2sP.start; out.end = r2sP.end; out.path = r2sP.path;
         } 
         return out; 
-    }, [rooms, anc, step, aFlr, activeBuilding, params.escapeType, params.fwu, params.fwuW]);
-
+    }, [rooms, anc, step, aFlr, activeBuilding, layout, params.escapeType, params.fwu, params.fwuW]);
         const fmtTxt = (n, w) => { let t = n || 'Data Hall'; if (w < 5000) { const u = t.toUpperCase(); if (u.includes('ELEVATOR')) t = 'EVL'; else if (u.includes('STAIR')) t = 'Stair'; else if (u.includes('UPS')) t = 'UPS' } return { t, fs: Math.max(200, Math.min(1500, w / 2.5, (w * 1.5) / Math.max(1, t.length))) } };
         const rDr = (rm, d, st, ui, a, iIt) => { let dx = 0, dy = 0, rt = 0; if (d.edge === 'top') dx = d.offset; else if (d.edge === 'bottom') { dx = d.offset + d.width; dy = rm.h; rt = 180 } else if (d.edge === 'left') { dy = d.offset + d.width; rt = 270 } else if (d.edge === 'right') { dx = rm.w; dy = d.offset; rt = 90 } const iD = ui.dragD?.doorId === d.id, tf = `${d.swing === 'right' ? `translate(${d.width}, 0) scale(-1, 1) ` : ''}${d.direction === 'out' ? '' : 'scale(1, -1) '}`; return <g transform={`translate(${rm.x + dx}, ${rm.y + dy}) rotate(${rt})`} key={`d-${rm.id}-${d.id}`} className={[2, 3].includes(st) ? (iD ? "cursor-grabbing" : "cursor-grab") : ""} onPointerDown={[2, 3].includes(st) ? e => { e.stopPropagation(); e.target.setPointerCapture(e.pointerId); a.setUi(p => ({ ...p, dragD: { roomId: rm.id, doorId: d.id, isIt: iIt } })) } : undefined} onDoubleClick={[2, 3].includes(st) ? e => { e.stopPropagation(); const f = o => o.map(x => { if (x.id !== d.id) return x; const eg = ['top', 'right', 'bottom', 'left']; return { ...x, edge: eg[(eg.indexOf(x.edge) + 1) % 4], offset: 0 } }); iIt ? a.setRooms(p => p.map(r => r.id !== rm.id ? r : { ...r, doors: f(r.doors || []) })) : a.setAnc(p => p.map(r => r.id !== rm.id ? r : { ...r, doors: f(r.doors) })) } : undefined}><rect x="0" y="-30" width={d.width} height="60" fill={iD ? "#e5e7eb" : (iIt ? SPACE_COLORS['IT'] : rm.color)} stroke="#111827" strokeWidth="10" />{d.type === 'single' && <g transform={tf}><path d={`M 0,0 L 0,${-d.width} A ${d.width} ${d.width} 0 0 1 ${d.width},0`} fill="none" stroke="#111827" strokeWidth="25" strokeDasharray="30,30" /><line x1="0" y1="0" x2="0" y2={-d.width} stroke="#111827" strokeWidth="25" strokeLinecap="round" /></g>}{d.type === 'double' && <g transform={tf}><path d={`M 0,0 L 0,${-d.width / 2} A ${d.width / 2} ${d.width / 2} 0 0 1 ${d.width / 2},0`} fill="none" stroke="#111827" strokeWidth="25" strokeDasharray="30,30" /><line x1="0" y1="0" x2="0" y2={-d.width / 2} stroke="#111827" strokeWidth="25" strokeLinecap="round" /><path d={`M ${d.width},0 L ${d.width},${-d.width / 2} A ${d.width / 2} ${d.width / 2} 0 0 0 ${d.width / 2},0`} fill="none" stroke="#111827" strokeWidth="25" strokeDasharray="30,30" /><line x1={d.width} y1="0" x2={d.width} y2={-d.width / 2} stroke="#111827" strokeWidth="25" strokeLinecap="round" /></g>}{d.type === 'sliding' && <g transform={tf}><line x1="-100" y1="-20" x2={d.width / 2 + 100} y2="-20" stroke="#111827" strokeWidth="25" strokeLinecap="round" /><line x1={d.width / 2 - 100} y1="20" x2={d.width + 100} y2="20" stroke="#111827" strokeWidth="25" strokeLinecap="round" /><path d={`M -50,-20 L -100,-60 L 0,-60 Z`} fill="#111827" /><path d={`M ${d.width + 50},20 L ${d.width + 100},60 L ${d.width},60 Z`} fill="#111827" /></g>}{[2, 3].includes(st) && <g transform={tf}><rect x="0" y={-d.width} width={d.width} height={d.width} fill="transparent" stroke={iD ? "#000" : "transparent"} strokeWidth="10" strokeDasharray="20,20" /></g>}</g> };
-        const rStDet = (r, fH = 5000, step, ui, a, flrs = [], ans = []) => { if (r.type === 'STAIRS') { const p = 500, w = Math.max(0, r.w - p * 2), h = Math.max(0, r.h - p * 2), e = r.evacType || 'normal', a_type = r.anteType || 'room', stT = r.stairType || 'U', sL = r.stairLayout || 'combo'; const ah = e === 'special' ? h * 0.3 : 0, sh = h - ah, totN = Math.ceil(fH / (r.stairRiser || 200)), sT = r.stairTread || 250; let isB = !0, isT = !1; if (flrs.length && ans.length) { const fI = flrs.findIndex(f => f.name === r.floor); const cS = ans.filter(an => an.type === 'STAIRS' && !(an.x + an.w <= r.x || an.x >= r.x + r.w || an.y + an.h <= r.y || an.y >= r.y + r.h)); const cF = cS.map(an => flrs.findIndex(f => f.name === an.floor)).filter(i => i !== -1).sort((x, y) => x - y); isT = cF.length > 1 ? fI === cF[0] : !1; isB = cF.length > 0 ? fI === cF[cF.length - 1] : !0; } const brFn = (cx, cy, fw) => { const dx = fw / 2 + 50; return <><line x1={cx - dx} y1={cy + 100} x2={cx + dx} y2={cy - 100} stroke="#111827" strokeWidth="15" /><line x1={cx - dx} y1={cy + 200} x2={cx + dx} y2={cy} stroke="#111827" strokeWidth="15" /></> }; const arFn = (x, y, dx, dy, t, tp = "up") => { const l = 80; return <g><circle cx={x} cy={y} r="30" fill="#111827" /><text x={x + (t === '上' ? -60 : (tp === 'lt' ? 60 : -60))} y={y} fill="#111827" fontSize="500" fontWeight="bold" textAnchor={t === '上' ? "end" : "end"} dominantBaseline="middle">{t}</text><line x1={x} y1={y} x2={dx} y2={dy} stroke="#111827" strokeWidth="15" /><polygon points={`${dx},${dy} ${dx - (tp === "up" ? 40 : tp === "dn" ? -40 : tp === "lt" ? -80 : 80)},${dy + (tp === "up" ? 80 : tp === "dn" ? -80 : tp === "lt" ? 40 : -40)} ${dx + (tp === "up" ? 40 : tp === "dn" ? -40 : tp === "lt" ? -80 : 80)},${dy + (tp === "up" ? 80 : tp === "dn" ? -80 : tp === "lt" ? -40 : 40)}`} fill="#111827" /></g> }; return <g transform={`translate(${r.x}, ${r.y})`} className="pointer-events-none opacity-80"><g transform={`translate(${p}, ${p})`}>{e === 'indoor' && <rect width={w} height={h} fill="none" stroke="#111827" strokeWidth="40" />}{e === 'outdoor' && <path d={`M 0,${h} L 0,0 L ${w},0 L ${w},${h}`} fill="none" stroke="#eab308" strokeWidth="40" />}{e === 'special' && <g><rect width={w} height={h} fill="none" stroke="#111827" strokeWidth="40" /><line x1="0" y1={ah} x2={w} y2={ah} stroke="#111827" strokeWidth="40" />{a_type === 'balcony' && <line x1="0" y1="0" x2={w} y2="0" stroke="#eab308" strokeWidth="40" />}{a_type === 'smoke' && <g><rect x="0" y="0" width={w * 0.3} height={ah} fill="#9ca3af" /><text x={w * 0.15} y={ah / 2} fontSize="300" fill="#fff" textAnchor="middle" dominantBaseline="middle">排煙</text></g>}</g>}<g transform={`translate(0, ${ah})`}><rect width={w} height={sh} fill="none" stroke="#9ca3af" strokeWidth="20" />{stT === 'U' && (() => { const n = Math.ceil(totN / 2), isC = sL === 'combo', eW = isC ? Math.min(r.evW || 2500, Math.max(w * 0.3, w - 2 * (r.stairWidth || 1200))) : 0, eH = isC ? Math.min(r.evH || 2500, sh * 0.6) : 0, eX = isC ? (w - eW) / 2 : 0, lH = isC ? sh - eH : sh * 0.25, sW = r.stairWidth || 1200, gapW = isC ? 0 : Math.max(0, w - sW * 2), cx = w / 2; const sW_c = isC ? Math.min(sW, eX) : sW; const rcx = isC ? w - sW_c / 2 : cx + gapW / 2 + sW / 2; const lcx = isC ? sW_c / 2 : cx - gapW / 2 - sW / 2; const mY = lH + (sh - lH) * 0.55; const dB = das => <g strokeDasharray={das ? "25,25" : "none"}>{isC ? <g><line x1="0" y1={lH} x2={w} y2={lH} stroke="#9ca3af" strokeWidth="20" /><line x1={sW_c} y1={lH} x2={sW_c} y2={sh} stroke="#9ca3af" strokeWidth="20" /><line x1={w - sW_c} y1={lH} x2={w - sW_c} y2={sh} stroke="#9ca3af" strokeWidth="20" />{Array.from({ length: n }).map((_, i) => { const y = lH + (i + 1) * sT; return y < sh ? <g key={`uc-${i}`}><line x1="0" y1={y} x2={sW_c} y2={y} stroke="#d1d5db" strokeWidth="15" /><line x1={w - sW_c} y1={y} x2={w} y2={y} stroke="#d1d5db" strokeWidth="15" /></g> : null })}</g> : <g><line x1="0" y1={lH} x2={w} y2={lH} stroke="#9ca3af" strokeWidth="20" />{gapW > 0 ? <><line x1={cx - gapW / 2} y1={lH} x2={cx - gapW / 2} y2={sh} stroke="#9ca3af" strokeWidth="20" /><line x1={cx + gapW / 2} y1={lH} x2={cx + gapW / 2} y2={sh} stroke="#9ca3af" strokeWidth="20" /></> : <line x1={w / 2} y1={lH} x2={w / 2} y2={sh} stroke="#9ca3af" strokeWidth="20" />}{Array.from({ length: n }).map((_, i) => { const y = lH + (i + 1) * sT; return y < sh ? <g key={`un-${i}`}>{gapW > 0 ? <><line x1="0" y1={y} x2={cx - gapW / 2} y2={y} stroke="#d1d5db" strokeWidth="15" /><line x1={cx + gapW / 2} y1={y} x2={w} y2={y} stroke="#d1d5db" strokeWidth="15" /></> : <line x1="0" y1={y} x2={w} y2={y} stroke="#d1d5db" strokeWidth="15" />}</g> : null })}</g>}</g>; return <g><defs><clipPath id={`cp-${r.id}`}><polygon points={`${cx - gapW / 2},${mY} ${w + 50},${mY} ${w + 50},${sh + 50} ${cx - gapW / 2},${sh + 50}`} /></clipPath></defs>{isB ? <>{dB(!0)}<g clipPath={`url(#cp-${r.id})`}>{dB(!1)}</g></> : dB(!1)}<g className="pointer-events-none opacity-80">{!isT && brFn(lcx, mY, sW)}{!isT && <g><circle cx={rcx} cy={sh - 100} r="30" fill="#111827" /><text x={rcx - 60} y={sh - 100} fill="#111827" fontSize="500" fontWeight="bold" textAnchor="end" dominantBaseline="middle">上</text><polyline points={`${rcx},${sh - 100} ${rcx},${lH / 2} ${lcx},${lH / 2} ${lcx},${mY - 30}`} fill="none" stroke="#111827" strokeWidth="15" /><polygon points={`${lcx},${mY - 30} ${lcx - 40},${mY - 110} ${lcx + 40},${mY - 110}`} fill="#111827" /></g>}{!isT && arFn(lcx, sh - 100, lcx, mY, '下', 'up')}{isT && <g><circle cx={lcx} cy={sh - 100} r="30" fill="#111827" /><text x={lcx - 60} y={sh - 100} fill="#111827" fontSize="500" fontWeight="bold" textAnchor="end" dominantBaseline="middle">下</text><polyline points={`${lcx},${sh - 100} ${lcx},${lH / 2} ${rcx},${lH / 2} ${rcx},${sh}`} fill="none" stroke="#111827" strokeWidth="15" /><polygon points={`${rcx},${sh} ${rcx - 40},${sh - 80} ${rcx + 40},${sh - 80}`} fill="#111827" /></g>}</g></g> })()}{stT === 'straight' && (() => { const mY = sh * 0.55, cx = w / 2; const dB = das => <g strokeDasharray={das ? "25,25" : "none"}>{Array.from({ length: totN }).map((_, i) => { const y = (i + 1) * sT; return y < sh ? <line key={`s-${r.id}-${i}`} x1="0" y1={y} x2={w} y2={y} stroke="#d1d5db" strokeWidth="15" /> : null })}</g>; return <g><defs><clipPath id={`cp-${r.id}`}><rect x="-50" y={mY} width={w + 100} height={sh - mY + 100} /></clipPath></defs>{isB ? <>{dB(!0)}<g clipPath={`url(#cp-${r.id})`}>{dB(!1)}</g></> : dB(!1)}<g className="pointer-events-none opacity-80">{!isT && brFn(cx, mY, w)}{!isT && arFn(cx, sh - 100, cx, mY, '上', 'up')}{!isB && !isT && arFn(cx + 400, 100, cx + 400, mY, '下', 'dn')}{isT && arFn(cx, 100, cx, sh - 100, '下', 'dn')}</g></g> })()}{stT === 'L' && (() => { const cx = r.stairWidth || 1200, cy = sh - (r.stairWidth || 1200), nX = Math.ceil(totN / 2), nY = Math.floor(totN / 2), mY = cy + (sh - cy) * 0.55, mX = cx + (w - cx) * 0.45; const dB = das => <g strokeDasharray={das ? "25,25" : "none"}><line x1={cx} y1="0" x2={cx} y2={cy} stroke="#9ca3af" strokeWidth="20" /><line x1={cx} y1={cy} x2={w} y2={cy} stroke="#9ca3af" strokeWidth="20" />{Array.from({ length: nY }).map((_, i) => { const y = (i + 1) * sT; return y < cy ? <line key={`sl1-${i}`} x1="0" y1={y} x2={cx} y2={y} stroke="#d1d5db" strokeWidth="15" /> : null })}{Array.from({ length: nX }).map((_, i) => { const x = cx + (i + 1) * sT; return x < w ? <line key={`sl2-${i}`} x1={x} y1={cy} x2={x} y2={sh} stroke="#d1d5db" strokeWidth="15" /> : null })}</g>; return <g><defs><clipPath id={`cp-${r.id}`}><rect x="-50" y={mY} width={cx + 100} height={sh - mY + 100} /></clipPath></defs>{isB ? <>{dB(!0)}<g clipPath={`url(#cp-${r.id})`}>{dB(!1)}</g></> : dB(!1)}<g className="pointer-events-none opacity-80">{!isT && brFn(cx / 2, mY, cx)}{!isT && arFn(cx / 2, sh - 100, cx / 2, mY, '上', 'up')}{!isB && !isT && <><circle cx={mX} cy={cy / 2} r="30" fill="#111827" /><text x={mX + 60} y={cy / 2} fill="#111827" fontSize="500" fontWeight="bold" textAnchor="start" dominantBaseline="middle">下</text><polyline points={`${mX},${cy / 2} ${cx / 2},${cy / 2} ${cx / 2},${mY - 30}`} fill="none" stroke="#111827" strokeWidth="15" /><polygon points={`${cx / 2},${mY - 30} ${cx / 2 - 40},${mY - 110} ${cx / 2 + 40},${mY - 110}`} fill="#111827" /></>}{isT && <g><circle cx={mX} cy={cy / 2} r="30" fill="#111827" /><text x={mX + 60} y={cy / 2} fill="#111827" fontSize="500" fontWeight="bold" textAnchor="start" dominantBaseline="middle">下</text><polyline points={`${mX},${cy / 2} ${cx / 2},${cy / 2} ${cx / 2},${sh}`} fill="none" stroke="#111827" strokeWidth="15" /><polygon points={`${cx / 2},${sh} ${cx / 2 - 40},${sh - 80} ${cx / 2 + 40},${sh - 80}`} fill="#111827" /></g>}</g></g> })()}{stT === 'spiral' && <g><circle cx={w / 2} cy={sh / 2} r={Math.min(w, sh) / 2} fill="none" stroke="#9ca3af" strokeWidth="20" /><circle cx={w / 2} cy={sh / 2} r={Math.min(w, sh) / 10} fill="none" stroke="#9ca3af" strokeWidth="20" />{Array.from({ length: totN }).map((_, i) => <line key={`sp-${i}`} x1={w / 2 + (Math.min(w, sh) / 10) * Math.cos(i * (360 / totN) * Math.PI / 180)} y1={sh / 2 + (Math.min(w, sh) / 10) * Math.sin(i * (360 / totN) * Math.PI / 180)} x2={w / 2 + (Math.min(w, sh) / 2) * Math.cos(i * (360 / totN) * Math.PI / 180)} y2={sh / 2 + (Math.min(w, sh) / 2) * Math.sin(i * (360 / totN) * Math.PI / 180)} stroke="#d1d5db" strokeWidth="15" />)}<g className="pointer-events-none opacity-80">{!isT && <><path d={`M ${w / 2},${sh / 2 + Math.min(w, sh) * 0.3} A ${Math.min(w, sh) * 0.3} ${Math.min(w, sh) * 0.3} 0 0 1 ${w / 2 - Math.min(w, sh) * 0.3},${sh / 2}`} fill="none" stroke="#111827" strokeWidth="15" /><polygon points={`${w / 2 - Math.min(w, sh) * 0.3},${sh / 2} ${w / 2 - Math.min(w, sh) * 0.3 - 40},${sh / 2 + 80} ${w / 2 - Math.min(w, sh) * 0.3 + 40},${sh / 2 + 80}`} fill="#111827" /><text x={w / 2} y={sh / 2 + Math.min(w, sh) * 0.3 + 200} fill="#111827" fontSize="400" fontWeight="bold" textAnchor="middle" dominantBaseline="middle">上</text></>}{!isB && <text x={w / 2} y={sh / 2 - Math.min(w, sh) * 0.3 - 200} fill="#111827" fontSize="400" fontWeight="bold" textAnchor="middle" dominantBaseline="middle">下</text>}</g></g>}{sL === 'combo' && (() => { const eW_d = r.evW || 2500, eH_d = r.evH || 2500, isU = stT === 'U', eW = isU ? Math.min(eW_d, Math.max(w * 0.3, w - 2 * (r.stairWidth || 1200))) : eW_d, eH = isU ? Math.min(eH_d, sh * 0.6) : eH_d, eX = isU ? (w - eW) / 2 : (w / 2 - eW / 2), eY = isU ? sh - eH : (sh / 2 - eH / 2); return <g transform={`translate(${eX}, ${eY})`}><rect width={eW} height={eH} fill={r.isEmergency ? "#fee2e2" : "#f9fafb"} stroke={r.isEmergency ? "#ef4444" : "#6b7280"} strokeWidth="20" /><line x1="0" y1="0" x2={eW} y2={eH} stroke={r.isEmergency ? "#ef4444" : "#6b7280"} strokeWidth="15" /><line x1={eW} y1="0" x2="0" y2={eH} stroke={r.isEmergency ? "#ef4444" : "#6b7280"} strokeWidth="15" /></g> })()}</g>{sL !== 'combo' && r.isEmergency && <text x={w / 2} y={ah + sh / 2} fill="#ef4444" fontSize="800" fontWeight="bold" textAnchor="middle" dominantBaseline="middle" transform={`rotate(-90, ${w / 2}, ${ah + sh / 2})`}>非常用</text>}</g></g> } if (r.type === 'EV_LOBBY') { const ew = r.evW || 2500, eh = r.evH || 2500, p = 500; return <g transform={`translate(${r.x}, ${r.y})`} className="opacity-70">{(r.elevators || [{ id: r.id + '_legacy', w: ew, h: eh, dx: Math.max(0, r.w - ew - p), dy: p, isEmergency: r.isEmergency }]).map((ev, i) => <g key={ev.id} transform={`translate(${ev.dx}, ${ev.dy})`} className={step >= 2 ? (ui?.dragEv?.evId === ev.id ? "cursor-grabbing" : "cursor-pointer") : "pointer-events-none"} style={{ pointerEvents: step >= 2 ? 'auto' : 'none' }} onPointerDown={step >= 2 ? e => { e.stopPropagation(); const pp = a.ptLocal ? a.ptLocal(e, r.buildingId || a.activeBuildingId) : (a.pt ? a.pt(e) : { x: 0, y: 0 }); a?.setUi(pr => ({ ...pr, dragEv: { roomId: r.id, evId: ev.id, isIt: false }, offX: pp.x - r.x - ev.dx, offY: pp.y - r.y - ev.dy })); try { e.target.setPointerCapture(e.pointerId) } catch (err) { } } : undefined}><rect width={ev.w} height={ev.h} fill={ev.isEmergency ? "#fee2e2" : "#f9fafb"} stroke={ev.isEmergency ? "#ef4444" : "#6b7280"} strokeWidth="20" /><line x1="0" y1="0" x2={ev.w} y2={ev.h} stroke={ev.isEmergency ? "#ef4444" : "#6b7280"} strokeWidth="15" /><line x1={ev.w} y1="0" x2="0" y2={ev.h} stroke={ev.isEmergency ? "#ef4444" : "#6b7280"} strokeWidth="15" />{ev.isEmergency && <text x={ev.w / 2} y={ev.h / 2} fill="#ef4444" fontSize="700" textAnchor="middle" dominantBaseline="middle" fontWeight="bold">非常用</text>}</g>)}</g> } return null };
+        const rStDet = (r, fH = 5000, step, ui, a, flrs = [], ans = []) => { 
+            if (r.type === 'STAIRS') { 
+                const p = 0, w = Math.max(0, r.w), h = Math.max(0, r.h);
+                const e = r.evacType || 'normal', a_type = r.anteType || 'room', stT = r.stairType || 'U', sL = r.stairLayout || 'combo'; 
+                
+                // 👇 1. 前室與牆體厚度計算 (法規空間區劃) 👇
+                const ah = e === 'special' ? Math.max(2000, h * 0.25) : 0; // 特別避難梯：前室至少留 2 米深
+                const sh = h - ah; // 扣除前室後的梯間本體高度
+                const wallThick = (e === 'indoor' || e === 'special') ? 200 : 20; // 實體 RC 防火牆(20cm) vs 一般虛擬邊界
+                const wallColor = (e === 'indoor' || e === 'special') ? "#1f2937" : "#9ca3af";
+                const wallDash = e === 'normal' ? "100,100" : "none";
+
+                // 👇 2. 樓梯物理尺寸計算 👇
+                const stairRiser = r.stairRiser || 200;
+                const stairTread = r.stairTread || 250;
+                const stairWidthMm = r.stairWidth || 1200; 
+                const totN = Math.ceil(fH / stairRiser);
+                const steps1 = Math.floor(totN / 2);
+                const steps2 = totN - steps1;
+                const landingDepth = Math.max(stairWidthMm, 1500); 
+
+                // 👇 3. 門扇淨空檢討參數 👇
+                const doorW = 900; // 標準逃生單開門 90cm
+                const requiredLanding = stairWidthMm + doorW; // 平台理想深度：梯寬 + 門寬不干涉
+
+                let isB = !0, isT = !1; 
+                if (flrs.length && ans.length) { 
+                    const fI = flrs.findIndex(f => f.name === r.floor); 
+                    const cS = ans.filter(an => an.type === 'STAIRS' && !(an.x + an.w <= r.x || an.x >= r.x + r.w || an.y + an.h <= r.y || an.y >= r.y + r.h)); 
+                    const cF = cS.map(an => flrs.findIndex(f => f.name === an.floor)).filter(i => i !== -1).sort((x, y) => x - y); 
+                    isT = cF.length > 1 ? fI === cF[0] : !1; 
+                    isB = cF.length > 0 ? fI === cF[cF.length - 1] : !0; 
+                } 
+
+                return <g transform={`translate(${r.x}, ${r.y})`} className="pointer-events-none opacity-90">
+                    
+                    {/* --- 繪製外圍牆體 (RC 防火區劃或一般隔間) --- */}
+                    <rect x={0} y={0} width={w} height={h} fill="none" stroke={wallColor} strokeWidth={wallThick} strokeDasharray={wallDash} />
+
+                    {/* --- 繪製前室 (特別避難階段專用，位於樓梯本體下方) --- */}
+                    {e === 'special' && (
+                        <g transform={`translate(0, ${sh})`}>
+                            <rect x={0} y={0} width={w} height={ah} fill="#f8fafc" />
+                            <line x1={0} y1={0} x2={w} y2={0} stroke={wallColor} strokeWidth={wallThick} />
+                            
+                            {/* 前室屬性文字 */}
+                            {a_type === 'smoke' && <text x={w/2} y={ah/2} fill="#64748b" fontSize="800" fontWeight="bold" textAnchor="middle" dominantBaseline="middle" letterSpacing="50">排煙前室</text>}
+                            {a_type === 'balcony' && <text x={w/2} y={ah/2} fill="#eab308" fontSize="800" fontWeight="bold" textAnchor="middle" dominantBaseline="middle" letterSpacing="50">戶外避難陽台</text>}
+                            {a_type === 'room' && <text x={w/2} y={ah/2} fill="#64748b" fontSize="800" fontWeight="bold" textAnchor="middle" dominantBaseline="middle" letterSpacing="50">附室</text>}
+
+                            {/* 進入前室的防火門 */}
+                            <path d={`M ${w - wallThick - doorW},${ah} L ${w - wallThick - doorW},${ah - doorW} A ${doorW} ${doorW} 0 0 1 ${w - wallThick},${ah}`} fill="none" stroke="#ef4444" strokeWidth="20" strokeDasharray="50,50" />
+                            <line x1={w - wallThick - doorW} y1={ah} x2={w - wallThick - doorW} y2={ah - doorW} stroke="#1f2937" strokeWidth="40" />
+                        </g>
+                    )}
+
+                    {/* --- 繪製樓梯本體 --- */}
+                    <g transform={`translate(0, 0)`}>
+                        
+                        {/* U型樓梯 */}
+                        {stT === 'U' && (() => { 
+                            const isC = sL === 'combo';
+                            const eW = isC ? (r.evW || 2500) : 0;
+                            const currentGap = isC ? Math.max(eW, 200) : 200;
+                            
+                            const innerW = stairWidthMm * 2 + currentGap;
+                            const runLength = Math.max(steps1, steps2) * stairTread;
+                            const innerH = landingDepth + runLength;
+
+                            const sW = w * (stairWidthMm / innerW);
+                            const sGap = w * (currentGap / innerW);
+                            const sLand = sh * (landingDepth / innerH);
+                            const sRun = sh * (runLength / innerH);
+                            const sT = sRun / Math.max(steps1, steps2);
+                            const mY = sLand + sRun * 0.55;
+
+                            const dB = das => (
+                                <g strokeDasharray={das ? "25,25" : "none"}>
+                                    <line x1={0} y1={sLand} x2={w} y2={sLand} stroke="#9ca3af" strokeWidth="20" />
+                                    <rect x={sW} y={sLand} width={sGap} height={sRun} fill="none" stroke="#9ca3af" strokeWidth="20" />
+                                    {Array.from({ length: steps1 }).map((_, i) => { 
+                                        const y = sLand + (i + 1) * sT; 
+                                        return y < sh ? <line key={`ul-${i}`} x1={0} y1={y} x2={sW} y2={y} stroke="#d1d5db" strokeWidth="15" /> : null;
+                                    })}
+                                    {Array.from({ length: steps2 }).map((_, i) => { 
+                                        const y = sLand + (i + 1) * sT; 
+                                        return y < sh ? <line key={`ur-${i}`} x1={sW + sGap} y1={y} x2={w} y2={y} stroke="#d1d5db" strokeWidth="15" /> : null;
+                                    })}
+                                </g>
+                            ); 
+
+                            return (
+                                <g>
+                                    <defs><clipPath id={`cp-${r.id}`}><rect x="-50" y={mY} width={w + 100} height={sh - mY + 100} /></clipPath></defs>
+                                    {isB ? <>{dB(!0)}<g clipPath={`url(#cp-${r.id})`}>{dB(!1)}</g></> : dB(!1)}
+                                    <g className="pointer-events-none opacity-80">
+                                        {!isT && <g><circle cx={sW / 2} cy={sh - 100} r="30" fill="#111827" /><text x={sW / 2 - 60} y={sh - 100} fill="#111827" fontSize="500" fontWeight="bold" textAnchor="end" dominantBaseline="middle">上</text><polyline points={`${sW / 2},${sh - 100} ${sW / 2},${sLand / 2} ${sW + sGap + sW / 2},${sLand / 2} ${sW + sGap + sW / 2},${sh - 100}`} fill="none" stroke="#111827" strokeWidth="15" /><polygon points={`${sW + sGap + sW / 2},${sh - 100} ${sW + sGap + sW / 2 - 40},${sh - 180} ${sW + sGap + sW / 2 + 40},${sh - 180}`} fill="#111827" /></g>}
+                                    </g>
+                                </g>
+                            ); 
+                        })()}
+                        
+                        {/* 直通樓梯 */}
+                        {stT === 'straight' && (() => { 
+                            const innerH = landingDepth * 2 + (totN * stairTread);
+                            const sLand = sh * (landingDepth / innerH);
+                            const sRun = sh * ((totN * stairTread) / innerH);
+                            const sT = sRun / totN;
+                            const mY = sLand + sRun * 0.55;
+
+                            const dB = das => (
+                                <g strokeDasharray={das ? "25,25" : "none"}>
+                                    <line x1={0} y1={sLand} x2={w} y2={sLand} stroke="#9ca3af" strokeWidth="20" />
+                                    <line x1={0} y1={sh - sLand} x2={w} y2={sh - sLand} stroke="#9ca3af" strokeWidth="20" />
+                                    {Array.from({ length: totN }).map((_, i) => { 
+                                        const y = sLand + (i + 1) * sT; 
+                                        return y < sh - sLand ? <line key={`str-${i}`} x1={0} y1={y} x2={w} y2={y} stroke="#d1d5db" strokeWidth="15" /> : null;
+                                    })}
+                                </g>
+                            ); 
+
+                            return (
+                                <g>
+                                    <defs><clipPath id={`cp-${r.id}`}><rect x="-50" y={mY} width={w + 100} height={sh - mY + 100} /></clipPath></defs>
+                                    {isB ? <>{dB(!0)}<g clipPath={`url(#cp-${r.id})`}>{dB(!1)}</g></> : dB(!1)}
+                                    <g className="pointer-events-none opacity-80">
+                                        {!isT && <g><circle cx={w / 2} cy={sh - 100} r="30" fill="#111827" /><text x={w / 2 - 60} y={sh - 100} fill="#111827" fontSize="500" fontWeight="bold" textAnchor="end" dominantBaseline="middle">上</text><line x1={w / 2} y1={sh - 100} x2={w / 2} y2={100} stroke="#111827" strokeWidth="15" /><polygon points={`${w / 2},100 ${w / 2 - 40},180 ${w / 2 + 40},180`} fill="#111827" /></g>}
+                                    </g>
+                                </g>
+                            ); 
+                        })()}
+                        
+                        {/* L 型樓梯 */}
+                        {stT === 'L' && (() => { 
+                            const sT = stairTread;
+                            const cx = r.stairWidth || 1200, cy = sh - (r.stairWidth || 1200), nX = Math.ceil(totN / 2), nY = Math.floor(totN / 2), mY = cy + (sh - cy) * 0.55, mX = cx + (w - cx) * 0.45; 
+                            const dB = das => <g strokeDasharray={das ? "25,25" : "none"}><line x1={cx} y1="0" x2={cx} y2={cy} stroke="#9ca3af" strokeWidth="20" /><line x1={cx} y1={cy} x2={w} y2={cy} stroke="#9ca3af" strokeWidth="20" />{Array.from({ length: nY }).map((_, i) => { const y = (i + 1) * sT; return y < cy ? <line key={`sl1-${i}`} x1="0" y1={y} x2={cx} y2={y} stroke="#d1d5db" strokeWidth="15" /> : null })}{Array.from({ length: nX }).map((_, i) => { const x = cx + (i + 1) * sT; return x < w ? <line key={`sl2-${i}`} x1={x} y1={cy} x2={x} y2={sh} stroke="#d1d5db" strokeWidth="15" /> : null })}</g>; 
+                            return <g><defs><clipPath id={`cp-${r.id}`}><rect x="-50" y={mY} width={cx + 100} height={sh - mY + 100} /></clipPath></defs>{isB ? <>{dB(!0)}<g clipPath={`url(#cp-${r.id})`}>{dB(!1)}</g></> : dB(!1)}</g>
+                        })()}
+                        
+                        {/* 螺旋樓梯 */}
+                        {stT === 'spiral' && <g><circle cx={w / 2} cy={sh / 2} r={Math.min(w, sh) / 2} fill="none" stroke="#9ca3af" strokeWidth="20" /><circle cx={w / 2} cy={sh / 2} r={Math.min(w, sh) / 10} fill="none" stroke="#9ca3af" strokeWidth="20" />{Array.from({ length: totN }).map((_, i) => <line key={`sp-${i}`} x1={w / 2 + (Math.min(w, sh) / 10) * Math.cos(i * (360 / totN) * Math.PI / 180)} y1={sh / 2 + (Math.min(w, sh) / 10) * Math.sin(i * (360 / totN) * Math.PI / 180)} x2={w / 2 + (Math.min(w, sh) / 2) * Math.cos(i * (360 / totN) * Math.PI / 180)} y2={sh / 2 + (Math.min(w, sh) / 2) * Math.sin(i * (360 / totN) * Math.PI / 180)} stroke="#d1d5db" strokeWidth="15" />)}</g>}
+                        
+                        {/* 電梯井 (Combo) */}
+                        {sL === 'combo' && (() => { 
+                            const isU = stT === 'U';
+                            const eW = isU ? w * (Math.max(r.evW || 2500, 200) / (stairWidthMm * 2 + Math.max(r.evW || 2500, 200))) : (r.evW || 2500); 
+                            const eH = isU ? sh * ((Math.max(steps1, steps2) * stairTread) / (landingDepth + Math.max(steps1, steps2) * stairTread)) : (r.evH || 2500); 
+                            const eX = isU ? w * (stairWidthMm / (stairWidthMm * 2 + Math.max(r.evW || 2500, 200))) : (w - eW) / 2;
+                            const eY = isU ? sh * (landingDepth / (landingDepth + Math.max(steps1, steps2) * stairTread)) : (sh - eH) / 2;
+                            return (
+                                <g transform={`translate(${eX}, ${eY})`}>
+                                    <rect width={eW} height={eH} fill={r.isEmergency ? "#fee2e2" : "#f9fafb"} stroke={r.isEmergency ? "#ef4444" : "#6b7280"} strokeWidth="20" />
+                                    <line x1="0" y1="0" x2={eW} y2={eH} stroke={r.isEmergency ? "#ef4444" : "#6b7280"} strokeWidth="15" />
+                                    <line x1={eW} y1="0" x2="0" y2={eH} stroke={r.isEmergency ? "#ef4444" : "#6b7280"} strokeWidth="15" />
+                                </g> 
+                            );
+                        })()}
+
+                        {/* --- 繪製安全梯門扇與淨空檢討區 (畫在最上層以免被樓梯線蓋住) --- */}
+                        {['indoor', 'special'].includes(e) && (
+                            <g>
+                                {/* 黃色淨空警告區：模擬開門後是否會阻擋通行 */}
+                                <rect x={w - wallThick - doorW - 500} y={sh - doorW - 500} width={doorW + 500} height={doorW + 500} fill="#fef08a" opacity="0.3" />
+                                <text x={w - wallThick - doorW/2} y={sh - doorW - 100} fill="#ef4444" fontSize="400" fontWeight="bold" textAnchor="middle">門扇淨空</text>
+                                
+                                {/* 進入樓梯間的防火門扇開啟軌跡 */}
+                                <path d={`M ${w - wallThick},${sh} L ${w - wallThick},${sh - doorW} A ${doorW} ${doorW} 0 0 0 ${w - wallThick - doorW},${sh}`} fill="none" stroke="#ef4444" strokeWidth="25" strokeDasharray="50,50" />
+                                <line x1={w - wallThick} y1={sh} x2={w - wallThick} y2={sh - doorW} stroke="#1f2937" strokeWidth="40" />
+                            </g>
+                        )}
+                    </g>
+                    {sL !== 'combo' && r.isEmergency && <text x={w / 2} y={ah + sh / 2} fill="#ef4444" fontSize="800" fontWeight="bold" textAnchor="middle" dominantBaseline="middle" transform={`rotate(-90, ${w / 2}, ${ah + sh / 2})`}>非常用</text>}
+                </g>
+            } 
+            
+            if (r.type === 'EV_LOBBY') { const ew = r.evW || 2500, eh = r.evH || 2500, p = 500; return <g transform={`translate(${r.x}, ${r.y})`} className="opacity-70">{(r.elevators || [{ id: r.id + '_legacy', w: ew, h: eh, dx: Math.max(0, r.w - ew - p), dy: p, isEmergency: r.isEmergency }]).map((ev, i) => <g key={ev.id} transform={`translate(${ev.dx}, ${ev.dy})`} className={step >= 2 ? (ui?.dragEv?.evId === ev.id ? "cursor-grabbing" : "cursor-pointer") : "pointer-events-none"} style={{ pointerEvents: step >= 2 ? 'auto' : 'none' }} onPointerDown={step >= 2 ? e => { e.stopPropagation(); const pp = a.ptLocal ? a.ptLocal(e, r.buildingId || a.activeBuildingId) : (a.pt ? a.pt(e) : { x: 0, y: 0 }); a?.setUi(pr => ({ ...pr, dragEv: { roomId: r.id, evId: ev.id, isIt: false }, offX: pp.x - r.x - ev.dx, offY: pp.y - r.y - ev.dy })); try { e.target.setPointerCapture(e.pointerId) } catch (err) { } } : undefined}><rect width={ev.w} height={ev.h} fill={ev.isEmergency ? "#fee2e2" : "#f9fafb"} stroke={ev.isEmergency ? "#ef4444" : "#6b7280"} strokeWidth="20" /><line x1="0" y1="0" x2={ev.w} y2={ev.h} stroke={ev.isEmergency ? "#ef4444" : "#6b7280"} strokeWidth="15" /><line x1={ev.w} y1="0" x2="0" y2={ev.h} stroke={ev.isEmergency ? "#ef4444" : "#6b7280"} strokeWidth="15" />{ev.isEmergency && <text x={ev.w / 2} y={ev.h / 2} fill="#ef4444" fontSize="700" textAnchor="middle" dominantBaseline="middle" fontWeight="bold">非常用</text>}</g>)}</g> } 
+            return null 
+        };
         const rLim = (sw, mh, tL, tR, lp, sbL, sbR) => { if (!lp.show) return null; const dh = mh + 15000, tw = 1500, { roadW, slopeR, baseH, slopeN, northH, northSlope } = lp, ds = (t, iL) => { if (!t || t === 'none') return null; const dir = iL ? 1 : -1, anc = iL ? 0 : sw; const setback = iL ? sbL : sbR; if (t === 'road') { const rs = anc + dir * -(roadW + setback); return <g key={iL ? 'l' : 'r'} className="pointer-events-none opacity-80"><line x1={rs} y1={0} x2={rs + dir * (dh / slopeR)} y2={-dh} stroke="#374151" strokeWidth="40" strokeDasharray="200,200" /><polygon points={`${rs + dir * tw},${-tw * slopeR} ${rs + dir * tw},0 ${rs},0`} fill="none" stroke="#374151" strokeWidth="20" /><text x={rs + dir * tw / 2} y={1000} fill="#374151" fontSize="800" fontWeight="bold" textAnchor="middle">1</text><text x={rs + dir * (tw + 500)} y={-tw * slopeR / 2} fill="#374151" fontSize="800" fontWeight="bold" textAnchor={iL ? "start" : "end"}>{slopeR}</text><line x1={rs} y1={1000} x2={rs} y2={3000} stroke="#374151" strokeWidth="20" /><line x1={rs + dir * roadW} y1={1000} x2={rs + dir * roadW} y2={3000} stroke="#374151" strokeWidth="20" /><line x1={anc} y1={1000} x2={anc} y2={3000} stroke="#374151" strokeWidth="20" /><line x1={rs} y1={2000} x2={rs + dir * roadW} y2={2000} stroke="#374151" strokeWidth="20" markerEnd="url(#arrow)" markerStart="url(#arrow)" /><text x={rs + dir * roadW / 2} y={1500} fill="#374151" fontSize="1000" fontWeight="bold" textAnchor="middle">{(roadW / 1000).toFixed(1)}m</text><line x1={rs + dir * roadW} y1={2000} x2={anc} y2={2000} stroke="#374151" strokeWidth="20" markerEnd="url(#arrow)" markerStart="url(#arrow)" /><text x={anc + dir * -(setback / 2)} y={1500} fill="#374151" fontSize="1000" fontWeight="bold" textAnchor="middle">{(setback / 1000).toFixed(1)}m</text><text x={rs} y={-2000} fill="#374151" fontSize="1200" fontWeight="bold" textAnchor={iL ? "start" : "end"}>道路 1:{slopeR}</text></g> } if (t === 'neighbor') { const ns = anc + dir * -setback; return <g key={iL ? 'l' : 'r'} className="pointer-events-none opacity-80"><line x1={ns} y1={-baseH} x2={ns + dir * ((dh - baseH) / slopeN)} y2={-dh} stroke="#52525b" strokeWidth="40" strokeDasharray="200,200" /><line x1={ns} y1={0} x2={ns} y2={-baseH} stroke="#52525b" strokeWidth="20" strokeDasharray="100,100" /><polygon points={`${ns + dir * tw},${-baseH - tw * slopeN} ${ns + dir * tw},${-baseH} ${ns},${-baseH}`} fill="none" stroke="#52525b" strokeWidth="20" /><text x={ns + dir * tw / 2} y={-baseH + 1000} fill="#52525b" fontSize="800" fontWeight="bold" textAnchor="middle">1</text><text x={ns + dir * (tw + 500)} y={-baseH - tw * slopeN / 2} fill="#52525b" fontSize="800" fontWeight="bold" textAnchor={iL ? "start" : "end"}>{slopeN}</text><line x1={ns} y1={1000} x2={ns} y2={4500} stroke="#52525b" strokeWidth="20" /><line x1={anc} y1={3000} x2={anc} y2={4500} stroke="#52525b" strokeWidth="20" /><line x1={ns} y1={3500} x2={anc} y2={3500} stroke="#52525b" strokeWidth="20" markerEnd="url(#arrow)" markerStart="url(#arrow)" /><text x={anc + dir * -(setback / 2)} y={3000} fill="#52525b" fontSize="1000" fontWeight="bold" textAnchor="middle">{(setback / 1000).toFixed(1)}m</text><text x={ns} y={-baseH - 2000} fill="#52525b" fontSize="1200" fontWeight="bold" textAnchor={iL ? "start" : "end"}>鄰地 1:{slopeN}</text></g> } if (t === 'north') { const setbackNth = setback; return <g key={iL ? 'l' : 'r'} className="pointer-events-none opacity-80"><line x1={anc + dir * -setbackNth} y1={-northH} x2={anc + dir * -setbackNth + dir * ((dh - northH) / northSlope)} y2={-dh} stroke="#71717a" strokeWidth="40" strokeDasharray="200,200" /><line x1={anc + dir * -setbackNth} y1={0} x2={anc + dir * -setbackNth} y2={-northH} stroke="#71717a" strokeWidth="20" strokeDasharray="100,100" /><polygon points={`${anc + dir * -setbackNth + dir * tw},${-northH - tw * northSlope} ${anc + dir * -setbackNth + dir * tw},${-northH} ${anc + dir * -setbackNth},${-northH}`} fill="none" stroke="#71717a" strokeWidth="20" /><text x={anc + dir * -setbackNth + dir * tw / 2} y={-northH + 1000} fill="#71717a" fontSize="800" fontWeight="bold" textAnchor="middle">1</text><text x={anc + dir * -setbackNth + dir * (tw + 500)} y={-northH - tw * northSlope / 2} fill="#71717a" fontSize="800" fontWeight="bold" textAnchor={iL ? "start" : "end"}>{northSlope}</text><text x={anc + dir * -setbackNth} y={-northH - 2000} fill="#71717a" fontSize="1200" fontWeight="bold" textAnchor={iL ? "start" : "end"}>北側 1:{northSlope}</text><line x1={anc + dir * -setbackNth} y1={2000} x2={anc} y2={2000} stroke="#71717a" strokeWidth="20" markerEnd="url(#arrow)" markerStart="url(#arrow)" /><text x={anc + dir * -(setbackNth / 2)} y={1500} fill="#71717a" fontSize="1000" fontWeight="bold" textAnchor="middle">{(setbackNth / 1000).toFixed(1)}m</text></g> } }; return <g>{ds(tL, !0)}{ds(tR, !1)}</g> };
 
         const Icon = memo(({ name, size = 18, className = "" }) => {
@@ -1522,10 +1776,11 @@ const Step3 = memo(({ s, a, t }) => {
                                                                 {(() => {
                                                                     const eD = escPath?.[r.id] || escPath?.[r.id?.toString()];
                                                                     if (!showEsc || !eD) return null;
-                                                                    // support per-room multi-point intPath or legacy intStart/intMid/intDoor
-                                                                    const ip = eD.path || eD.intPath || (eD.intStart && eD.intDoor ? [eD.intStart, eD.intIsL && eD.intMid ? eD.intMid : null, eD.intDoor].filter(Boolean) : null);
+                                                                    const ip = eD.path || null;
                                                                     if (!ip || !ip.length) return null;
-                                                                    const d = `M ${ip.map(pt => `${pt.x} ${pt.y}`).join(' L ')}`;
+                                                                    // 👇 套用 Chaikin 平滑化 👇
+                                                                    const smoothed = applyChaikin(ip, 2);
+                                                                    const d = `M ${smoothed.map(pt => `${pt.x} ${pt.y}`).join(' L ')}`;
                                                                     const s = ip[0];
                                                                     return <g className="pointer-events-none"><path d={d} fill="none" stroke="#3b82f6" strokeWidth="40" strokeDasharray="100,50" /><circle cx={s.x} cy={s.y} r="250" fill="#3b82f6" /></g>;
                                                                 })()}
@@ -1551,6 +1806,9 @@ const Step3 = memo(({ s, a, t }) => {
                                                                     <g className="cursor-pointer" onPointerDown={e => { e.stopPropagation(); e.target.setPointerCapture(e.pointerId); a.setUi(p => ({ ...p, rotId: { id: r.id, t: 'it' } })) }} style={{ pointerEvents: 'auto' }}><line x1={r.x + r.w / 2} y1={r.y} x2={r.x + r.w / 2} y2={r.y - 1500} stroke="#3b82f6" strokeWidth="40" /><circle cx={r.x + r.w / 2} cy={r.y - 1500} r="300" fill="#fff" stroke="#3b82f6" strokeWidth="60" /></g>
                                                                 </g>
                                                             )}
+                                                            
+                                                            {/* 🌟 [修正] 門永遠放在 DOM 最下方，保證在最頂層且不被藍點蓋住 🌟 */}
+                                                            <g style={{ pointerEvents: 'auto' }}>{r.doors?.map(d => rDr(r, d, step, ui, a, !0))}</g>
                                                         </g>
                                                     </g>
                                                     );
@@ -1590,24 +1848,26 @@ const Step3 = memo(({ s, a, t }) => {
                     {bId === activeBuilding && showEsc && escPath && dSpc && (() => {
                         // support both legacy fields and new BFS-based engine which may return per-room multi-point `path` arrays
                         const e = escPath;
-                        // when escPath is a mapping of roomId => { path: [{x,y}, ...], isCompliant }
-                        const globalPath = e.path || (e.start && e.door && e.end ? [e.start, e.door, e.end] : null);
-                        // prefer per-room entry when available
-                        const forRoom = e?.[bId] || null; // not likely, fallback
-                        const p = forRoom && forRoom.path && forRoom.path.length ? forRoom.path : (globalPath && globalPath.length ? globalPath : null);
-                        if (!p || !p.length) return null;
-                        const stroke = (e.isCompliant || (forRoom && forRoom.isCompliant)) ? "#22c55e" : "#ef4444";
-                        const d = `M ${p.map(pt => `${pt.x} ${pt.y}`).join(' L ')}`;
-                        const startPt = p[0];
-                        const endPt = p[p.length - 1];
-                        return (
-                            <g className="pointer-events-none">
-                                {startPt && <circle cx={startPt.x} cy={startPt.y} r="400" fill="#ef4444" className="animate-pulse" />}
-                                <path d={d} fill="none" stroke={stroke} strokeWidth="60" strokeDasharray="200,100" />
-                                {endPt && <circle cx={endPt.x} cy={endPt.y} r="500" fill={stroke} />}
-                            </g>
-                        );
-                    })()}
+                                    const globalPath = e.path || null;
+                                    const forRoom = e?.[bId] || null;
+                                    const p = forRoom && forRoom.path && forRoom.path.length ? forRoom.path : (globalPath && globalPath.length ? globalPath : null);
+                                    if (!p || !p.length) return null;
+                                    const stroke = (e.isCompliant || (forRoom && forRoom.isCompliant)) ? "#22c55e" : "#ef4444";
+                                    
+                                    // 👇 呼叫 Chaikin 讓路線平滑 👇
+                                    const smoothed = applyChaikin(p, 2);
+                                    const d = `M ${smoothed.map(pt => `${pt.x} ${pt.y}`).join(' L ')}`;
+                                    
+                                    const startPt = p[0];
+                                    const endPt = p[p.length - 1];
+                                    return (
+                                        <g className="pointer-events-none">
+                                            {startPt && <circle cx={startPt.x} cy={startPt.y} r="400" fill="#ef4444" className="animate-pulse" />}
+                                            <path d={d} fill="none" stroke={stroke} strokeWidth="60" strokeDasharray="200,100" />
+                                            {endPt && <circle cx={endPt.x} cy={endPt.y} r="500" fill={stroke} />}
+                                        </g>
+                                    );
+                                })()}
                     </g>
                             );
                         })}
@@ -2543,6 +2803,10 @@ const Step3 = memo(({ s, a, t }) => {
             }, [step, ui, pt, ptLocal, drawMode, sitePoly, bldgPoly, room.w, room.h, grid, aFlr, rooms, anc, activeBuilding]);
 
             const ptrMov = useCallback(e => {
+                // --- Apple Pencil & iPad 滑順引擎 ---
+            if (e.pointerType === 'pen' || e.pointerType === 'touch') {
+                if (e.pointerType === 'pen') e.preventDefault(); // 提高採樣精度，忽略系統預設延遲
+            }
                 // multi-touch pinch / two-finger pan handling
                 try {
                     if (e.pointerType === 'touch') {
