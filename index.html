@@ -48,7 +48,7 @@
         }
         /* Touch / iPad improvements */
         #root { touch-action: none; overscroll-behavior: none; }
-        .no-touch-scroll { touch-action: none; overscroll-behavior: none; -webkit-touch-callout: none; -webkit-user-select: none; }
+        .no-touch-scroll { touch-action: none; overscroll-behavior: none; user-select: none; -webkit-user-select: none; -ms-user-select: none; -webkit-touch-callout: none; }
     </style>
 </head>
 
@@ -90,8 +90,8 @@
         I18N.jp = Object.assign(I18N.jp || {}, {
             appTitle: 'データセンター プランナー', pro: 'PRO', step1: '1. 基本設定', step2: '2. 構造システム', step3: '3. 空間計画', step4: '4. 面積表', step5: '5. 断面図\n分析', step6: '6. 情報\n可視化', langToggle: 'TW', importDxf: '建築図面インポート (DXF)', importDxfBtn: 'DXF ファイルをインポート', confirmUnit: '図面単位の確認', unitMm: 'ミリメートル (mm)', unitCm: 'センチメートル (cm)', unitM: 'メートル (m)', newProject: '新規プロジェクト'
         });
-        const SPACE_COLORS = { IT: '#7690B3', UPS: '#ECBC76', IDF: '#B6E0CD', AHU: '#70927B', CHILLER: '#908180', LV: '#EFE19D', SHV_HV: '#ECB66D', GEN: '#3F3E4C', OFFICE: '#F6F2D1', STORAGE: '#D9CFCB', STAIRS: '#504E5D', WATER: '#B6E0CD', EV_LOBBY: '#D9CFCB', PARKING: '#F3EBE9', COOLING_TOWER: '#7690B3', PS: '#908180', DS: '#A39C9B', OUTDOOR: '#B6E0CD', SEMI_OUTDOOR: '#F3EBE9', SUNKEN: '#D9CFCB', VOID: '#FFFFFF', CUSTOM: '#D09590', MAIN_EXIT: '#10B981' };
-               const SPACE_TEXT_COLORS = { IT: '#FFFFFF', UPS: '#1E293B', IDF: '#1E293B', AHU: '#FFFFFF', CHILLER: '#FFFFFF', LV: '#1E293B', SHV_HV: '#1E293B', GEN: '#FFFFFF', OFFICE: '#1E293B', STORAGE: '#1E293B', STAIRS: '#FFFFFF', WATER: '#1E293B', EV_LOBBY: '#1E293B', PARKING: '#1E293B', COOLING_TOWER: '#FFFFFF', PS: '#FFFFFF', DS: '#FFFFFF', OUTDOOR: '#1E293B', SEMI_OUTDOOR: '#1E293B', SUNKEN: '#1E293B', VOID: '#1E293B', CUSTOM: '#FFFFFF', MAIN_EXIT: '#FFFFFF' };
+        const SPACE_COLORS = { IT: '#7690B3', UPS: '#ECBC76', IDF: '#B6E0CD', AHU: '#70927B', CHILLER: '#908180', LV: '#EFE19D', SHV_HV: '#ECB66D', GEN: '#3F3E4C', OFFICE: '#F6F2D1', STORAGE: '#D9CFCB', STAIRS: '#FFFFFF', WATER: '#B6E0CD', EV_LOBBY: '#D9CFCB', PARKING: '#F3EBE9', COOLING_TOWER: '#7690B3', PS: '#908180', DS: '#A39C9B', OUTDOOR: '#B6E0CD', SEMI_OUTDOOR: '#F3EBE9', SUNKEN: '#D9CFCB', VOID: '#FFFFFF', CUSTOM: '#D09590', MAIN_EXIT: '#10B981' };
+        const SPACE_TEXT_COLORS = { IT: '#FFFFFF', UPS: '#1E293B', IDF: '#1E293B', AHU: '#FFFFFF', CHILLER: '#FFFFFF', LV: '#1E293B', SHV_HV: '#1E293B', GEN: '#FFFFFF', OFFICE: '#1E293B', STORAGE: '#1E293B', STAIRS: '#000000', WATER: '#1E293B', EV_LOBBY: '#1E293B', PARKING: '#1E293B', COOLING_TOWER: '#FFFFFF', PS: '#FFFFFF', DS: '#FFFFFF', OUTDOOR: '#1E293B', SEMI_OUTDOOR: '#1E293B', SUNKEN: '#1E293B', VOID: '#1E293B', CUSTOM: '#FFFFFF', MAIN_EXIT: '#FFFFFF' };
         const DEF_CORRIDORS = { top: !1, bottom: !1, left: !1, right: !1 }, DEF_IT_CORRIDORS = { top: !1, bottom: !1, left: !1, right: !1 }, DEF_CORRIDOR_W = { top: 1800, bottom: 1800, left: 1800, right: 1800 };
 
         const calcPolyArea = p => { if (!p || p.length < 3) return 0; let a = 0; for (let i = 0, j = p.length - 1; i < p.length; j = i++)a += (p[j].x + p[i].x) * (p[j].y - p[i].y); return Math.abs(a / 2) / 1e6 };
@@ -449,25 +449,38 @@
                 const p = 0, w = Math.max(0, r.w), h = Math.max(0, r.h);
                 const e = r.evacType || 'normal', a_type = r.anteType || 'room', stT = r.stairType || 'U', sL = r.stairLayout || 'combo'; 
                 
-                // 👇 1. 前室與牆體厚度計算 (法規空間區劃) 👇
-                const ah = e === 'special' ? Math.max(2000, h * 0.25) : 0; // 特別避難梯：前室至少留 2 米深
-                const sh = h - ah; // 扣除前室後的梯間本體高度
-                const wallThick = (e === 'indoor' || e === 'special') ? 200 : 20; // 實體 RC 防火牆(20cm) vs 一般虛擬邊界
-                const wallColor = (e === 'indoor' || e === 'special') ? "#1f2937" : "#9ca3af";
+                const ah = e === 'special' ? Math.max(2000, h * 0.25) : 0; 
+                const sh = h - ah; 
+
+                const wallThick = (e === 'indoor' || e === 'special') ? 200 : 20; 
+                const wallColor = "#000000"; 
                 const wallDash = e === 'normal' ? "100,100" : "none";
 
-                // 👇 2. 樓梯物理尺寸計算 👇
+                // 物理階數與尺寸
                 const stairRiser = r.stairRiser || 200;
                 const stairTread = r.stairTread || 250;
                 const stairWidthMm = r.stairWidth || 1200; 
                 const totN = Math.ceil(fH / stairRiser);
                 const steps1 = Math.floor(totN / 2);
                 const steps2 = totN - steps1;
-                const landingDepth = Math.max(stairWidthMm, 1500); 
+                
+                const hasTopLand = r.topLanding !== false;
+                const hasBottomLand = r.bottomLanding !== false;
+                const tLandDepth = hasTopLand ? (r.topLandDepth || Math.max(stairWidthMm, 1500)) : 0; 
+                const bLandDepth = hasBottomLand ? (r.bottomLandDepth || Math.max(stairWidthMm, 1500)) : 0; 
 
-                // 👇 3. 門扇淨空檢討參數 👇
-                const doorW = 900; // 標準逃生單開門 90cm
-                const requiredLanding = stairWidthMm + doorW; // 平台理想深度：梯寬 + 門寬不干涉
+                // 計算大梁退縮尺寸 (Beam Margin)
+                const bmSize = r.bmSize || 400;
+                const bmT = r.bmTop ? bmSize : 0;
+                const bmB = r.bmBottom ? bmSize : 0;
+                const bmL = r.bmLeft ? bmSize : 0;
+                const bmR = r.bmRight ? bmSize : 0;
+
+                // 扣除大梁後，樓梯本體「真正可用」的內部寬高
+                const ew = Math.max(1, w - bmL - bmR);
+                const esh = Math.max(1, sh - bmT - bmB);
+
+                const doorW = 900; 
 
                 let isB = !0, isT = !1; 
                 if (flrs.length && ans.length) { 
@@ -479,148 +492,345 @@
                 } 
 
                 return <g transform={`translate(${r.x}, ${r.y})`} className="pointer-events-none opacity-90">
-                    
-                    {/* --- 繪製外圍牆體 (RC 防火區劃或一般隔間) --- */}
+                    {/* 最外圍的牆體 (不受大梁退縮影響) */}
                     <rect x={0} y={0} width={w} height={h} fill="none" stroke={wallColor} strokeWidth={wallThick} strokeDasharray={wallDash} />
 
-                    {/* --- 繪製前室 (特別避難階段專用，位於樓梯本體下方) --- */}
+                    {/* 繪製大梁退縮示意區塊 */}
+                    <g className="pointer-events-none">
+                        {r.bmTop && <rect x={0} y={0} width={w} height={bmSize} fill="#f1f5f9" stroke="#cbd5e1" strokeWidth="15" strokeDasharray="50,50" />}
+                        {r.bmBottom && <rect x={0} y={sh - bmSize} width={w} height={bmSize} fill="#f1f5f9" stroke="#cbd5e1" strokeWidth="15" strokeDasharray="50,50" />}
+                        {r.bmLeft && <rect x={0} y={0} width={bmSize} height={sh} fill="#f1f5f9" stroke="#cbd5e1" strokeWidth="15" strokeDasharray="50,50" />}
+                        {r.bmRight && <rect x={w - bmSize} y={0} width={bmSize} height={sh} fill="#f1f5f9" stroke="#cbd5e1" strokeWidth="15" strokeDasharray="50,50" />}
+                    </g>
+
                     {e === 'special' && (
                         <g transform={`translate(0, ${sh})`}>
-                            <rect x={0} y={0} width={w} height={ah} fill="#f8fafc" />
+                            <rect x={0} y={0} width={w} height={ah} fill="#ffffff" />
                             <line x1={0} y1={0} x2={w} y2={0} stroke={wallColor} strokeWidth={wallThick} />
-                            
-                            {/* 前室屬性文字 */}
-                            {a_type === 'smoke' && <text x={w/2} y={ah/2} fill="#64748b" fontSize="800" fontWeight="bold" textAnchor="middle" dominantBaseline="middle" letterSpacing="50">排煙前室</text>}
+                            {a_type === 'smoke' && <text x={w/2} y={ah/2} fill="#000000" fontSize="800" fontWeight="bold" textAnchor="middle" dominantBaseline="middle" letterSpacing="50">排煙前室</text>}
                             {a_type === 'balcony' && <text x={w/2} y={ah/2} fill="#eab308" fontSize="800" fontWeight="bold" textAnchor="middle" dominantBaseline="middle" letterSpacing="50">戶外避難陽台</text>}
-                            {a_type === 'room' && <text x={w/2} y={ah/2} fill="#64748b" fontSize="800" fontWeight="bold" textAnchor="middle" dominantBaseline="middle" letterSpacing="50">附室</text>}
-
-                            {/* 進入前室的防火門 */}
+                            {a_type === 'room' && <text x={w/2} y={ah/2} fill="#000000" fontSize="800" fontWeight="bold" textAnchor="middle" dominantBaseline="middle" letterSpacing="50">附室</text>}
                             <path d={`M ${w - wallThick - doorW},${ah} L ${w - wallThick - doorW},${ah - doorW} A ${doorW} ${doorW} 0 0 1 ${w - wallThick},${ah}`} fill="none" stroke="#ef4444" strokeWidth="20" strokeDasharray="50,50" />
-                            <line x1={w - wallThick - doorW} y1={ah} x2={w - wallThick - doorW} y2={ah - doorW} stroke="#1f2937" strokeWidth="40" />
+                            <line x1={w - wallThick - doorW} y1={ah} x2={w - wallThick - doorW} y2={ah - doorW} stroke="#000000" strokeWidth="40" />
                         </g>
                     )}
 
-                    {/* --- 繪製樓梯本體 --- */}
-                    <g transform={`translate(0, 0)`}>
+                    {/* 樓梯本體：整體向內位移並使用可用寬高 */}
+                    <g transform={`translate(${bmL}, ${bmT})`}>
                         
-                        {/* U型樓梯 */}
                         {stT === 'U' && (() => { 
                             const isC = sL === 'combo';
-                            const eW = isC ? (r.evW || 2500) : 0;
-                            const currentGap = isC ? Math.max(eW, 200) : 200;
+                            const eVW = isC ? (r.evW || 2500) : 0;
+                            const currentGap = isC ? Math.max(eVW, 200) : 200;
                             
                             const innerW = stairWidthMm * 2 + currentGap;
                             const runLength = Math.max(steps1, steps2) * stairTread;
-                            const innerH = landingDepth + runLength;
+                            const innerH = tLandDepth + runLength + bLandDepth;
 
-                            const sW = w * (stairWidthMm / innerW);
-                            const sGap = w * (currentGap / innerW);
-                            const sLand = sh * (landingDepth / innerH);
-                            const sRun = sh * (runLength / innerH);
-                            const sT = sRun / Math.max(steps1, steps2);
-                            const mY = sLand + sRun * 0.55;
+                            const sW = ew * (stairWidthMm / innerW);
+                            const sGap = ew * (currentGap / innerW);
+                            
+                            const validInnerH = innerH || 1;
+                            const sTopLand = esh * (tLandDepth / validInnerH);
+                            const sBottomLand = esh * (bLandDepth / validInnerH);
+                            const sRun = esh * (runLength / validInnerH);
+                            
+                            const sT = sRun / Math.max(steps1, steps2, 1);
+                            const mY = sTopLand + sRun * 0.55;
 
                             const dB = das => (
                                 <g strokeDasharray={das ? "25,25" : "none"}>
-                                    <line x1={0} y1={sLand} x2={w} y2={sLand} stroke="#9ca3af" strokeWidth="20" />
-                                    <rect x={sW} y={sLand} width={sGap} height={sRun} fill="none" stroke="#9ca3af" strokeWidth="20" />
+                                    {hasTopLand && <line x1={0} y1={sTopLand} x2={ew} y2={sTopLand} stroke="#000000" strokeWidth="20" />}
+                                    {hasBottomLand && <line x1={0} y1={esh - sBottomLand} x2={ew} y2={esh - sBottomLand} stroke="#000000" strokeWidth="20" />}
+                                    
+                                    <rect x={sW} y={sTopLand} width={sGap} height={sRun} fill="none" stroke="#000000" strokeWidth="20" />
                                     {Array.from({ length: steps1 }).map((_, i) => { 
-                                        const y = sLand + (i + 1) * sT; 
-                                        return y < sh ? <line key={`ul-${i}`} x1={0} y1={y} x2={sW} y2={y} stroke="#d1d5db" strokeWidth="15" /> : null;
+                                        const y = (esh - sBottomLand) - (i * sT); 
+                                        return y > sTopLand ? <line key={`ul-${i}`} x1={0} y1={y} x2={sW} y2={y} stroke="#000000" strokeWidth="15" /> : null;
                                     })}
                                     {Array.from({ length: steps2 }).map((_, i) => { 
-                                        const y = sLand + (i + 1) * sT; 
-                                        return y < sh ? <line key={`ur-${i}`} x1={sW + sGap} y1={y} x2={w} y2={y} stroke="#d1d5db" strokeWidth="15" /> : null;
+                                        const y = sTopLand + (i * sT); 
+                                        return y < (esh - sBottomLand) ? <line key={`ur-${i}`} x1={sW + sGap} y1={y} x2={ew} y2={y} stroke="#000000" strokeWidth="15" /> : null;
                                     })}
                                 </g>
                             ); 
 
+                            // 🌟 定義折断線（中間層の場合は右半分だけ切断する）
+                            const bLineStartX = (!isB && !isT) ? (sW + sGap / 2) : -50;
+                            const breakLineSVG = <g className="break-line">
+                                <line x1={bLineStartX} y1={mY + 150} x2={ew + 50} y2={mY - 150} stroke="#ffffff" strokeWidth="60" />
+                                <line x1={bLineStartX} y1={mY + 100} x2={ew + 50} y2={mY - 100} stroke="#000000" strokeWidth="15" />
+                                <line x1={bLineStartX} y1={mY + 200} x2={ew + 50} y2={mY} stroke="#000000" strokeWidth="15" />
+                            </g>;
+
+                            // 定義矢印座標
+                            const ptUpStart = { x: sW / 2, y: hasBottomLand ? esh - sBottomLand / 2 : esh - 100 };
+                            const ptUpCut = { x: sW / 2, y: mY };
+                            const ptUpTop = { x: sW / 2, y: hasTopLand ? sTopLand / 2 : 100 };
+                            
+                            const ptDnStart = { x: sW + sGap + sW / 2, y: hasBottomLand ? esh - sBottomLand / 2 : esh - 100 };
+                            const ptDnCut = { x: sW + sGap + sW / 2, y: mY };
+                            const ptDnTop = { x: sW + sGap + sW / 2, y: hasTopLand ? sTopLand / 2 : 100 };
+
+                            let arrowSVG = null;
+                            // サイズ定数（3倍）
+                            const dotR = 90;          // 円の半径 (30 -> 90)
+                            const arrowW = 120;       // 矢印の幅の半分 (40 -> 120)
+                            const arrowL = 240;       // 矢印の長さ (80 -> 240)
+                            const textFS = 1000;      // 文字サイズ (500 -> 1000)
+                            const textOff = 130;      // 文字のオフセット (60 -> 130)
+
+                            if (isB) { 
+                                // 底層：全実線で右下まで貫通
+                                arrowSVG = <>
+                                    <circle cx={ptUpStart.x} cy={ptUpStart.y} r={dotR} fill="#000000" />
+                                    <text x={ptUpStart.x - textOff} y={ptUpStart.y} fill="#000000" fontSize={textFS} fontWeight="bold" textAnchor="end" dominantBaseline="middle">上</text>
+                                    <polyline points={`${ptUpStart.x},${ptUpStart.y} ${ptUpTop.x},${ptUpTop.y} ${ptDnTop.x},${ptDnTop.y} ${ptDnStart.x},${ptDnStart.y}`} fill="none" stroke="#000000" strokeWidth="15" />
+                                    <polygon points={`${ptDnStart.x},${ptDnStart.y} ${ptDnStart.x - arrowW},${ptDnStart.y - arrowL} ${ptDnStart.x + arrowW},${ptDnStart.y - arrowL}`} fill="#000000" />
+                                </>;
+                            } else if (isT) { 
+                                // 頂層：下りのみ
+                                arrowSVG = <>
+                                    <circle cx={ptDnStart.x} cy={ptDnStart.y} r={dotR} fill="#000000" />
+                                    <text x={ptDnStart.x + textOff} y={ptDnStart.y} fill="#000000" fontSize={textFS} fontWeight="bold" textAnchor="start" dominantBaseline="middle">下</text>
+                                    <polyline points={`${ptDnStart.x},${ptDnStart.y} ${ptDnTop.x},${ptDnTop.y} ${ptUpTop.x},${ptUpTop.y} ${ptUpStart.x},${ptUpStart.y}`} fill="none" stroke="#000000" strokeWidth="15" />
+                                    <polygon points={`${ptUpStart.x},${ptUpStart.y} ${ptUpStart.x - arrowW},${ptUpStart.y - arrowL} ${ptUpStart.x + arrowW},${ptUpStart.y - arrowL}`} fill="#000000" />
+                                </>;
+                            } else { 
+                                // 中間層：右側で上下が合流
+                                arrowSVG = <>
+                                    {breakLineSVG}
+                                    <circle cx={ptUpStart.x} cy={ptUpStart.y} r={dotR} fill="#000000" />
+                                    <text x={ptUpStart.x - textOff} y={ptUpStart.y} fill="#000000" fontSize={textFS} fontWeight="bold" textAnchor="end" dominantBaseline="middle">上</text>
+                                    <polyline points={`${ptUpStart.x},${ptUpStart.y} ${ptUpTop.x},${ptUpTop.y} ${ptDnTop.x},${ptDnTop.y} ${ptDnCut.x},${ptDnCut.y}`} fill="none" stroke="#000000" strokeWidth="15" />
+                                    <polygon points={`${ptDnCut.x},${ptDnCut.y} ${ptDnCut.x - arrowW},${ptDnCut.y - arrowL} ${ptDnCut.x + arrowW},${ptDnCut.y - arrowL}`} fill="#000000" />
+                                    
+                                    <circle cx={ptDnStart.x} cy={ptDnStart.y} r={dotR} fill="#000000" />
+                                    <text x={ptDnStart.x + textOff} y={ptDnStart.y} fill="#000000" fontSize={textFS} fontWeight="bold" textAnchor="start" dominantBaseline="middle">下</text>
+                                    <polyline points={`${ptDnStart.x},${ptDnStart.y} ${ptDnCut.x},${ptDnCut.y}`} fill="none" stroke="#000000" strokeWidth="15" />
+                                    <polygon points={`${ptDnCut.x},${ptDnCut.y} ${ptDnCut.x - arrowW},${ptDnCut.y + arrowL} ${ptDnCut.x + arrowW},${ptDnCut.y + arrowL}`} fill="#000000" />
+                                </>;
+                            }
+
+                            // 階層に応じた実線表示範囲の定義（中間層のみクリップする）
+                            const clipPathDef = (!isB && !isT) 
+                                ? <path d={`M -50 -50 L ${sW + sGap/2} -50 L ${sW + sGap/2} ${mY} L ${ew + 50} ${mY} L ${ew + 50} ${esh + 100} L -50 ${esh + 100} Z`} />
+                                : <rect x="-50" y="-50" width={ew + 100} height={esh + 100} />;
+
                             return (
                                 <g>
-                                    <defs><clipPath id={`cp-${r.id}`}><rect x="-50" y={mY} width={w + 100} height={sh - mY + 100} /></clipPath></defs>
-                                    {isB ? <>{dB(!0)}<g clipPath={`url(#cp-${r.id})`}>{dB(!1)}</g></> : dB(!1)}
+                                    <defs><clipPath id={`cp-${r.id}`}>{clipPathDef}</clipPath></defs>
+                                    {/* 🌟 修正：底層(isB)と頂層(isT)は完全に実線で描画し、中間層だけ点線と実線を切り替える */}
+                                    {isB || isT ? dB(!1) : <>{dB(!0)}<g clipPath={`url(#cp-${r.id})`}>{dB(!1)}</g></>}
                                     <g className="pointer-events-none opacity-80">
-                                        {!isT && <g><circle cx={sW / 2} cy={sh - 100} r="30" fill="#111827" /><text x={sW / 2 - 60} y={sh - 100} fill="#111827" fontSize="500" fontWeight="bold" textAnchor="end" dominantBaseline="middle">上</text><polyline points={`${sW / 2},${sh - 100} ${sW / 2},${sLand / 2} ${sW + sGap + sW / 2},${sLand / 2} ${sW + sGap + sW / 2},${sh - 100}`} fill="none" stroke="#111827" strokeWidth="15" /><polygon points={`${sW + sGap + sW / 2},${sh - 100} ${sW + sGap + sW / 2 - 40},${sh - 180} ${sW + sGap + sW / 2 + 40},${sh - 180}`} fill="#111827" /></g>}
+                                        {arrowSVG}
                                     </g>
                                 </g>
-                            ); 
+                            );
                         })()}
                         
-                        {/* 直通樓梯 */}
                         {stT === 'straight' && (() => { 
-                            const innerH = landingDepth * 2 + (totN * stairTread);
-                            const sLand = sh * (landingDepth / innerH);
-                            const sRun = sh * ((totN * stairTread) / innerH);
-                            const sT = sRun / totN;
-                            const mY = sLand + sRun * 0.55;
+                            const innerH = tLandDepth + (totN * stairTread) + bLandDepth;
+                            const validInnerH = innerH || 1;
+                            const sTopLand = esh * (tLandDepth / validInnerH);
+                            const sBottomLand = esh * (bLandDepth / validInnerH);
+                            const sRun = esh * ((totN * stairTread) / validInnerH);
+                            const sT = sRun / Math.max(1, totN);
+                            const mY = sTopLand + sRun * 0.55;
 
                             const dB = das => (
                                 <g strokeDasharray={das ? "25,25" : "none"}>
-                                    <line x1={0} y1={sLand} x2={w} y2={sLand} stroke="#9ca3af" strokeWidth="20" />
-                                    <line x1={0} y1={sh - sLand} x2={w} y2={sh - sLand} stroke="#9ca3af" strokeWidth="20" />
+                                    {hasTopLand && <line x1={0} y1={sTopLand} x2={ew} y2={sTopLand} stroke="#000000" strokeWidth="20" />}
+                                    {hasBottomLand && <line x1={0} y1={esh - sBottomLand} x2={ew} y2={esh - sBottomLand} stroke="#000000" strokeWidth="20" />}
                                     {Array.from({ length: totN }).map((_, i) => { 
-                                        const y = sLand + (i + 1) * sT; 
-                                        return y < sh - sLand ? <line key={`str-${i}`} x1={0} y1={y} x2={w} y2={y} stroke="#d1d5db" strokeWidth="15" /> : null;
+                                        const y = sTopLand + (i + 1) * sT; 
+                                        return y < esh - sBottomLand ? <line key={`str-${i}`} x1={0} y1={y} x2={ew} y2={y} stroke="#000000" strokeWidth="15" /> : null;
                                     })}
                                 </g>
                             ); 
 
+                            const breakLineSVG = <g className="break-line">
+                                <line x1={-50} y1={mY + 150} x2={ew + 50} y2={mY - 150} stroke="#ffffff" strokeWidth="60" />
+                                <line x1={-50} y1={mY + 100} x2={ew + 50} y2={mY - 100} stroke="#000000" strokeWidth="15" />
+                                <line x1={-50} y1={mY + 200} x2={ew + 50} y2={mY} stroke="#000000" strokeWidth="15" />
+                            </g>;
+
+                            const sUpStart = { x: ew / 2, y: hasBottomLand ? esh - sBottomLand / 2 : esh - 100 };
+                            const sUpMid = { x: ew / 2, y: mY };
+                            const sDnStart = { x: ew / 2, y: hasTopLand ? sTopLand / 2 : 100 };
+                            const sDnMid = { x: ew / 2, y: mY };
+
+                            let arrowSVG = null;
+                            const dotR = 90;
+                            const arrowW = 120;
+                            const arrowL = 240;
+                            const textFS = 1000;
+                            const textOff = 130;
+
+                            if (isB) {
+                                arrowSVG = <>
+                                    <circle cx={sUpStart.x} cy={sUpStart.y} r={dotR} fill="#000000" />
+                                    <text x={sUpStart.x - textOff} y={sUpStart.y} fill="#000000" fontSize={textFS} fontWeight="bold" textAnchor="end" dominantBaseline="middle">上</text>
+                                    <polyline points={`${sUpStart.x},${sUpStart.y} ${sDnStart.x},${sDnStart.y}`} fill="none" stroke="#000000" strokeWidth="15" />
+                                    <polygon points={`${sDnStart.x},${sDnStart.y} ${sDnStart.x - arrowW},${sDnStart.y + arrowL} ${sDnStart.x + arrowW},${sDnStart.y + arrowL}`} fill="#000000" />
+                                </>;
+                            } else if (isT) {
+                                arrowSVG = <>
+                                    <circle cx={sDnStart.x} cy={sDnStart.y} r={dotR} fill="#000000" />
+                                    <text x={sDnStart.x + textOff} y={sDnStart.y} fill="#000000" fontSize={textFS} fontWeight="bold" textAnchor="start" dominantBaseline="middle">下</text>
+                                    <polyline points={`${sDnStart.x},${sDnStart.y} ${sUpStart.x},${sUpStart.y}`} fill="none" stroke="#000000" strokeWidth="15" />
+                                    <polygon points={`${sUpStart.x},${sUpStart.y} ${sUpStart.x - arrowW},${sUpStart.y - arrowL} ${sUpStart.x + arrowW},${sUpStart.y - arrowL}`} fill="#000000" />
+                                </>;
+                            } else {
+                                arrowSVG = <>
+                                    {breakLineSVG}
+                                    <circle cx={sUpStart.x} cy={sUpStart.y} r={dotR} fill="#000000" />
+                                    <text x={sUpStart.x - textOff} y={sUpStart.y} fill="#000000" fontSize={textFS} fontWeight="bold" textAnchor="end" dominantBaseline="middle">上</text>
+                                    <polyline points={`${sUpStart.x},${sUpStart.y} ${sUpMid.x},${sUpMid.y}`} fill="none" stroke="#000000" strokeWidth="15" />
+                                    <polygon points={`${sUpMid.x},${sUpMid.y} ${sUpMid.x - arrowW},${sUpMid.y + arrowL} ${sUpMid.x + arrowW},${sUpMid.y + arrowL}`} fill="#000000" />
+                                    
+                                    <circle cx={sDnStart.x} cy={sDnStart.y} r={dotR} fill="#000000" />
+                                    <text x={sDnStart.x + textOff} y={sDnStart.y} fill="#000000" fontSize={textFS} fontWeight="bold" textAnchor="start" dominantBaseline="middle">下</text>
+                                    <polyline points={`${sDnStart.x},${sDnStart.y} ${sDnMid.x},${sDnMid.y}`} fill="none" stroke="#000000" strokeWidth="15" />
+                                    <polygon points={`${sDnMid.x},${sDnMid.y} ${sDnMid.x - arrowW},${sDnMid.y - arrowL} ${sDnMid.x + arrowW},${sDnMid.y - arrowL}`} fill="#000000" />
+                                </>;
+                            }
+
                             return (
                                 <g>
-                                    <defs><clipPath id={`cp-${r.id}`}><rect x="-50" y={mY} width={w + 100} height={sh - mY + 100} /></clipPath></defs>
-                                    {isB ? <>{dB(!0)}<g clipPath={`url(#cp-${r.id})`}>{dB(!1)}</g></> : dB(!1)}
+                                    <defs><clipPath id={`cp-${r.id}`}><rect x="-50" y={mY} width={ew + 100} height={esh - mY + 100} /></clipPath></defs>
+                                    {/* 🌟 修正：底層と頂層はクリップを使用せず、完全に実線で描画 */}
+                                    {isB || isT ? dB(!1) : <>{dB(!0)}<g clipPath={`url(#cp-${r.id})`}>{dB(!1)}</g></>}
                                     <g className="pointer-events-none opacity-80">
-                                        {!isT && <g><circle cx={w / 2} cy={sh - 100} r="30" fill="#111827" /><text x={w / 2 - 60} y={sh - 100} fill="#111827" fontSize="500" fontWeight="bold" textAnchor="end" dominantBaseline="middle">上</text><line x1={w / 2} y1={sh - 100} x2={w / 2} y2={100} stroke="#111827" strokeWidth="15" /><polygon points={`${w / 2},100 ${w / 2 - 40},180 ${w / 2 + 40},180`} fill="#111827" /></g>}
+                                        {arrowSVG}
+                                    </g>
+                                </g>
+                            );
+                        })()}
+                        
+                        {stT === 'straight' && (() => { 
+                            const innerH = tLandDepth + (totN * stairTread) + bLandDepth;
+                            const validInnerH = innerH || 1;
+                            const sTopLand = esh * (tLandDepth / validInnerH);
+                            const sBottomLand = esh * (bLandDepth / validInnerH);
+                            const sRun = esh * ((totN * stairTread) / validInnerH);
+                            const sT = sRun / Math.max(1, totN);
+                            const mY = sTopLand + sRun * 0.55;
+
+                            const dB = das => (
+                                <g strokeDasharray={das ? "25,25" : "none"}>
+                                    {hasTopLand && <line x1={0} y1={sTopLand} x2={ew} y2={sTopLand} stroke="#000000" strokeWidth="20" />}
+                                    {hasBottomLand && <line x1={0} y1={esh - sBottomLand} x2={ew} y2={esh - sBottomLand} stroke="#000000" strokeWidth="20" />}
+                                    {Array.from({ length: totN }).map((_, i) => { 
+                                        const y = sTopLand + (i + 1) * sT; 
+                                        return y < esh - sBottomLand ? <line key={`str-${i}`} x1={0} y1={y} x2={ew} y2={y} stroke="#000000" strokeWidth="15" /> : null;
+                                    })}
+                                </g>
+                            ); 
+
+                            const breakLineSVG = <g className="break-line">
+                                <line x1={-50} y1={mY + 150} x2={ew + 50} y2={mY - 150} stroke="#ffffff" strokeWidth="60" />
+                                <line x1={-50} y1={mY + 100} x2={ew + 50} y2={mY - 100} stroke="#000000" strokeWidth="15" />
+                                <line x1={-50} y1={mY + 200} x2={ew + 50} y2={mY} stroke="#000000" strokeWidth="15" />
+                            </g>;
+
+                            const sUpStart = { x: ew / 2, y: hasBottomLand ? esh - sBottomLand / 2 : esh - 100 };
+                            const sUpMid = { x: ew / 2, y: mY };
+                            const sDnStart = { x: ew / 2, y: hasTopLand ? sTopLand / 2 : 100 };
+                            const sDnMid = { x: ew / 2, y: mY };
+
+                            let arrowSVG = null;
+                            if (isB) { 
+                                // 底層：只有上箭頭，畫到裁切線
+                                arrowSVG = <>
+                                    {breakLineSVG}
+                                    <circle cx={ptUpStart.x} cy={ptUpStart.y} r="30" fill="#000000" />
+                                    <text x={ptUpStart.x - 60} y={ptUpStart.y} fill="#000000" fontSize="500" fontWeight="bold" textAnchor="end" dominantBaseline="middle">上</text>
+                                    <polyline points={`${ptUpStart.x},${ptUpStart.y} ${ptUpCut.x},${ptUpCut.y}`} fill="none" stroke="#000000" strokeWidth="15" />
+                                    <polygon points={`${ptUpCut.x},${ptUpCut.y} ${ptUpCut.x - 40},${ptUpCut.y + 80} ${ptUpCut.x + 40},${ptUpCut.y + 80}`} fill="#000000" />
+                                </>;
+                            } else if (isT) { 
+                                // 頂層：無裁切線，U型連續箭頭往下走
+                                arrowSVG = <>
+                                    <circle cx={ptDnStart.x} cy={ptDnStart.y} r="30" fill="#000000" />
+                                    <text x={ptDnStart.x + 60} y={ptDnStart.y} fill="#000000" fontSize="500" fontWeight="bold" textAnchor="start" dominantBaseline="middle">下</text>
+                                    <polyline points={`${ptDnStart.x},${ptDnStart.y} ${ptDnTop.x},${ptDnTop.y} ${ptUpTop.x},${ptUpTop.y} ${ptUpStart.x},${ptUpStart.y}`} fill="none" stroke="#000000" strokeWidth="15" />
+                                    <polygon points={`${ptUpStart.x},${ptUpStart.y} ${ptUpStart.x - 40},${ptUpStart.y - 80} ${ptUpStart.x + 40},${ptUpStart.y - 80}`} fill="#000000" />
+                                </>;
+                            } else { 
+                                // 中間層：依據你的橘色修改圖，完美繞過上方平台！
+                                arrowSVG = <>
+                                    {breakLineSVG}
+                                    {/* 上箭頭 (繞過頂部平台，來到右側裁切線) */}
+                                    <circle cx={ptUpStart.x} cy={ptUpStart.y} r="30" fill="#000000" />
+                                    <text x={ptUpStart.x - 60} y={ptUpStart.y} fill="#000000" fontSize="500" fontWeight="bold" textAnchor="end" dominantBaseline="middle">上</text>
+                                    <polyline points={`${ptUpStart.x},${ptUpStart.y} ${ptUpTop.x},${ptUpTop.y} ${ptDnTop.x},${ptDnTop.y} ${ptDnCut.x},${ptDnCut.y}`} fill="none" stroke="#000000" strokeWidth="15" />
+                                    {/* 箭頭朝下 (指向右側裁切線) */}
+                                    <polygon points={`${ptDnCut.x},${ptDnCut.y} ${ptDnCut.x - 40},${ptDnCut.y - 80} ${ptDnCut.x + 40},${ptDnCut.y - 80}`} fill="#000000" />
+                                    
+                                    {/* 下箭頭 (從右下到右側裁切線) */}
+                                    <circle cx={ptDnStart.x} cy={ptDnStart.y} r="30" fill="#000000" />
+                                    <text x={ptDnStart.x + 60} y={ptDnStart.y} fill="#000000" fontSize="500" fontWeight="bold" textAnchor="start" dominantBaseline="middle">下</text>
+                                    <polyline points={`${ptDnStart.x},${ptDnStart.y} ${ptDnCut.x},${ptDnCut.y}`} fill="none" stroke="#000000" strokeWidth="15" />
+                                    {/* 箭頭朝上 (指向右側裁切線) */}
+                                    <polygon points={`${ptDnCut.x},${ptDnCut.y} ${ptDnCut.x - 40},${ptDnCut.y + 80} ${ptDnCut.x + 40},${ptDnCut.y + 80}`} fill="#000000" />
+                                </>;
+                            }
+
+                            return (
+                                <g>
+                                    <defs><clipPath id={`cp-${r.id}`}><rect x="-50" y={mY} width={ew + 100} height={esh - mY + 100} /></clipPath></defs>
+                                    {!isT ? <>{dB(!0)}<g clipPath={`url(#cp-${r.id})`}>{dB(!1)}</g></> : dB(!1)}
+                                    <g className="pointer-events-none opacity-80">
+                                        {arrowSVG}
                                     </g>
                                 </g>
                             ); 
                         })()}
                         
-                        {/* L 型樓梯 */}
                         {stT === 'L' && (() => { 
                             const sT = stairTread;
-                            const cx = r.stairWidth || 1200, cy = sh - (r.stairWidth || 1200), nX = Math.ceil(totN / 2), nY = Math.floor(totN / 2), mY = cy + (sh - cy) * 0.55, mX = cx + (w - cx) * 0.45; 
-                            const dB = das => <g strokeDasharray={das ? "25,25" : "none"}><line x1={cx} y1="0" x2={cx} y2={cy} stroke="#9ca3af" strokeWidth="20" /><line x1={cx} y1={cy} x2={w} y2={cy} stroke="#9ca3af" strokeWidth="20" />{Array.from({ length: nY }).map((_, i) => { const y = (i + 1) * sT; return y < cy ? <line key={`sl1-${i}`} x1="0" y1={y} x2={cx} y2={y} stroke="#d1d5db" strokeWidth="15" /> : null })}{Array.from({ length: nX }).map((_, i) => { const x = cx + (i + 1) * sT; return x < w ? <line key={`sl2-${i}`} x1={x} y1={cy} x2={x} y2={sh} stroke="#d1d5db" strokeWidth="15" /> : null })}</g>; 
-                            return <g><defs><clipPath id={`cp-${r.id}`}><rect x="-50" y={mY} width={cx + 100} height={sh - mY + 100} /></clipPath></defs>{isB ? <>{dB(!0)}<g clipPath={`url(#cp-${r.id})`}>{dB(!1)}</g></> : dB(!1)}</g>
+                            const cx = r.stairWidth || 1200, cy = esh - (r.stairWidth || 1200), nX = Math.ceil(totN / 2), nY = Math.floor(totN / 2), mY = cy + (esh - cy) * 0.55, mX = cx + (ew - cx) * 0.45; 
+                            const dB = das => <g strokeDasharray={das ? "25,25" : "none"}><line x1={cx} y1="0" x2={cx} y2={cy} stroke="#000000" strokeWidth="20" /><line x1={cx} y1={cy} x2={ew} y2={cy} stroke="#000000" strokeWidth="20" />{Array.from({ length: nY }).map((_, i) => { const y = (i + 1) * sT; return y < cy ? <line key={`sl1-${i}`} x1="0" y1={y} x2={cx} y2={y} stroke="#000000" strokeWidth="15" /> : null })}{Array.from({ length: nX }).map((_, i) => { const x = cx + (i + 1) * sT; return x < ew ? <line key={`sl2-${i}`} x1={x} y1={cy} x2={x} y2={esh} stroke="#000000" strokeWidth="15" /> : null })}</g>; 
+                            return <g><defs><clipPath id={`cp-${r.id}`}><rect x="-50" y={mY} width={cx + 100} height={esh - mY + 100} /></clipPath></defs>{isB ? <>{dB(!0)}<g clipPath={`url(#cp-${r.id})`}>{dB(!1)}</g></> : dB(!1)}</g>
                         })()}
                         
-                        {/* 螺旋樓梯 */}
-                        {stT === 'spiral' && <g><circle cx={w / 2} cy={sh / 2} r={Math.min(w, sh) / 2} fill="none" stroke="#9ca3af" strokeWidth="20" /><circle cx={w / 2} cy={sh / 2} r={Math.min(w, sh) / 10} fill="none" stroke="#9ca3af" strokeWidth="20" />{Array.from({ length: totN }).map((_, i) => <line key={`sp-${i}`} x1={w / 2 + (Math.min(w, sh) / 10) * Math.cos(i * (360 / totN) * Math.PI / 180)} y1={sh / 2 + (Math.min(w, sh) / 10) * Math.sin(i * (360 / totN) * Math.PI / 180)} x2={w / 2 + (Math.min(w, sh) / 2) * Math.cos(i * (360 / totN) * Math.PI / 180)} y2={sh / 2 + (Math.min(w, sh) / 2) * Math.sin(i * (360 / totN) * Math.PI / 180)} stroke="#d1d5db" strokeWidth="15" />)}</g>}
+                        {stT === 'spiral' && <g><circle cx={ew / 2} cy={esh / 2} r={Math.min(ew, esh) / 2} fill="none" stroke="#000000" strokeWidth="20" /><circle cx={ew / 2} cy={esh / 2} r={Math.min(ew, esh) / 10} fill="none" stroke="#000000" strokeWidth="20" />{Array.from({ length: totN }).map((_, i) => <line key={`sp-${i}`} x1={ew / 2 + (Math.min(ew, esh) / 10) * Math.cos(i * (360 / totN) * Math.PI / 180)} y1={esh / 2 + (Math.min(ew, esh) / 10) * Math.sin(i * (360 / totN) * Math.PI / 180)} x2={ew / 2 + (Math.min(ew, esh) / 2) * Math.cos(i * (360 / totN) * Math.PI / 180)} y2={esh / 2 + (Math.min(ew, esh) / 2) * Math.sin(i * (360 / totN) * Math.PI / 180)} stroke="#000000" strokeWidth="15" />)}</g>}
                         
-                        {/* 電梯井 (Combo) */}
                         {sL === 'combo' && (() => { 
                             const isU = stT === 'U';
-                            const eW = isU ? w * (Math.max(r.evW || 2500, 200) / (stairWidthMm * 2 + Math.max(r.evW || 2500, 200))) : (r.evW || 2500); 
-                            const eH = isU ? sh * ((Math.max(steps1, steps2) * stairTread) / (landingDepth + Math.max(steps1, steps2) * stairTread)) : (r.evH || 2500); 
-                            const eX = isU ? w * (stairWidthMm / (stairWidthMm * 2 + Math.max(r.evW || 2500, 200))) : (w - eW) / 2;
-                            const eY = isU ? sh * (landingDepth / (landingDepth + Math.max(steps1, steps2) * stairTread)) : (sh - eH) / 2;
+                            const eVW = isU ? ew * (Math.max(r.evW || 2500, 200) / (stairWidthMm * 2 + Math.max(r.evW || 2500, 200))) : (r.evW || 2500); 
+                            
+                            const innerH = isU ? (tLandDepth + Math.max(steps1, steps2) * stairTread + bLandDepth) : (tLandDepth + totN * stairTread + bLandDepth);
+                            const validInnerH = innerH || 1;
+                            const eH = isU ? esh * ((Math.max(steps1, steps2) * stairTread) / validInnerH) : (r.evH || 2500); 
+
+                            const eX = isU ? ew * (stairWidthMm / (stairWidthMm * 2 + Math.max(r.evW || 2500, 200))) : (ew - eVW) / 2;
+                            const eY = isU ? esh * (tLandDepth / validInnerH) : (esh - eH) / 2;
+
                             return (
                                 <g transform={`translate(${eX}, ${eY})`}>
-                                    <rect width={eW} height={eH} fill={r.isEmergency ? "#fee2e2" : "#f9fafb"} stroke={r.isEmergency ? "#ef4444" : "#6b7280"} strokeWidth="20" />
-                                    <line x1="0" y1="0" x2={eW} y2={eH} stroke={r.isEmergency ? "#ef4444" : "#6b7280"} strokeWidth="15" />
-                                    <line x1={eW} y1="0" x2="0" y2={eH} stroke={r.isEmergency ? "#ef4444" : "#6b7280"} strokeWidth="15" />
+                                    <rect width={eVW} height={eH} fill={r.isEmergency ? "#fee2e2" : "#ffffff"} stroke={r.isEmergency ? "#ef4444" : "#000000"} strokeWidth="20" />
+                                    <line x1="0" y1="0" x2={eVW} y2={eH} stroke={r.isEmergency ? "#ef4444" : "#000000"} strokeWidth="15" />
+                                    <line x1={eVW} y1="0" x2="0" y2={eH} stroke={r.isEmergency ? "#ef4444" : "#000000"} strokeWidth="15" />
                                 </g> 
                             );
                         })()}
-
-                        {/* --- 繪製安全梯門扇與淨空檢討區 (畫在最上層以免被樓梯線蓋住) --- */}
-                        {['indoor', 'special'].includes(e) && (
-                            <g>
-                                {/* 黃色淨空警告區：模擬開門後是否會阻擋通行 */}
-                                <rect x={w - wallThick - doorW - 500} y={sh - doorW - 500} width={doorW + 500} height={doorW + 500} fill="#fef08a" opacity="0.3" />
-                                <text x={w - wallThick - doorW/2} y={sh - doorW - 100} fill="#ef4444" fontSize="400" fontWeight="bold" textAnchor="middle">門扇淨空</text>
-                                
-                                {/* 進入樓梯間的防火門扇開啟軌跡 */}
-                                <path d={`M ${w - wallThick},${sh} L ${w - wallThick},${sh - doorW} A ${doorW} ${doorW} 0 0 0 ${w - wallThick - doorW},${sh}`} fill="none" stroke="#ef4444" strokeWidth="25" strokeDasharray="50,50" />
-                                <line x1={w - wallThick} y1={sh} x2={w - wallThick} y2={sh - doorW} stroke="#1f2937" strokeWidth="40" />
-                            </g>
-                        )}
                     </g>
+                    {/* 門扇淨空區 (不受退縮影響，依然貼在外牆) */}
+                    {['indoor', 'special'].includes(e) && (
+                        <g>
+                            <rect x={w - wallThick - doorW - 500} y={sh - doorW - 500} width={doorW + 500} height={doorW + 500} fill="#fef08a" opacity="0.3" />
+                            <text x={w - wallThick - doorW/2} y={sh - doorW - 100} fill="#ef4444" fontSize="400" fontWeight="bold" textAnchor="middle">門扇淨空</text>
+                            <path d={`M ${w - wallThick},${sh} L ${w - wallThick},${sh - doorW} A ${doorW} ${doorW} 0 0 0 ${w - wallThick - doorW},${sh}`} fill="none" stroke="#ef4444" strokeWidth="25" strokeDasharray="50,50" />
+                            <line x1={w - wallThick} y1={sh} x2={w - wallThick} y2={sh - doorW} stroke="#000000" strokeWidth="40" />
+                        </g>
+                    )}
                     {sL !== 'combo' && r.isEmergency && <text x={w / 2} y={ah + sh / 2} fill="#ef4444" fontSize="800" fontWeight="bold" textAnchor="middle" dominantBaseline="middle" transform={`rotate(-90, ${w / 2}, ${ah + sh / 2})`}>非常用</text>}
                 </g>
             } 
             
-            if (r.type === 'EV_LOBBY') { const ew = r.evW || 2500, eh = r.evH || 2500, p = 500; return <g transform={`translate(${r.x}, ${r.y})`} className="opacity-70">{(r.elevators || [{ id: r.id + '_legacy', w: ew, h: eh, dx: Math.max(0, r.w - ew - p), dy: p, isEmergency: r.isEmergency }]).map((ev, i) => <g key={ev.id} transform={`translate(${ev.dx}, ${ev.dy})`} className={step >= 2 ? (ui?.dragEv?.evId === ev.id ? "cursor-grabbing" : "cursor-pointer") : "pointer-events-none"} style={{ pointerEvents: step >= 2 ? 'auto' : 'none' }} onPointerDown={step >= 2 ? e => { e.stopPropagation(); const pp = a.ptLocal ? a.ptLocal(e, r.buildingId || a.activeBuildingId) : (a.pt ? a.pt(e) : { x: 0, y: 0 }); a?.setUi(pr => ({ ...pr, dragEv: { roomId: r.id, evId: ev.id, isIt: false }, offX: pp.x - r.x - ev.dx, offY: pp.y - r.y - ev.dy })); try { e.target.setPointerCapture(e.pointerId) } catch (err) { } } : undefined}><rect width={ev.w} height={ev.h} fill={ev.isEmergency ? "#fee2e2" : "#f9fafb"} stroke={ev.isEmergency ? "#ef4444" : "#6b7280"} strokeWidth="20" /><line x1="0" y1="0" x2={ev.w} y2={ev.h} stroke={ev.isEmergency ? "#ef4444" : "#6b7280"} strokeWidth="15" /><line x1={ev.w} y1="0" x2="0" y2={ev.h} stroke={ev.isEmergency ? "#ef4444" : "#6b7280"} strokeWidth="15" />{ev.isEmergency && <text x={ev.w / 2} y={ev.h / 2} fill="#ef4444" fontSize="700" textAnchor="middle" dominantBaseline="middle" fontWeight="bold">非常用</text>}</g>)}</g> } 
+            if (r.type === 'EV_LOBBY') { const ew = r.evW || 2500, eh = r.evH || 2500, p = 500; return <g transform={`translate(${r.x}, ${r.y})`} className="opacity-70">{(r.elevators || [{ id: r.id + '_legacy', w: ew, h: eh, dx: Math.max(0, r.w - ew - p), dy: p, isEmergency: r.isEmergency }]).map((ev, i) => <g key={ev.id} transform={`translate(${ev.dx}, ${ev.dy})`} className={step >= 2 ? (ui?.dragEv?.evId === ev.id ? "cursor-grabbing" : "cursor-pointer") : "pointer-events-none"} style={{ pointerEvents: step >= 2 ? 'auto' : 'none' }} onPointerDown={step >= 2 ? e => { e.stopPropagation(); const pp = a.ptLocal ? a.ptLocal(e, r.buildingId || a.activeBuildingId) : (a.pt ? a.pt(e) : { x: 0, y: 0 }); a?.setUi(pr => ({ ...pr, dragEv: { roomId: r.id, evId: ev.id, isIt: false }, offX: pp.x - r.x - ev.dx, offY: pp.y - r.y - ev.dy })); try { e.target.setPointerCapture(e.pointerId) } catch (err) { } } : undefined}><rect width={ev.w} height={ev.h} fill={ev.isEmergency ? "#fee2e2" : "#ffffff"} stroke={ev.isEmergency ? "#ef4444" : "#000000"} strokeWidth="20" /><line x1="0" y1="0" x2={ev.w} y2={ev.h} stroke={ev.isEmergency ? "#ef4444" : "#000000"} strokeWidth="15" /><line x1={ev.w} y1="0" x2="0" y2={ev.h} stroke={ev.isEmergency ? "#ef4444" : "#000000"} strokeWidth="15" />{ev.isEmergency && <text x={ev.w / 2} y={ev.h / 2} fill="#ef4444" fontSize="700" textAnchor="middle" dominantBaseline="middle" fontWeight="bold">非常用</text>}</g>)}</g> } 
             return null 
         };
         const rLim = (sw, mh, tL, tR, lp, sbL, sbR) => { if (!lp.show) return null; const dh = mh + 15000, tw = 1500, { roadW, slopeR, baseH, slopeN, northH, northSlope } = lp, ds = (t, iL) => { if (!t || t === 'none') return null; const dir = iL ? 1 : -1, anc = iL ? 0 : sw; const setback = iL ? sbL : sbR; if (t === 'road') { const rs = anc + dir * -(roadW + setback); return <g key={iL ? 'l' : 'r'} className="pointer-events-none opacity-80"><line x1={rs} y1={0} x2={rs + dir * (dh / slopeR)} y2={-dh} stroke="#374151" strokeWidth="40" strokeDasharray="200,200" /><polygon points={`${rs + dir * tw},${-tw * slopeR} ${rs + dir * tw},0 ${rs},0`} fill="none" stroke="#374151" strokeWidth="20" /><text x={rs + dir * tw / 2} y={1000} fill="#374151" fontSize="800" fontWeight="bold" textAnchor="middle">1</text><text x={rs + dir * (tw + 500)} y={-tw * slopeR / 2} fill="#374151" fontSize="800" fontWeight="bold" textAnchor={iL ? "start" : "end"}>{slopeR}</text><line x1={rs} y1={1000} x2={rs} y2={3000} stroke="#374151" strokeWidth="20" /><line x1={rs + dir * roadW} y1={1000} x2={rs + dir * roadW} y2={3000} stroke="#374151" strokeWidth="20" /><line x1={anc} y1={1000} x2={anc} y2={3000} stroke="#374151" strokeWidth="20" /><line x1={rs} y1={2000} x2={rs + dir * roadW} y2={2000} stroke="#374151" strokeWidth="20" markerEnd="url(#arrow)" markerStart="url(#arrow)" /><text x={rs + dir * roadW / 2} y={1500} fill="#374151" fontSize="1000" fontWeight="bold" textAnchor="middle">{(roadW / 1000).toFixed(1)}m</text><line x1={rs + dir * roadW} y1={2000} x2={anc} y2={2000} stroke="#374151" strokeWidth="20" markerEnd="url(#arrow)" markerStart="url(#arrow)" /><text x={anc + dir * -(setback / 2)} y={1500} fill="#374151" fontSize="1000" fontWeight="bold" textAnchor="middle">{(setback / 1000).toFixed(1)}m</text><text x={rs} y={-2000} fill="#374151" fontSize="1200" fontWeight="bold" textAnchor={iL ? "start" : "end"}>道路 1:{slopeR}</text></g> } if (t === 'neighbor') { const ns = anc + dir * -setback; return <g key={iL ? 'l' : 'r'} className="pointer-events-none opacity-80"><line x1={ns} y1={-baseH} x2={ns + dir * ((dh - baseH) / slopeN)} y2={-dh} stroke="#52525b" strokeWidth="40" strokeDasharray="200,200" /><line x1={ns} y1={0} x2={ns} y2={-baseH} stroke="#52525b" strokeWidth="20" strokeDasharray="100,100" /><polygon points={`${ns + dir * tw},${-baseH - tw * slopeN} ${ns + dir * tw},${-baseH} ${ns},${-baseH}`} fill="none" stroke="#52525b" strokeWidth="20" /><text x={ns + dir * tw / 2} y={-baseH + 1000} fill="#52525b" fontSize="800" fontWeight="bold" textAnchor="middle">1</text><text x={ns + dir * (tw + 500)} y={-baseH - tw * slopeN / 2} fill="#52525b" fontSize="800" fontWeight="bold" textAnchor={iL ? "start" : "end"}>{slopeN}</text><line x1={ns} y1={1000} x2={ns} y2={4500} stroke="#52525b" strokeWidth="20" /><line x1={anc} y1={3000} x2={anc} y2={4500} stroke="#52525b" strokeWidth="20" /><line x1={ns} y1={3500} x2={anc} y2={3500} stroke="#52525b" strokeWidth="20" markerEnd="url(#arrow)" markerStart="url(#arrow)" /><text x={anc + dir * -(setback / 2)} y={3000} fill="#52525b" fontSize="1000" fontWeight="bold" textAnchor="middle">{(setback / 1000).toFixed(1)}m</text><text x={ns} y={-baseH - 2000} fill="#52525b" fontSize="1200" fontWeight="bold" textAnchor={iL ? "start" : "end"}>鄰地 1:{slopeN}</text></g> } if (t === 'north') { const setbackNth = setback; return <g key={iL ? 'l' : 'r'} className="pointer-events-none opacity-80"><line x1={anc + dir * -setbackNth} y1={-northH} x2={anc + dir * -setbackNth + dir * ((dh - northH) / northSlope)} y2={-dh} stroke="#71717a" strokeWidth="40" strokeDasharray="200,200" /><line x1={anc + dir * -setbackNth} y1={0} x2={anc + dir * -setbackNth} y2={-northH} stroke="#71717a" strokeWidth="20" strokeDasharray="100,100" /><polygon points={`${anc + dir * -setbackNth + dir * tw},${-northH - tw * northSlope} ${anc + dir * -setbackNth + dir * tw},${-northH} ${anc + dir * -setbackNth},${-northH}`} fill="none" stroke="#71717a" strokeWidth="20" /><text x={anc + dir * -setbackNth + dir * tw / 2} y={-northH + 1000} fill="#71717a" fontSize="800" fontWeight="bold" textAnchor="middle">1</text><text x={anc + dir * -setbackNth + dir * (tw + 500)} y={-northH - tw * northSlope / 2} fill="#71717a" fontSize="800" fontWeight="bold" textAnchor={iL ? "start" : "end"}>{northSlope}</text><text x={anc + dir * -setbackNth} y={-northH - 2000} fill="#71717a" fontSize="1200" fontWeight="bold" textAnchor={iL ? "start" : "end"}>北側 1:{northSlope}</text><line x1={anc + dir * -setbackNth} y1={2000} x2={anc} y2={2000} stroke="#71717a" strokeWidth="20" markerEnd="url(#arrow)" markerStart="url(#arrow)" /><text x={anc + dir * -(setbackNth / 2)} y={1500} fill="#71717a" fontSize="1000" fontWeight="bold" textAnchor="middle">{(setbackNth / 1000).toFixed(1)}m</text></g> } }; return <g>{ds(tL, !0)}{ds(tR, !1)}</g> };
@@ -958,7 +1168,94 @@ const Step3 = memo(({ s, a, t }) => {
                                     {params.customStrategy === 'center' && <div className="col-span-2"><label className="block text-[10px] text-purple-700 font-bold mb-1">{t('clearance')}</label><input type="number" value={params.customClearance || 1500} onChange={e => a.setParams(p => ({ ...p, customClearance: Number(e.target.value) }))} className="w-full border border-purple-200 rounded px-2 py-1 outline-none focus:border-purple-500 font-mono text-xs" /></div>}
                                 </div>
                             </div>}
-                            {r.type === 'STAIRS' && <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 space-y-3"><label className="font-bold text-black text-xs">{t('stairTypeSet')}</label><div className="grid grid-cols-2 gap-3"><select value={r.stairType || 'U'} onChange={e => setR(p => p.map(x => x.id === r.id ? { ...x, stairType: e.target.value } : x))} className="w-full bg-white border border-gray-300 rounded px-2 py-1.5 text-sm outline-none focus:border-black"><option value="U">{t('uStair')}</option><option value="straight">{t('straightStair')}</option><option value="L">{t('lStair')}</option><option value="spiral">{t('spiralStair')}</option></select><select value={r.stairLayout || 'combo'} onChange={e => setR(p => p.map(x => x.id === r.id ? { ...x, stairLayout: e.target.value } : x))} className="w-full bg-white border border-gray-300 rounded px-2 py-1.5 text-sm outline-none focus:border-black"><option value="combo">{t('stairElevator')}</option><option value="stairs">{t('pureStair')}</option></select></div><label className="font-bold text-black text-xs mt-2 block">{t('evacTypeSet')}</label><div className="grid grid-cols-2 gap-3"><select value={r.evacType || 'normal'} onChange={e => setR(p => p.map(x => x.id === r.id ? { ...x, evacType: e.target.value } : x))} className="w-full bg-white border border-gray-300 rounded px-2 py-1.5 text-sm outline-none focus:border-black"><option value="normal">{t('evacNormal')}</option><option value="indoor">{t('evacIndoor')}</option><option value="outdoor">{t('evacOutdoor')}</option><option value="special">{t('evacSpecial')}</option></select>{r.evacType === 'special' && <select value={r.anteType || 'room'} onChange={e => setR(p => p.map(x => x.id === r.id ? { ...x, anteType: e.target.value } : x))} className="w-full bg-white border border-gray-300 rounded px-2 py-1.5 text-sm outline-none focus:border-black"><option value="room">{t('anteRoom')}</option><option value="balcony">{t('anteBalcony')}</option><option value="smoke">{t('anteSmoke')}</option></select>}</div><div className="grid grid-cols-3 gap-2 mt-3"><div><label className="text-[10px] text-gray-600 font-bold mb-1 block">{t('stairRiser')}</label><input type="number" value={r.stairRiser || 200} onChange={e => setR(p => p.map(x => x.id === r.id ? { ...x, stairRiser: Number(e.target.value) } : x))} className="w-full bg-white border border-gray-300 rounded px-2 py-1.5 text-xs outline-none focus:border-black font-mono" /></div><div><label className="text-[10px] text-gray-600 font-bold mb-1 block">{t('stairTread')}</label><input type="number" value={r.stairTread || 250} onChange={e => setR(p => p.map(x => x.id === r.id ? { ...x, stairTread: Number(e.target.value) } : x))} className="w-full bg-white border border-gray-300 rounded px-2 py-1.5 text-xs outline-none focus:border-black font-mono" /></div><div><label className="text-[10px] text-gray-600 font-bold mb-1 block">{t('stairWidth')}</label><input type="number" value={r.stairWidth || 1200} onChange={e => setR(p => p.map(x => x.id === r.id ? { ...x, stairWidth: Number(e.target.value) } : x))} className="w-full bg-white border border-gray-300 rounded px-2 py-1.5 text-xs outline-none focus:border-black font-mono" /></div></div></div>}
+                            {r.type === 'STAIRS' && <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 space-y-3">
+    <label className="font-bold text-black text-xs">{t('stairTypeSet')}</label>
+    <div className="grid grid-cols-2 gap-3">
+        <select value={r.stairType || 'U'} onChange={e => setR(p => p.map(x => x.id === r.id ? { ...x, stairType: e.target.value } : x))} className="w-full bg-white border border-gray-300 rounded px-2 py-1.5 text-sm outline-none focus:border-black">
+            <option value="U">{t('uStair')}</option>
+            <option value="straight">{t('straightStair')}</option>
+            <option value="L">{t('lStair')}</option>
+            <option value="spiral">{t('spiralStair')}</option>
+        </select>
+        <select value={r.stairLayout || 'combo'} onChange={e => setR(p => p.map(x => x.id === r.id ? { ...x, stairLayout: e.target.value } : x))} className="w-full bg-white border border-gray-300 rounded px-2 py-1.5 text-sm outline-none focus:border-black">
+            <option value="combo">{t('stairElevator')}</option>
+            <option value="stairs">{t('pureStair')}</option>
+        </select>
+    </div>
+    <label className="font-bold text-black text-xs mt-2 block">{t('evacTypeSet')}</label>
+    <div className="grid grid-cols-2 gap-3">
+        <select value={r.evacType || 'normal'} onChange={e => setR(p => p.map(x => x.id === r.id ? { ...x, evacType: e.target.value } : x))} className="w-full bg-white border border-gray-300 rounded px-2 py-1.5 text-sm outline-none focus:border-black">
+            <option value="normal">{t('evacNormal')}</option>
+            <option value="indoor">{t('evacIndoor')}</option>
+            <option value="outdoor">{t('evacOutdoor')}</option>
+            <option value="special">{t('evacSpecial')}</option>
+        </select>
+        {r.evacType === 'special' && <select value={r.anteType || 'room'} onChange={e => setR(p => p.map(x => x.id === r.id ? { ...x, anteType: e.target.value } : x))} className="w-full bg-white border border-gray-300 rounded px-2 py-1.5 text-sm outline-none focus:border-black">
+            <option value="room">{t('anteRoom')}</option>
+            <option value="balcony">{t('anteBalcony')}</option>
+            <option value="smoke">{t('anteSmoke')}</option>
+        </select>}
+    </div>
+    
+    {/* 上下平台開關與數值設定 */}
+    <div className="grid grid-cols-1 gap-2 mt-3 mb-2 p-2 bg-white rounded border border-gray-200">
+        <div className="flex items-center justify-between gap-2 border-b border-gray-50 pb-1">
+            <label className="flex items-center gap-1 text-[10px] font-bold text-gray-700 cursor-pointer">
+                <input type="checkbox" checked={r.topLanding !== false} onChange={e => setR(p => p.map(x => x.id === r.id ? { ...x, topLanding: e.target.checked } : x))} className="accent-black" /> 
+                包含上平台
+            </label>
+            {r.topLanding !== false && (
+                <div className="flex items-center bg-gray-50 border border-gray-300 rounded px-1 w-24">
+                    <span className="text-[9px] text-gray-400 shrink-0">深:</span>
+                    <input type="number" value={r.topLandDepth || 1450} onChange={e => setR(p => p.map(x => x.id === r.id ? { ...x, topLandDepth: Number(e.target.value) } : x))} className="w-full bg-transparent border-none outline-none text-[10px] font-mono p-0.5 text-right" />
+                </div>
+            )}
+        </div>
+        <div className="flex items-center justify-between gap-2">
+            <label className="flex items-center gap-1 text-[10px] font-bold text-gray-700 cursor-pointer">
+                <input type="checkbox" checked={r.bottomLanding !== false} onChange={e => setR(p => p.map(x => x.id === r.id ? { ...x, bottomLanding: e.target.checked } : x))} className="accent-black" /> 
+                包含下平台
+            </label>
+            {r.bottomLanding !== false && (
+                <div className="flex items-center bg-gray-50 border border-gray-300 rounded px-1 w-24">
+                    <span className="text-[9px] text-gray-400 shrink-0">深:</span>
+                    <input type="number" value={r.bottomLandDepth || 1450} onChange={e => setR(p => p.map(x => x.id === r.id ? { ...x, bottomLandDepth: Number(e.target.value) } : x))} className="w-full bg-transparent border-none outline-none text-[10px] font-mono p-0.5 text-right" />
+                </div>
+            )}
+        </div>
+    </div>
+
+    {/* 周邊大梁淨空退縮設定 */}
+    <div className="bg-gray-50 border border-gray-200 p-2 rounded mt-2">
+        <div className="flex items-center justify-between mb-2 border-b border-gray-200 pb-1">
+            <span className="text-[10px] font-bold text-gray-700">周邊大梁淨空預留 (防撞頭)</span>
+            <div className="flex items-center bg-white border border-gray-300 rounded px-1 w-24">
+                <span className="text-[9px] text-gray-400 shrink-0">梁寬:</span>
+                <input type="number" value={r.bmSize || 400} onChange={e => setR(p => p.map(x => x.id === r.id ? { ...x, bmSize: Number(e.target.value) } : x))} className="w-full bg-transparent border-none outline-none text-[10px] font-mono p-0.5 text-right" />
+            </div>
+        </div>
+        <div className="grid grid-cols-4 gap-1">
+            {[
+                { k: 'bmTop', l: '上方' }, 
+                { k: 'bmBottom', l: '下方' }, 
+                { k: 'bmLeft', l: '左側' }, 
+                { k: 'bmRight', l: '右側' }
+            ].map(dir => (
+                <label key={dir.k} className="flex flex-col items-center gap-1 text-[9px] text-gray-600 cursor-pointer bg-white p-1 rounded border border-gray-200 hover:border-black">
+                    <input type="checkbox" checked={!!r[dir.k]} onChange={e => setR(p => p.map(x => x.id === r.id ? { ...x, [dir.k]: e.target.checked } : x))} className="accent-black" />
+                    {dir.l}
+                </label>
+            ))}
+        </div>
+    </div>
+
+    <div className="grid grid-cols-4 gap-2 mt-3">
+        <div><label className="text-[10px] text-gray-600 font-bold mb-1 block">{t('stairRiser')}</label><input type="number" value={r.stairRiser || 200} onChange={e => setR(p => p.map(x => x.id === r.id ? { ...x, stairRiser: Number(e.target.value) } : x))} className="w-full bg-white border border-gray-300 rounded px-1 py-1.5 text-xs outline-none focus:border-black font-mono" /></div>
+        <div><label className="text-[10px] text-gray-600 font-bold mb-1 block">{t('stairTread')}</label><input type="number" value={r.stairTread || 250} onChange={e => setR(p => p.map(x => x.id === r.id ? { ...x, stairTread: Number(e.target.value) } : x))} className="w-full bg-white border border-gray-300 rounded px-1 py-1.5 text-xs outline-none focus:border-black font-mono" /></div>
+        <div><label className="text-[10px] text-gray-600 font-bold mb-1 block">{t('stairWidth')}</label><input type="number" value={r.stairWidth || 1200} onChange={e => setR(p => p.map(x => x.id === r.id ? { ...x, stairWidth: Number(e.target.value) } : x))} className="w-full bg-white border border-gray-300 rounded px-1 py-1.5 text-xs outline-none focus:border-black font-mono" /></div>
+        <div><label className="text-[10px] text-gray-600 font-bold mb-1 block">淨高要求</label><input type="number" value={r.headroom || 2100} onChange={e => setR(p => p.map(x => x.id === r.id ? { ...x, headroom: Number(e.target.value) } : x))} className="w-full bg-white border border-gray-300 rounded px-1 py-1.5 text-xs outline-none focus:border-black font-mono" /></div>
+    </div>
+</div>}
                             {r.type === 'STAIRS' && ['combo', 'elevator'].includes(r.stairLayout || 'combo') && <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 space-y-3"><div className="flex justify-between items-center"><label className="font-bold text-black text-xs">{t('elevatorSizeSet')}</label><label className="flex items-center gap-1 text-[10px] whitespace-nowrap cursor-pointer text-gray-700 font-bold"><input type="checkbox" checked={r.isEmergency || !1} onChange={e => setR(p => p.map(x => x.id === r.id ? { ...x, isEmergency: e.target.checked } : x))} className="accent-black" /> {t('emergencyElevator')}</label></div><div className="grid grid-cols-2 gap-3"><div><label className="text-[10px] text-gray-600 font-bold mb-1 block">{t('evW')}</label><input type="number" value={r.evW || 2500} onChange={e => setR(p => p.map(x => x.id === r.id ? { ...x, evW: Number(e.target.value) } : x))} className="w-full bg-white border border-gray-300 rounded px-2 py-1.5 text-xs outline-none focus:border-black font-mono" /></div><div><label className="text-[10px] text-gray-600 font-bold mb-1 block">{t('evH')}</label><input type="number" value={r.evH || 2500} onChange={e => setR(p => p.map(x => x.id === r.id ? { ...x, evH: Number(e.target.value) } : x))} className="w-full bg-white border border-gray-300 rounded px-2 py-1.5 text-xs outline-none focus:border-black font-mono" /></div></div></div>}
                             {r.type === 'EV_LOBBY' && (() => { const evTypes = [{ id: 'custom', label: t('evCustom'), w: null, h: null }, { id: 'pass_11', label: t('evPass11'), w: 1800, h: 1800 }, { id: 'pass_15', label: t('evPass15'), w: 2000, h: 2000 }, { id: 'pass_17', label: t('evPass17'), w: 2200, h: 2000 }, { id: 'emergency', label: t('emergencyElevator'), w: 2500, h: 2500 }, { id: 'cargo_2t', label: t('evCargo2t'), w: 3000, h: 3000 }, { id: 'cargo_3t', label: t('evCargo3t'), w: 3500, h: 3500 }]; return <div className="space-y-3"><div className="flex justify-between items-center"><span className="text-xs font-bold text-black">{t('evList')}</span><button onClick={() => a.addAncEv(r.id)} className="flex items-center gap-1 text-xs bg-black text-white hover:bg-gray-800 px-3 py-1.5 rounded transition font-bold shadow-sm"><Icon name="Plus" size={14} /> {t('addBtn')}</button></div>{(r.elevators?.length > 0 || r.evW) ? <div className="space-y-3 max-h-56 overflow-y-auto pr-1 custom-scrollbar">{(r.elevators || [{ id: r.id + '_legacy', w: r.evW || 2500, h: r.evH || 2500, dx: Math.max(0, r.w - (r.evW || 2500) - 500), dy: 500, isEmergency: r.isEmergency }]).map((ev, evi) => <div key={ev.id} className="bg-gray-50 p-3 rounded-lg border border-gray-200 flex flex-col gap-2"><div className="flex justify-between items-center"><span className="text-xs font-bold text-gray-800">{t('elevator')} {evi + 1}</span><button onClick={() => setR(p => p.map(x => x.id === r.id ? { ...x, elevators: (x.elevators || [{ id: x.id + '_legacy', w: x.evW || 2500, h: x.evH || 2500, dx: Math.max(0, x.w - (x.evW || 2500) - 500), dy: 500, isEmergency: x.isEmergency }]).filter(y => y.id !== ev.id) } : x))} className="text-gray-400 hover:text-black transition"><Icon name="Trash2" size={14} /></button></div><select value={ev.evType || 'custom'} onChange={e => { const tp = evTypes.find(t => t.id === e.target.value); setR(p => p.map(x => x.id === r.id ? { ...x, elevators: (x.elevators || [{ id: x.id + '_legacy', w: x.evW || 2500, h: x.evH || 2500, dx: Math.max(0, x.w - (x.evW || 2500) - 500), dy: 500, isEmergency: x.isEmergency }]).map(y => y.id === ev.id ? { ...y, evType: tp.id, w: tp.w || y.w, h: tp.h || y.h, isEmergency: tp.id === 'emergency' ? !0 : (tp.id === 'custom' ? y.isEmergency : !1) } : y) } : x)) }} className="w-full rounded border border-gray-300 px-1.5 py-1.5 text-xs outline-none focus:border-black bg-white font-bold text-gray-800">{evTypes.map(tb => <option key={tb.id} value={tb.id}>{tb.label}</option>)}</select><div className="flex items-center gap-1 text-[10px] whitespace-nowrap cursor-pointer text-gray-700 font-bold mb-1"><input type="checkbox" checked={ev.isEmergency || false} onChange={e => setR(p => p.map(x => x.id === r.id ? { ...x, elevators: (x.elevators || [{ id: x.id + '_legacy', w: x.evW || 2500, h: x.evH || 2500, dx: Math.max(0, x.w - (x.evW || 2500) - 500), dy: 500, isEmergency: x.isEmergency }]).map(y => y.id === ev.id ? { ...y, isEmergency: e.target.checked, evType: 'custom' } : y) } : x))} className="accent-black" /> {t('emergencyElevator')}</div><div className="grid grid-cols-2 gap-2 text-xs text-black"><div className="flex items-center bg-white border border-gray-300 rounded px-2 focus-within:border-black transition"><span className="text-gray-500 font-bold py-1.5 whitespace-nowrap mr-1 shrink-0">{t('evW')}</span><input type="number" value={Math.round(ev.w)} onChange={e => setR(p => p.map(x => x.id === r.id ? { ...x, elevators: (x.elevators || [{ id: x.id + '_legacy', w: x.evW || 2500, h: x.evH || 2500, dx: Math.max(0, x.w - (x.evW || 2500) - 500), dy: 500, isEmergency: x.isEmergency }]).map(y => y.id === ev.id ? { ...y, w: Number(e.target.value), evType: 'custom' } : y) } : x))} className="w-full bg-transparent outline-none py-1.5 font-mono" /></div><div className="flex items-center bg-white border border-gray-300 rounded px-2 focus-within:border-black transition"><span className="text-gray-500 font-bold py-1.5 whitespace-nowrap mr-1 shrink-0">{t('evH')}</span><input type="number" value={Math.round(ev.h)} onChange={e => setR(p => p.map(x => x.id === r.id ? { ...x, elevators: (x.elevators || [{ id: x.id + '_legacy', w: x.evW || 2500, h: x.evH || 2500, dx: Math.max(0, x.w - (x.evW || 2500) - 500), dy: 500, isEmergency: x.isEmergency }]).map(y => y.id === ev.id ? { ...y, h: Number(e.target.value), evType: 'custom' } : y) } : x))} className="w-full bg-transparent outline-none py-1.5 font-mono" /></div></div></div>)}</div> : <div className="text-[10px] text-gray-400 text-center py-2 bg-gray-50 rounded border border-dashed border-gray-200">{t('noEv')}</div>}</div> })()}
                             {!o && <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 space-y-3"><label className="font-bold text-black text-xs">{t('corridorWSet')}</label><div className="grid grid-cols-4 gap-2">{['top', 'bottom', 'left', 'right'].map(eg => <div key={eg} className="flex flex-col items-center"><label className="text-[10px] text-gray-500 mb-1 uppercase tracking-wider font-bold">{eg}</label><input type="number" value={cw[eg]} onChange={e => setR(p => p.map(x => x.id === r.id ? { ...x, corridorW: { ...cw, [eg]: Number(e.target.value) } } : x))} className="w-full bg-white text-black border border-gray-300 rounded px-1 py-1.5 text-center outline-none text-xs focus:border-black font-mono" /></div>)}</div></div>}
@@ -1001,7 +1298,7 @@ const Step3 = memo(({ s, a, t }) => {
                                 {typeOpen && (
                                     <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-2xl z-50 max-h-64 overflow-y-auto py-1 custom-scrollbar">
                                         {Object.keys(nT).map(k => (
-                                            <div key={k} onClick={() => { a.setNewRm(p => ({ ...p, type: k, name: nT[k] || p.name })); setTypeOpen(false); }} className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 cursor-pointer transition-colors border-b border-gray-50 last:border-0">
+                                            <div key={k} onClick={() => { a.setNewRm(p => ({ ...p, type: k, name: nT[k] || p.name, w: k === 'STAIRS' ? 4000 : p.w, h: k === 'STAIRS' ? 7000 : p.h })); setTypeOpen(false); setTypeOpen(false); }} className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 cursor-pointer transition-colors border-b border-gray-50 last:border-0">
                                                 <div className="w-4 h-4 rounded-sm border border-black/20 shrink-0 shadow-inner" style={{ backgroundColor: SPACE_COLORS[k] || '#ccc' }}></div>
                                                 <span className="text-xs font-bold text-gray-700">{nT[k]}</span>
                                             </div>
@@ -1746,7 +2043,18 @@ const Step3 = memo(({ s, a, t }) => {
                                                             <g transform={`rotate(${r.rotation || 0}, ${r.x + r.w / 2}, ${r.y + r.h / 2})`}>
                                                                     {[{ k: 'top', a: c.top, cx: r.x + r.w / 2, cy: c.top ? r.y - cw.top / 2 : r.y - 300, blk: isCB(r, 'top', room.w, room.h, bRooms, bAnc) }, { k: 'bottom', a: c.bottom, cx: r.x + r.w / 2, cy: c.bottom ? r.y + r.h + cw.bottom / 2 : r.y + r.h + 300, blk: isCB(r, 'bottom', room.w, room.h, bRooms, bAnc) }, { k: 'left', a: c.left, cx: c.left ? r.x - cw.left / 2 : r.x - 300, cy: r.y + r.h / 2, blk: isCB(r, 'left', room.w, room.h, bRooms, bAnc) }, { k: 'right', a: c.right, cx: c.right ? r.x + r.w + cw.right / 2 : r.x + r.w + 300, cy: r.y + r.h / 2, blk: isCB(r, 'right', room.w, room.h, bRooms, bAnc) }]
                                                                     .filter(z => !z.blk)
-                                                                    .map(z => <g key={`br-${r.id}-${z.k}`} onPointerDown={e => { e.stopPropagation(); e.preventDefault(); a.setAnc(p => p.map(x => x.id !== r.id ? x : { ...x, corridors: { ...c, [z.k]: !c[z.k] } })) }} className="cursor-pointer hover:opacity-80" style={{ pointerEvents: 'auto' }}><circle cx={z.cx} cy={z.cy} r="200" fill={z.a ? '#64748b' : '#94a3b8'} stroke="#fff" strokeWidth="15" /><text x={z.cx} y={z.cy + 20} fill="#fff" fontSize="250" fontWeight="bold" textAnchor="middle" dominantBaseline="middle">{z.a ? '－' : '＋'}</text></g>)
+                                                                    .map(z => <g key={`br-${r.id}-${z.k}`} onPointerDown={e => { 
+                                                                        e.stopPropagation(); 
+                                                                        if (z.a) { // 如果已經開啟廊道（顯示－），點擊就是開始拖曳！
+                                                                            e.target.setPointerCapture(e.pointerId);
+                                                                            a.setUi(p => ({ ...p, dragCorr: { id: r.id, edge: z.k, isIt: false } }));
+                                                                        } else { // 如果還沒開廊道（顯示＋），點擊就是開啟
+                                                                            a.setAnc(p => p.map(x => x.id !== r.id ? x : { ...x, corridors: { ...c, [z.k]: !c[z.k] } }));
+                                                                        }
+                                                                    }} className="cursor-pointer hover:opacity-80" style={{ pointerEvents: 'auto' }}>
+                                                                        <circle cx={z.cx} cy={z.cy} r="200" fill={z.a ? '#64748b' : '#94a3b8'} stroke="#fff" strokeWidth="15" />
+                                                                        <text x={z.cx} y={z.cy + 20} fill="#fff" fontSize="250" fontWeight="bold" textAnchor="middle" dominantBaseline="middle">{z.a ? '－' : '＋'}</text>
+                                                                    </g>)
                                                                 }
                                                                 <g className="cursor-nw-resize" onPointerDown={e => { e.stopPropagation(); e.target.setPointerCapture(e.pointerId); const pp = a.ptLocal(e, b.id); a.setUi(p => ({ ...p, resId: { id: r.id, t: 'anc', corner: 'nw' }, startX: r.x, startY: r.y, startW: r.w, startH: r.h, mX: pp.x, mY: pp.y })) }} style={{ pointerEvents: 'auto' }}><rect x={r.x - 1500} y={r.y - 1500} width="3000" height="3000" fill="transparent" /><circle cx={r.x} cy={r.y} r="300" fill="#1e293b" stroke="#ffffff" strokeWidth="60" /></g>
                                                                 <g className="cursor-se-resize" onPointerDown={e => { e.stopPropagation(); e.target.setPointerCapture(e.pointerId); const pp = a.ptLocal(e, b.id); a.setUi(p => ({ ...p, resId: { id: r.id, t: 'anc' }, startW: r.w, startH: r.h, mX: pp.x, mY: pp.y })) }} style={{ pointerEvents: 'auto' }}><rect x={r.x + r.w - 1500} y={r.y + r.h - 1500} width="3000" height="3000" fill="transparent" /><circle cx={r.x + r.w} cy={r.y + r.h} r="300" fill="#1e293b" stroke="#ffffff" strokeWidth="60" /></g>
@@ -1799,7 +2107,18 @@ const Step3 = memo(({ s, a, t }) => {
                                                                 <g transform={`rotate(${r.rotation || 0}, ${r.x + r.w / 2}, ${r.y + r.h / 2})`}>
                                                                     {[{ k: 'top', a: c.top, cx: r.x + r.w / 2, cy: c.top ? r.y - cw.top / 2 : r.y - 300, blk: isCB(r, 'top', room.w, room.h, bRooms, bAnc) }, { k: 'bottom', a: c.bottom, cx: r.x + r.w / 2, cy: c.bottom ? r.y + r.h + cw.bottom / 2 : r.y + r.h + 300, blk: isCB(r, 'bottom', room.w, room.h, bRooms, bAnc) }, { k: 'left', a: c.left, cx: c.left ? r.x - cw.left / 2 : r.x - 300, cy: r.y + r.h / 2, blk: isCB(r, 'left', room.w, room.h, bRooms, bAnc) }, { k: 'right', a: c.right, cx: c.right ? r.x + r.w + cw.right / 2 : r.x + r.w + 300, cy: r.y + r.h / 2, blk: isCB(r, 'right', room.w, room.h, bRooms, bAnc) }]
                                                                         .filter(z => !z.blk)
-                                                                        .map(z => <g key={`bi-${r.id}-${z.k}`} onPointerDown={e => { e.stopPropagation(); e.preventDefault(); a.setRooms(p => p.map(x => x.id !== r.id ? x : { ...x, corridors: { ...c, [z.k]: !c[z.k] } })) }} className="cursor-pointer hover:opacity-80" style={{ pointerEvents: 'auto' }}><circle cx={z.cx} cy={z.cy} r="200" fill={z.a ? '#3b82f6' : '#94a3b8'} stroke="#fff" strokeWidth="15" /><text x={z.cx} y={z.cy + 20} fill="#fff" fontSize="250" fontWeight="bold" textAnchor="middle" dominantBaseline="middle">{z.a ? '－' : '＋'}</text></g>)
+                                                                        .map(z => <g key={`bi-${r.id}-${z.k}`} onPointerDown={e => { 
+                                                                            e.stopPropagation(); 
+                                                                            if (z.a) { // 如果已經開啟廊道（顯示－），點擊就是開始拖曳！
+                                                                                e.target.setPointerCapture(e.pointerId);
+                                                                                a.setUi(p => ({ ...p, dragCorr: { id: r.id, edge: z.k, isIt: true } }));
+                                                                            } else { // 如果還沒開廊道（顯示＋），點擊就是開啟
+                                                                                a.setRooms(p => p.map(x => x.id !== r.id ? x : { ...x, corridors: { ...c, [z.k]: !c[z.k] } }));
+                                                                            }
+                                                                        }} className="cursor-pointer hover:opacity-80" style={{ pointerEvents: 'auto' }}>
+                                                                            <circle cx={z.cx} cy={z.cy} r="200" fill={z.a ? '#3b82f6' : '#94a3b8'} stroke="#fff" strokeWidth="15" />
+                                                                            <text x={z.cx} y={z.cy + 20} fill="#fff" fontSize="250" fontWeight="bold" textAnchor="middle" dominantBaseline="middle">{z.a ? '－' : '＋'}</text>
+                                                                        </g>)
                                                                     }
                                                                     <g className="cursor-nw-resize" onPointerDown={e => { e.stopPropagation(); e.target.setPointerCapture(e.pointerId); const pp = a.ptLocal(e, b.id); a.setUi(p => ({ ...p, resId: { id: r.id, t: 'it', corner: 'nw' }, startX: r.x, startY: r.y, startW: r.w, startH: r.h, mX: pp.x, mY: pp.y })) }} style={{ pointerEvents: 'auto' }}><rect x={r.x - 1500} y={r.y - 1500} width="3000" height="3000" fill="transparent" /><circle cx={r.x} cy={r.y} r="400" fill="#3b82f6" stroke="#ffffff" strokeWidth="100" /></g>
                                                                     <g className="cursor-se-resize" onPointerDown={e => { e.stopPropagation(); e.target.setPointerCapture(e.pointerId); const pp = a.ptLocal(e, b.id); a.setUi(p => ({ ...p, resId: { id: r.id, t: 'it' }, startW: r.w, startH: r.h, mX: pp.x, mY: pp.y })) }} style={{ pointerEvents: 'auto' }}><rect x={r.x + r.w - 1500} y={r.y + r.h - 1500} width="3000" height="3000" fill="transparent" /><circle cx={r.x + r.w} cy={r.y + r.h} r="400" fill="#3b82f6" stroke="#ffffff" strokeWidth="100" /></g>
@@ -2165,7 +2484,7 @@ const Step3 = memo(({ s, a, t }) => {
                             </g>
                         })}
                         {(() => { const aC = Array.from(new Map(layout.columns.filter(c => c.x <= secs.x && c.x + c.w >= secs.x).map(c => [c.cy, c])).values()); return dB.map(fb => { const sy = -fb.bottomY - fb.h; if (fb.isSeismic) { return secs.seismic !== !1 && aC.map((c, ci) => <g key={`ciY-${fb.floor}-${c.id}-${ci}`}><rect x={c.cy - 400} y={sy + 300} width={800} height={200} fill="#1e293b" /><rect x={c.cy - 300} y={sy + 500} width={600} height={fb.h - 700} fill="#ef4444" /><rect x={c.cy - 400} y={sy + fb.h - 200} width={800} height={200} fill="#1e293b" /></g>) } else { return secs.cols !== !1 && aC.map((c, ci) => <g key={`cnY-${fb.floor}-${c.id}-${ci}`}><rect x={c.cy - c.h / 2} y={sy} width={c.h} height={fb.h} fill="#fde047" stroke="#ca8a04" strokeWidth={10} opacity="0.9" /><rect x={c.cy - c.h / 2 - 50} y={sy} width={c.h + 100} height={300} fill="#ef4444" /><rect x={c.cy - c.h / 2 - 50} y={sy + fb.h - 300} width={c.h + 100} height={300} fill="#ef4444" /></g>) } }) })()}
-                        {secs.beams !== !1 && (() => { return dB.map(fb => { if (fb.isSeismic) return null; const sy = -fb.bottomY - fb.h; const bFloor = floors.find(f => f.name === fb.floor); if (!bFloor) return null; const bw = bFloor.beamW || 400, bh = bFloor.beamH || 800, slab = bFloor.slabThickness || 300; const bX = grid[activeBuilding]?.[fb.floor]?.x || []; return <g key={`beam-y-${fb.floor}`}>{bX.length > 1 && <line x1={Math.min(...bX)} y1={sy + bh} x2={Math.max(...bX)} y2={sy + bh} stroke="#64748b" strokeWidth="15" opacity="0.5" />}{bX.map((xVal, i) => { const align = beamCfg?.[activeBuilding]?.[fb.floor]?.x?.[i] || 0; const offset = align === 1 ? -params.colW/2 + bw/2 : (align === 2 ? params.colW/2 - bw/2 : 0); const bx = xVal + offset; return <rect key={`by-${fb.floor}-${i}`} x={bx - bw/2} y={sy + slab} width={bw} height={bh - slab} fill="#94a3b8" stroke="#475569" strokeWidth="15" opacity="0.8" />; })}</g>; }); })()}
+                        {secs.beams !== !1 && (() => { return dB.map(fb => { if (fb.isSeismic) return null; const sy = -fb.bottomY - fb.h; const bFloor = floors.find(f => f.name === fb.floor); if (!bFloor) return null; const bw = bFloor.beamW || 400, bh = bFloor.beamH || 800, slab = bFloor.slabThickness || 300; const bY = grid[activeBuilding]?.[fb.floor]?.y || []; return <g key={`beam-y-${fb.floor}`}>{bY.length > 1 && <line x1={Math.min(...bY)} y1={sy + bh} x2={Math.max(...bY)} y2={sy + bh} stroke="#64748b" strokeWidth="15" opacity="0.5" />}{bY.map((yVal, i) => { const align = beamCfg?.[activeBuilding]?.[fb.floor]?.y?.[i] || 0; const offset = align === 1 ? -params.colH/2 + bw/2 : (align === 2 ? params.colH/2 - bw/2 : 0); const by = yVal + offset; return <rect key={`by-${fb.floor}-${i}`} x={by - bw/2} y={sy + slab} width={bw} height={bh - slab} fill="#94a3b8" stroke="#475569" strokeWidth="15" opacity="0.8" />; })}</g>; }); })()}
                     </g>
 
                     <g transform={`translate(0, ${tH + 40000})`}>
@@ -2198,7 +2517,7 @@ const Step3 = memo(({ s, a, t }) => {
                             </g>
                         })}
                         {(() => { const aC = Array.from(new Map(layout.columns.filter(c => c.y <= secs.y && c.y + c.h >= secs.y).map(c => [c.cx, c])).values()); return dB.map(fb => { const sy = -fb.bottomY - fb.h; if (fb.isSeismic) { return secs.seismic !== !1 && aC.map((c, ci) => <g key={`ciY-${fb.floor}-${c.id}-${ci}`}><rect x={c.cx - 400} y={sy + 300} width={800} height={200} fill="#1e293b" /><rect x={c.cx - 300} y={sy + 500} width={600} height={fb.h - 700} fill="#ef4444" /><rect x={c.cx - 400} y={sy + fb.h - 200} width={800} height={200} fill="#1e293b" /></g>) } else { return secs.cols !== !1 && aC.map((c, ci) => <g key={`cnY-${fb.floor}-${c.id}-${ci}`}><rect x={c.x} y={sy} width={c.w} height={fb.h} fill="#fde047" stroke="#ca8a04" strokeWidth={10} opacity="0.9" /><rect x={c.x - 50} y={sy} width={c.w + 100} height={300} fill="#ef4444" /><rect x={c.x - 50} y={sy + fb.h - 300} width={c.w + 100} height={300} fill="#ef4444" /></g>) } }) })()}
-                        {secs.beams !== !1 && (() => { return dB.map(fb => { if (fb.isSeismic) return null; const sy = -fb.bottomY - fb.h; const bFloor = floors.find(f => f.name === fb.floor); if (!bFloor) return null; const bw = bFloor.beamW || 400, bh = bFloor.beamH || 800, slab = bFloor.slabThickness || 300; const bY = grid[activeBuilding]?.[fb.floor]?.y || []; return <g key={`beam-x-${fb.floor}`}>{bY.length > 1 && <line x1={Math.min(...bY)} y1={sy + bh} x2={Math.max(...bY)} y2={sy + bh} stroke="#64748b" strokeWidth="15" opacity="0.5" />}{bY.map((yVal, i) => { const align = beamCfg?.[activeBuilding]?.[fb.floor]?.y?.[i] || 0; const offset = align === 1 ? -params.colH/2 + bw/2 : (align === 2 ? params.colH/2 - bw/2 : 0); const by = yVal + offset; return <rect key={`bx-${fb.floor}-${i}`} x={by - bw/2} y={sy + slab} width={bw} height={bh - slab} fill="#94a3b8" stroke="#475569" strokeWidth="15" opacity="0.8" />; })}</g>; }); })()}
+                        {secs.beams !== !1 && (() => { return dB.map(fb => { if (fb.isSeismic) return null; const sy = -fb.bottomY - fb.h; const bFloor = floors.find(f => f.name === fb.floor); if (!bFloor) return null; const bw = bFloor.beamW || 400, bh = bFloor.beamH || 800, slab = bFloor.slabThickness || 300; const bX = grid[activeBuilding]?.[fb.floor]?.x || []; return <g key={`beam-x-${fb.floor}`}>{bX.length > 1 && <line x1={Math.min(...bX)} y1={sy + bh} x2={Math.max(...bX)} y2={sy + bh} stroke="#64748b" strokeWidth="15" opacity="0.5" />}{bX.map((xVal, i) => { const align = beamCfg?.[activeBuilding]?.[fb.floor]?.x?.[i] || 0; const offset = align === 1 ? -params.colW/2 + bw/2 : (align === 2 ? params.colW/2 - bw/2 : 0); const bx = xVal + offset; return <rect key={`bx-${fb.floor}-${i}`} x={bx - bw/2} y={sy + slab} width={bw} height={bh - slab} fill="#94a3b8" stroke="#475569" strokeWidth="15" opacity="0.8" />; })}</g>; }); })()}
                     </g>
                 </g>}
 
@@ -2340,8 +2659,22 @@ const Step3 = memo(({ s, a, t }) => {
                     return { ...f, w: nR.w, h: nR.h, targetArea: Math.round((nR.w * nR.h) / 1e6) };
                 }));
             }, [aFlr, activeBuilding]);
-            const [rooms, setRooms] = useState([{ id: 1000, type: 'IT', name: 'Data Hall 1', floor: '1F', w: 21600, h: 25000, x: 11000, y: 5000, corridors: { ...DEF_IT_CORRIDORS }, corridorW: { ...DEF_CORRIDOR_W }, zOffset: 0, zHeight: 0, rotation: 0, doors: [{ id: 1001, edge: 'bottom', offset: 9900, width: 900, type: 'single', direction: 'in', swing: 'left' }] }]);
-            const [anc, setAnc] = useState([{ id: 1, name: 'StairCase', type: 'STAIRS', floor: '1F', w: 4000, h: 5000, x: 2000, y: 2000, color: SPACE_COLORS['STAIRS'], corridorW: { ...DEF_CORRIDOR_W }, corridors: { top: !1, bottom: !1, left: !1, right: !1 }, doors: [{ id: 1, edge: 'right', offset: 1000, width: 900, type: 'single', direction: 'in', swing: 'left' }], stairLayout: 'combo', evacType: 'normal', anteType: 'room', stairRiser: 200, stairTread: 250, stairWidth: 1200, evW: 2500, evH: 2500, zOffset: 0, zHeight: 0, rotation: 0 }, { id: 101, name: 'Elevator Lobby', type: 'EV_LOBBY', floor: '1F', w: 4000, h: 5000, x: 6000, y: 2000, color: SPACE_COLORS['EV_LOBBY'], corridorW: { ...DEF_CORRIDOR_W }, corridors: { top: !1, bottom: !1, left: !1, right: !1 }, doors: [{ id: 101, edge: 'bottom', offset: 1000, width: 900, type: 'single', direction: 'in', swing: 'left' }], evW: 2500, evH: 2500, zOffset: 0, zHeight: 0, rotation: 0 }, { id: 2, name: 'UPS/BATTERY', type: 'UPS', floor: '1F', w: 6000, h: 10000, x: 2000, y: 7000, color: SPACE_COLORS['UPS'], corridorW: { ...DEF_CORRIDOR_W }, corridors: { top: !1, bottom: !1, left: !1, right: !1 }, doors: [{ id: 2, edge: 'right', offset: 2000, width: 900, type: 'single', direction: 'in', swing: 'left' }], zOffset: 0, zHeight: 0, rotation: 0 }, { id: 3, name: 'IDF', type: 'IDF', floor: '1F', w: 8000, h: 4000, x: 12000, y: 31000, color: SPACE_COLORS['IDF'], corridorW: { ...DEF_CORRIDOR_W }, corridors: { ...DEF_CORRIDORS }, doors: [{ id: 3, edge: 'top', offset: 1500, width: 900, type: 'single', direction: 'in', swing: 'left' }], zOffset: 0, zHeight: 0, rotation: 0 }]);
+            const [rooms, setRooms] = useState([{ 
+    id: 1000, type: 'IT', name: 'Data Hall 1', floor: '1F', w: 21600, h: 25000, x: 11000, y: 5000, 
+    corridors: { ...DEF_IT_CORRIDORS }, 
+    corridorW: { ...DEF_CORRIDOR_W }, 
+    zOffset: 0, zHeight: 0, rotation: 0, 
+    doors: [{ 
+        id: 1001, 
+        edge: 'left',          // 右側の壁に配置
+        offset: 22000,          // 25000(h) - 3000(幅) で下端に合わせる
+        width: 3000,            // 幅 3000mm
+        type: 'double',         // 両開き
+        direction: 'in', 
+        swing: 'right' 
+    }] 
+}]);
+            const [anc, setAnc] = useState([{ id: 1, name: 'StairCase', type: 'STAIRS', floor: '1F', w: 4000, h: 7000, x: 2000, y: 2000, color: SPACE_COLORS['STAIRS'], corridorW: { ...DEF_CORRIDOR_W }, corridors: { top: !1, bottom: !1, left: !1, right: !1 }, doors: [{ id: 1, edge: 'right', offset: 6000, width: 900, type: 'single', direction: 'in', swing: 'right' }], stairType: 'U', stairLayout: 'stairs', evacType: 'normal', anteType: 'room', topLanding: true, topLandDepth: 1450, bottomLanding: true, bottomLandDepth: 1450, stairRiser: 200, stairTread: 250, stairWidth: 1200, evW: 2500, evH: 2500, zOffset: 0, zHeight: 0, rotation: 0 }, { id: 101, name: 'Elevator Lobby', type: 'EV_LOBBY', floor: '1F', w: 4000, h: 5000, x: 6000, y: 2000, color: SPACE_COLORS['EV_LOBBY'], corridorW: { ...DEF_CORRIDOR_W }, corridors: { top: !1, bottom: !1, left: !1, right: !1 }, doors: [{ id: 101, edge: 'bottom', offset: 1000, width: 900, type: 'single', direction: 'in', swing: 'left' }], evW: 2500, evH: 2500, zOffset: 0, zHeight: 0, rotation: 0 }, { id: 2, name: 'UPS/BATTERY', type: 'UPS', floor: '1F', w: 6000, h: 10000, x: 2000, y: 7000, color: SPACE_COLORS['UPS'], corridorW: { ...DEF_CORRIDOR_W }, corridors: { top: !1, bottom: !1, left: !1, right: !1 }, doors: [{ id: 2, edge: 'right', offset: 2000, width: 900, type: 'single', direction: 'in', swing: 'left' }], zOffset: 0, zHeight: 0, rotation: 0 }, { id: 3, name: 'IDF', type: 'IDF', floor: '1F', w: 8000, h: 4000, x: 12000, y: 31000, color: SPACE_COLORS['IDF'], corridorW: { ...DEF_CORRIDOR_W }, corridors: { ...DEF_CORRIDORS }, doors: [{ id: 3, edge: 'top', offset: 1500, width: 900, type: 'single', direction: 'in', swing: 'left' }], zOffset: 0, zHeight: 0, rotation: 0 }]);
             const [params, setParams] = useState({ rackW: 600, rackD: 1200, inA: 1200, mA: 1800, mX: 1800, mY: 1800, kw: 10.1, fwu: false, fwuW: 2000, col: !0, colW: 800, colH: 800, upsW: 800, upsD: 800, upsAisle: 1200, upsMargin: 1000, lvW: 800, lvD: 800, lvMargin: 500, genW: 2500, genD: 6000, genClearance: 1500, customW: 800, customD: 800, customAisle: 1200, customMargin: 1000, customClearance: 1500, customStrategy: 'array' });
             const [grid, setGrid] = useState({}), [delCol, setDelCol] = useState({}), [beamCfg, setBeamCfg] = useState({});
 
@@ -2375,7 +2708,7 @@ const Step3 = memo(({ s, a, t }) => {
             const vRooms = useMemo(() => (rooms || []).filter(r => (r.buildingId || 'B1') === activeBuilding), [rooms, activeBuilding]);
             const vAnc = useMemo(() => (anc || []).filter(r => (r.buildingId || 'B1') === activeBuilding), [anc, activeBuilding]);
 
-            const [ui, setUi] = useState({ showEq: !1, info: !1, vb: { x: -8000, y: -8000, w: 65000, h: 55000 }, pan: !1, drag: null, dragR: null, dragIt: null, dragD: null, dragG: null, dragS: null, resId: null, rotId: null, dragBd: !1, vMenu: !1, eMenu: !1, tips: !1, sop: !1, meas: !1, snap: !0, dragCraneId: null, dragCraneHookId: null, minToolbar: true, valMenu: false });
+            const [ui, setUi] = useState({ showEq: !1, info: !1, vb: { x: -8000, y: -8000, w: 65000, h: 55000 }, pan: !1, drag: null, dragR: null, dragIt: null, dragD: null, dragG: null, dragS: null, dragCorr: null, resId: null, rotId: null, dragBd: !1, vMenu: !1, eMenu: !1, tips: !1, sop: !1, meas: !1, snap: !0, dragCraneId: null, dragCraneHookId: null, minToolbar: true, valMenu: false });
             const svgRef = useRef(null);
             const pointers = useRef(new Map());
             const touchState = useRef(null);
@@ -2449,14 +2782,41 @@ const Step3 = memo(({ s, a, t }) => {
 
             const applyGrid = useCallback((f) => { const ps = (s, m, o) => { const a = String(s).split(',').map(x => parseInt(x.trim())).filter(n => !isNaN(n) && n > 0); if (!a.length) return [o]; const c = [o]; let cu = o, i = 0; while (cu < o + m && i <= 150) { const sp = a[Math.min(i, a.length - 1)]; cu += sp; if (cu <= o + m + sp) c.push(cu); i++; } return c; }; setGrid(p => ({ ...p, [activeBuilding]: { ...(p[activeBuilding] || {}), [f]: { x: ps(params.colGridX || '10800', room.w, 0), y: ps(params.colGridY || '10800', room.h, 0) } } })); setDelCol(p => ({ ...p, [activeBuilding]: { ...(p[activeBuilding] || {}), [f]: [] } })) }, [params.colGridX, params.colGridY, room.w, room.h, activeBuilding]);
             const syncGrid = useCallback(() => { const srcGrid = (grid && grid[activeBuilding]) || {}; const srcDel = (delCol && delCol[activeBuilding]) || {}; const ng = {}, nd = {}; floors.forEach(f => { ng[f.name] = srcGrid[aFlr]; nd[f.name] = srcDel[aFlr] }); setGrid(p => ({ ...p, [activeBuilding]: ng })); setDelCol(p => ({ ...p, [activeBuilding]: nd })); }, [floors, grid, delCol, aFlr, activeBuilding]);
-            const addItRoom = useCallback((bId) => { const targetB = (typeof bId === 'string') ? bId : activeBuilding; setRooms(p => { const pt = fSpot(aFlr, 21600, 25000, room.w, room.h, p, anc); return [...p, { id: Date.now(), buildingId: targetB, type: 'IT', name: `Data Hall ${p.length + 1}`, floor: aFlr, w: 21600, h: 25000, x: pt.x, y: pt.y, corridors: { ...DEF_IT_CORRIDORS }, corridorW: { ...DEF_CORRIDOR_W }, zOffset: 0, zHeight: 0, rotation: 0, doors: [{ id: Date.now() + 1, edge: 'bottom', offset: 500, width: 900, type: 'single', direction: 'in', swing: 'left' }] }] }) }, [aFlr, room.w, room.h, anc, activeBuilding]);
+            const addItRoom = useCallback((bId) => { const targetB = (typeof bId === 'string') ? bId : activeBuilding; setRooms(p => { const pt = fSpot(aFlr, 21600, 25000, room.w, room.h, p, anc); return [...p, { id: Date.now(), buildingId: targetB, type: 'IT', name: `Data Hall ${p.length + 1}`, floor: aFlr, w: 21600, h: 25000, x: pt.x, y: pt.y, corridors: { ...DEF_IT_CORRIDORS }, corridorW: { ...DEF_CORRIDOR_W }, zOffset: 0, zHeight: 0, rotation: 0, doors: [{ id: Date.now() + 1, edge: 'bottom', offset: 3100, width: 900, type: 'single', direction: 'in', swing: 'right' }] }] }) }, [aFlr, room.w, room.h, anc, activeBuilding]);
             const addItDoor = useCallback((id) => setRooms(p => p.map(r => r.id !== id ? r : { ...r, doors: [...(r.doors || []), { id: Date.now(), edge: 'bottom', offset: 500, width: 900, type: 'single', direction: 'in', swing: 'left' }] })), []);
             const arrItRoom = useCallback((id, ax) => { const s = rooms.find(r => r.id === id); if (!s) return; const n = []; let cx = s.x, cy = s.y; for (let i = 0; i < 50; i++) { if (ax === 'x') cx += s.w; else cy += s.h; if (cx + s.w > room.w || cy + s.h > room.h) break; if (!chkCol(null, s.floor, cx, cy, s.w, s.h, rooms, anc) && !n.some(r => checkRectIntersect({ x: cx, y: cy, w: s.w, h: s.h }, r))) n.push({ ...s, id: Date.now() + Math.random() + i, buildingId: s.buildingId || activeBuilding, name: `${s.name}-${i + 1}`, x: cx, y: cy, doors: s.doors?.map(d => ({ ...d, id: Date.now() + Math.random() })) || [] }) } if (n.length > 0) setRooms(p => [...p, ...n]) }, [rooms, anc, room.w, room.h, activeBuilding]);
             const dupItRoom = useCallback(id => { const s = rooms.find(r => r.id === id); if (s) { const pt = fSpot(s.floor, s.w, s.h, room.w, room.h, rooms, anc); setRooms(p => [...p, { ...s, id: Date.now(), buildingId: s.buildingId || activeBuilding, name: `${s.name} (複製)`, x: pt.x, y: pt.y, doors: [] }]) } }, [rooms, anc, room, activeBuilding]);
             const addAnc = useCallback((bId) => {
                 const targetB = (typeof bId === 'string') ? bId : activeBuilding;
                 if (newRm.type === 'IT') {
-                    setRooms(p => { const pt = fSpot(aFlr, newRm.w, newRm.h, room.w, room.h, p, anc); return [...p, { id: Date.now(), buildingId: targetB, type: 'IT', name: newRm.name || `Data Hall ${p.length + 1}`, floor: aFlr, w: newRm.w, h: newRm.h, x: pt.x, y: pt.y, corridors: { ...DEF_IT_CORRIDORS }, corridorW: { ...DEF_CORRIDOR_W }, zOffset: 0, zHeight: 0, rotation: 0, doors: [] }] });
+                    setRooms(p => { const pt = fSpot(aFlr, newRm.w, newRm.h, room.w, room.h, p, anc); return [...p, { 
+    ...newRm, 
+    id: Date.now(), 
+    buildingId: targetB, 
+    floor: aFlr, 
+    x: pt.x, 
+    y: pt.y, 
+    color: SPACE_COLORS[newRm.type] || '#e5e7eb', 
+    corridorW: { ...DEF_CORRIDOR_W }, 
+    corridors: o ? { top: !1, bottom: !1, left: !1, right: !1 } : { ...DEF_CORRIDORS }, 
+    doors: [], 
+    stairType: 'U', 
+    stairLayout: 'stairs', 
+    evacType: 'normal', 
+    anteType: 'room', 
+    topLanding: true, 
+    topLandDepth: 1450, 
+    bottomLanding: true, 
+    bottomLandDepth: 1450, 
+    stairRiser: 200, 
+    stairTread: 250, 
+    stairWidth: 1200, 
+    evW: 2500, 
+    evH: 2500, 
+    zOffset: newRm.type === 'SUNKEN' ? -500 : 0, 
+    zHeight: newRm.type === 'SUNKEN' ? 500 : newRm.type === 'VOID' ? floors.find(f => f.name === aFlr)?.height || 5000 : 0, 
+    rotation: 0 
+}] });
                 } else {
                     setAnc(p => { const o = ['OUTDOOR', 'SEMI_OUTDOOR', 'SUNKEN', 'VOID'].includes(newRm.type), pt = o ? { x: 0, y: 0 } : fSpot(aFlr, newRm.w, newRm.h, room.w, room.h, rooms, p); return [...p, { ...newRm, id: Date.now(), buildingId: targetB, floor: aFlr, x: pt.x, y: pt.y, color: SPACE_COLORS[newRm.type] || '#e5e7eb', corridorW: { ...DEF_CORRIDOR_W }, corridors: o ? { top: !1, bottom: !1, left: !1, right: !1 } : { ...DEF_CORRIDORS }, doors: [], evacType: 'normal', anteType: 'room', stairRiser: 200, stairTread: 250, stairWidth: 1200, evW: 2500, evH: 2500, zOffset: newRm.type === 'SUNKEN' ? -500 : 0, zHeight: newRm.type === 'SUNKEN' ? 500 : newRm.type === 'VOID' ? floors.find(f => f.name === aFlr)?.height || 5000 : 0, rotation: 0 }] });
                 }
@@ -2917,6 +3277,57 @@ const Step3 = memo(({ s, a, t }) => {
                         }
                         isIt ? setRooms(prev => prev.map(r => r.id === id ? { ...r, x: rx, y: ry } : r)) : setAnc(prev => prev.map(r => r.id === id ? { ...r, x: rx, y: ry } : r));
                         setUi(pr => ({ ...pr, snapX: sx, snapY: sy }));
+                    }
+                }
+                else if (ui.dragCorr) {
+                    const { id, edge, isIt } = ui.dragCorr;
+                    const setFn = isIt ? setRooms : setAnc;
+                    const r = (isIt ? rooms : anc).find(x => x.id === id);
+                    
+                    if (r) {
+                        const bId = r.buildingId || activeBuilding;
+                        const pt = ptLocal(e, bId);
+                        
+                        // 🌟 1. 收集同一層所有空間與廊道的邊界，作為「磁吸參考線」
+                        const allR = [...rooms, ...anc].filter(x => x.floor === r.floor && x.buildingId === r.buildingId);
+                        const lines = new Set();
+                        allR.forEach(x => {
+                            if (edge === 'top' || edge === 'bottom') {
+                                lines.add(x.y); lines.add(x.y + x.h);
+                                if (x.corridors?.top) lines.add(x.y - (x.corridorW?.top || 1800));
+                                if (x.corridors?.bottom) lines.add(x.y + x.h + (x.corridorW?.bottom || 1800));
+                            } else {
+                                lines.add(x.x); lines.add(x.x + x.w);
+                                if (x.corridors?.left) lines.add(x.x - (x.corridorW?.left || 1800));
+                                if (x.corridors?.right) lines.add(x.x + x.w + (x.corridorW?.right || 1800));
+                            }
+                        });
+
+                        // 取得目前滑鼠所在的絕對座標
+                        let targetVal = (edge === 'top' || edge === 'bottom') ? pt.y : pt.x;
+                        
+                        // 🌟 2. 加入 500mm 基本網格磁吸
+                        lines.add(Math.round(targetVal / 500) * 500);
+
+                        // 🌟 3. 尋找最近的磁吸線 (容許吸附距離設定為 600mm 內)
+                        let bestVal = targetVal;
+                        let minDiff = 600; 
+                        lines.forEach(val => {
+                            const diff = Math.abs(targetVal - val);
+                            if (diff < minDiff) { minDiff = diff; bestVal = val; }
+                        });
+
+                        // 4. 反向計算出新的廊道寬度
+                        let nW = 0;
+                        if (edge === 'top') nW = r.y - bestVal;
+                        if (edge === 'bottom') nW = bestVal - (r.y + r.h);
+                        if (edge === 'left') nW = r.x - bestVal;
+                        if (edge === 'right') nW = bestVal - (r.x + r.w);
+                        
+                        nW = Math.max(0, Math.round(nW / 100) * 100); // 不能為負數，且四捨五入
+                        
+                        // 寫入更新
+                        setFn(p => p.map(x => x.id === id ? { ...x, corridorW: { ...(x.corridorW || DEF_CORRIDOR_W), [edge]: nW } } : x));
                     }
                 }
                 else if (ui.resId) {
