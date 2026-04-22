@@ -418,12 +418,20 @@
 
                 if (s.id) {
                     const L = isEvac ? wL * 2 : (st.length === 1 ? dL : wL);
-                    out[s.id] = { noDoor: !s.doors?.length, walkDist: totalDist, intDist: maxIntDist, isCompliant: totalDist <= L, path: fullPath };
-                }
+                    out[s.id] = { 
+                        noDoor: !s.doors?.length, 
+                        walkDist: totalDist, 
+                        intDist: maxIntDist, 
+                        isCompliant: totalDist <= L, 
+                        path: fullPath,
+                        intPath: bestIntPath,  // 🌟 獨立儲存 DH 內部路徑
+                        extPath: extRes.path   // 🌟 獨立儲存 DH 外部避難路徑
+                    };
                 
                 if (totalDist > maxTotalDist && totalDist !== Infinity) {
                     maxTotalDist = totalDist;
-                    bestGlobalRes = { distance: totalDist, path: fullPath, start: fullPath[0], end: fullPath[fullPath.length - 1] };
+                    bestGlobalRes = { distance: totalDist, path: fullPath, intPath: bestIntPath, extPath: extRes.path, start: fullPath[0], end: fullPath[fullPath.length - 1] };
+                }
                 }
             });
             return bestGlobalRes || { distance: 0, path: [], start: null, end: null };
@@ -1113,7 +1121,6 @@ const Step3 = memo(({ s, a, t }) => {
                                     <label className="flex items-center gap-2 cursor-pointer font-bold text-xs text-gray-800"><input type="checkbox" checked={params.fwu} onChange={e => a.setParams(p => ({ ...p, fwu: e.target.checked }))} className="accent-black" /> {t('sideFwuAhu')}</label>
                                     {params.fwu && <div className="flex items-center gap-1"><span className="text-[10px] text-gray-800 font-bold">{t('depthMm')}</span><input type="number" value={params.fwuW} onChange={e => a.setParams(p => ({ ...p, fwuW: Number(e.target.value) }))} className="w-14 border border-gray-200 rounded px-1 py-1 font-mono text-xs outline-none focus:border-black text-center" /></div>}
                                 </div>
-                                <div className={`p-2 rounded text-[10px] font-bold border flex justify-between items-center ${eD.noDoor ? 'bg-gray-50 border-gray-200' : (eD.isCompliant ? 'bg-white border-green-200' : 'bg-white border-red-200')}`}><span className="flex items-center gap-1 text-gray-800"><Icon name="Footprints" size={12} /> {t('walkDupLimit')}</span><span className={`flex items-center gap-1 ${eD.noDoor ? 'text-gray-500' : (eD.isCompliant ? 'text-green-600' : 'text-red-600')}`}>{eD.noDoor ? t('noDoorSet') : `DH內 ${(eD.intDist / 1000).toFixed(1)}m | 總 ${(eD.walkDist / 1000).toFixed(1)}m ${eD.isCompliant ? '✓' : ''}`}{!eD.noDoor && !eD.isCompliant && <Icon name="AlertTriangle" size={12} />}</span></div>
                             </div>}
                             {r.type === 'UPS' && <div className="space-y-4 pt-2">
                                 <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 flex items-center justify-between"><div className="font-bold text-gray-800 text-sm flex items-center gap-2"><Icon name="BatteryCharging" size={16} /> {t('upsConfig')}</div></div>
@@ -1261,6 +1268,23 @@ const Step3 = memo(({ s, a, t }) => {
                             {!o && <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 space-y-3"><label className="font-bold text-black text-xs">{t('corridorWSet')}</label><div className="grid grid-cols-4 gap-2">{['top', 'bottom', 'left', 'right'].map(eg => <div key={eg} className="flex flex-col items-center"><label className="text-[10px] text-gray-500 mb-1 uppercase tracking-wider font-bold">{eg}</label><input type="number" value={cw[eg]} onChange={e => setR(p => p.map(x => x.id === r.id ? { ...x, corridorW: { ...cw, [eg]: Number(e.target.value) } } : x))} className="w-full bg-white text-black border border-gray-300 rounded px-1 py-1.5 text-center outline-none text-xs focus:border-black font-mono" /></div>)}</div></div>}
                             {!o && <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 space-y-3"><label className="font-bold text-gray-800 text-xs flex items-center gap-1"><Icon name="Move" size={14} /> {t('innerCorridor')}</label><div className="grid grid-cols-4 gap-2">{['top', 'bottom', 'left', 'right'].map(eg => { const icw = r.innerCorridorW || { top: 0, bottom: 0, left: 0, right: 0 }; return <div key={`ic-${eg}`} className="flex flex-col items-center"><label className="text-[10px] text-gray-600 mb-1 uppercase tracking-wider font-bold">{eg}</label><input type="number" value={icw[eg]} onChange={e => setR(p => p.map(x => x.id === r.id ? { ...x, innerCorridorW: { ...(x.innerCorridorW || { top: 0, bottom: 0, left: 0, right: 0 }), [eg]: Number(e.target.value) } } : x))} className="w-full bg-white text-gray-800 border border-gray-300 rounded px-1 py-1.5 text-center outline-none text-xs focus:border-black font-mono" /></div> })}</div></div>}
                             {['STAIRS', 'EV_LOBBY', 'PS', 'DS', 'VOID'].includes(r.type) && <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 space-y-3"><label className="font-bold text-gray-900 text-xs flex items-center gap-1"><Icon name="ArrowUp" size={14} /> {t('verticalPenetrate')}</label><div className="flex flex-wrap gap-2"><button onClick={() => a.penAnc(r, eFs.filter(f => f !== r.floor))} className="bg-gray-800 text-white text-[10px] px-2 py-1.5 rounded font-bold shadow-sm hover:bg-black transition">{t('penetrateAll')}</button>{eFs.filter(f => f !== r.floor).map(f => <button key={f} onClick={() => a.penAnc(r, [f])} className="bg-white border border-gray-300 text-gray-700 hover:bg-gray-100 hover:text-black text-[10px] px-2 py-1.5 rounded transition font-bold shadow-sm">{t('toFloor')}{f}</button>)}</div></div>}
+                            {!['STAIRS', 'EV_LOBBY', 'PS', 'DS', 'VOID', 'WATER', 'COOLING_TOWER', 'OUTDOOR', 'SEMI_OUTDOOR', 'SUNKEN', 'MAIN_EXIT'].includes(r.type) && (
+                                <div className={`p-2 rounded text-[10px] font-bold border flex flex-col gap-1 mt-4 mb-2 ${eD.noDoor ? 'bg-gray-50 border-gray-200' : (eD.isCompliant ? 'bg-white border-green-200' : 'bg-white border-red-200')}`}>
+                                    {isIt && (
+                                        <div className="flex justify-between items-center border-b border-gray-100 pb-1">
+                                            <span className="flex items-center gap-1 text-gray-800"><Icon name="Footprints" size={12} /> DH 專用步行距離</span>
+                                            <span className="font-mono text-blue-600">{(eD.intDist / 1000).toFixed(1)} m</span>
+                                        </div>
+                                    )}
+                                    <div className="flex justify-between items-center">
+                                        <span className="flex items-center gap-1 text-gray-800"><Icon name="ArrowRight" size={12} /> 室內避難步行距離</span>
+                                        <span className={`flex items-center gap-1 ${eD.noDoor ? 'text-gray-500' : (eD.isCompliant ? 'text-green-600' : 'text-red-600')}`}>
+                                            {eD.noDoor ? t('noDoorSet') : `${(eD.walkDist / 1000).toFixed(1)} m ${eD.isCompliant ? '✓' : ''}`}
+                                            {!eD.noDoor && !eD.isCompliant && <Icon name="AlertTriangle" size={12} />}
+                                        </span>
+                                    </div>
+                                </div>
+                            )}
                             {r.type !== 'OUTDOOR' && <div className="space-y-3"><div className="flex justify-between items-center"><span className="text-xs font-bold text-black">{t('doorList')}</span><button onClick={() => (isIt ? a.addItDoor(r.id) : a.addAncDr(r.id))} className="flex items-center gap-1 text-xs bg-black text-white hover:bg-gray-800 px-3 py-1.5 rounded transition font-bold shadow-sm"><Icon name="Plus" size={14} /> {t('addBtn')}</button></div>{r.doors?.length > 0 ? <div className="space-y-3 max-h-48 overflow-y-auto pr-1 custom-scrollbar">{r.doors.map((d, di) => <div key={d.id} className="bg-gray-50 p-3 rounded-lg border border-gray-200 flex flex-col gap-2"><div className="flex justify-between items-center"><span className="text-xs font-bold text-gray-800">{t('doorNum')}{di + 1}</span><button onClick={() => setR(p => p.map(x => x.id === r.id ? { ...x, doors: x.doors.filter(y => y.id !== d.id) } : x))} className="text-gray-400 hover:text-black transition"><Icon name="Trash2" size={14} /></button></div><div className="grid grid-cols-4 gap-2 text-xs text-black"><select value={d.edge} onChange={e => setR(p => p.map(x => x.id === r.id ? { ...x, doors: x.doors.map(y => y.id === d.id ? { ...y, edge: e.target.value } : y) } : x))} className="rounded border border-gray-300 px-1 py-1.5 focus:border-black outline-none"><option value="top">{t('topWall')}</option><option value="bottom">{t('bottomWall')}</option><option value="left">{t('leftWall')}</option><option value="right">{t('rightWall')}</option></select><select value={d.type} onChange={e => setR(p => p.map(x => x.id === r.id ? { ...x, doors: x.doors.map(y => y.id === d.id ? { ...y, type: e.target.value } : y) } : x))} className="rounded border border-gray-300 px-1 py-1.5 focus:border-black outline-none"><option value="single">{t('singleDoor')}</option><option value="double">{t('doubleDoor')}</option><option value="sliding">{t('slidingDoor')}</option></select><select value={d.direction || 'in'} onChange={e => setR(p => p.map(x => x.id === r.id ? { ...x, doors: x.doors.map(y => y.id === d.id ? { ...y, direction: e.target.value } : y) } : x))} className="rounded border border-gray-300 px-1 py-1.5 focus:border-black outline-none"><option value="in">{t('openIn')}</option><option value="out">{t('openOut')}</option></select><select value={d.swing || 'left'} onChange={e => setR(p => p.map(x => x.id === r.id ? { ...x, doors: x.doors.map(y => y.id === d.id ? { ...y, swing: e.target.value } : y) } : x))} className="rounded border border-gray-300 px-1 py-1.5 focus:border-black outline-none"><option value="left">{t('swingLeft')}</option><option value="right">{t('swingRight')}</option></select></div><div className="grid grid-cols-2 gap-2 text-xs text-black mt-1"><div className="flex items-center bg-white border border-gray-300 rounded px-2 focus-within:border-black transition"><span className="text-gray-500 font-bold py-1.5 whitespace-nowrap mr-1 shrink-0">{t('doorW')}</span><input type="number" value={Math.round(d.width)} onChange={e => setR(p => p.map(x => x.id === r.id ? { ...x, doors: x.doors.map(y => y.id === d.id ? { ...y, width: Number(e.target.value) } : y) } : x))} className="w-full bg-transparent outline-none py-1.5 font-mono" /></div><div className="flex items-center bg-white border border-gray-300 rounded px-2 focus-within:border-black transition"><span className="text-gray-500 font-bold py-1.5 whitespace-nowrap mr-1 shrink-0">{t('doorDist')}</span><input type="number" value={Math.round(d.offset)} onChange={e => setR(p => p.map(x => x.id === r.id ? { ...x, doors: x.doors.map(y => y.id === d.id ? { ...y, offset: Number(e.target.value) } : y) } : x))} className="w-full bg-transparent outline-none py-1.5 font-mono" /></div></div></div>)}</div> : <div className="text-[10px] text-gray-400 text-center py-2 bg-gray-50 rounded border border-dashed border-gray-200">{t('noDoorSetting')}</div>}</div>}</div>
                     </div>
                 </div>;
@@ -1515,7 +1539,8 @@ const Step3 = memo(({ s, a, t }) => {
                     </div>}
                     {![5, 6].includes(step) && <div className="relative w-full"><button onClick={() => a.setUi(p => ({ ...p, vMenu: !p.vMenu }))} className={`w-full px-3 py-2.5 rounded-xl text-xs font-bold shadow-sm border transition flex items-center justify-center gap-2 ${ui.vMenu ? 'bg-black border-black text-white shadow-md' : 'bg-white/95 backdrop-blur border-gray-200 text-gray-700 hover:bg-gray-50 hover:text-black'}`}><Icon name="LayoutDashboard" size={14} /> {t('displaySettings')}</button>{ui.vMenu && <div className="absolute top-full left-0 mt-2 bg-white/95 backdrop-blur border border-gray-200 shadow-xl rounded-xl p-3.5 flex flex-col gap-3 w-44 animate-in fade-in slide-in-from-top-2">
                                 <label className="flex items-center justify-between cursor-pointer text-xs font-bold text-gray-700 hover:text-black"><span className="flex items-center gap-1.5"><Icon name="Scissors" size={14} /> {t('sectionLine')}</span><input type="checkbox" checked={secs.show} onChange={() => a.setSecs(p => ({ ...p, show: !p.show }))} className="accent-black w-4 h-4" /></label>
-                                <label className="flex items-center justify-between cursor-pointer text-xs font-bold text-gray-700 hover:text-black"><span className="flex items-center gap-1.5"><Icon name="Footprints" size={14} /> {t('walkingLine')}</span><input type="checkbox" checked={showEsc} onChange={() => a.setShowEsc(p => !p)} className="accent-black w-4 h-4" /></label>
+                                <label className="flex items-center justify-between cursor-pointer text-xs font-bold text-gray-700 hover:text-black"><span className="flex items-center gap-1.5"><Icon name="Footprints" size={14} /> DH 專用步行距離</span><input type="checkbox" checked={showEsc.int} onChange={() => a.setShowEsc(p => ({ ...p, int: !p.int }))} className="accent-blue-600 w-4 h-4" /></label>
+                                <label className="flex items-center justify-between cursor-pointer text-xs font-bold text-gray-700 hover:text-black"><span className="flex items-center gap-1.5"><Icon name="ArrowRight" size={14} /> 室內避難步行距離</span><input type="checkbox" checked={showEsc.ext} onChange={() => a.setShowEsc(p => ({ ...p, ext: !p.ext }))} className="accent-green-600 w-4 h-4" /></label>
                                 <label className="flex items-center justify-between cursor-pointer text-xs font-bold text-gray-700 hover:text-black"><span className="flex items-center gap-1.5"><Icon name="Server" size={14} /> {t('showEq')}</span><input type="checkbox" checked={ui.showEq !== false} onChange={() => a.setUi(p => ({ ...p, showEq: p.showEq === false ? true : false }))} className="accent-black w-4 h-4" /></label>
                                 <label className="flex items-center justify-between cursor-pointer text-xs font-bold text-gray-700 hover:text-black"><span className="flex items-center gap-1.5">顯示結構梁</span><input type="checkbox" checked={secs.beams !== !1} onChange={e => a.setSecs(p => ({ ...p, beams: e.target.checked }))} className="accent-black w-4 h-4" /></label>
                             </div>}</div>}
@@ -2038,7 +2063,20 @@ const Step3 = memo(({ s, a, t }) => {
                                                             </g>
                                                         </g>
 
+                                                        {/* 1004行目の既存のドア描画コード */}
                                                         <g transform={`rotate(${r.rotation || 0}, ${r.x + r.w / 2}, ${r.y + r.h / 2})`}>{r.doors?.map(d => rDr(r, d, step, ui, a, !1))}</g>
+                                                        
+                                                        {/* 🌟 ここから追加：附屬空間用の避難線描画ロジック */}
+                                                        {(() => {
+                                                            const eD = escPath?.[r.id] || escPath?.[r.id?.toString()];
+                                                            if (!eD || ['STAIRS', 'EV_LOBBY', 'PS', 'DS', 'VOID'].includes(r.type)) return null;
+                                                            const fullPath = eD.path || [];
+                                                            const dExt = (showEsc.ext && fullPath.length > 1) ? `M ${applyChaikin(fullPath, 2).map(pt => `${pt.x} ${pt.y}`).join(' L ')}` : "";
+                                                            return <g className="pointer-events-none">
+                                                                {dExt && <path d={dExt} fill="none" stroke="#22c55e" strokeWidth="40" strokeDasharray="100,50" />}
+                                                                {showEsc.ext && fullPath[0] && <circle cx={fullPath[0].x} cy={fullPath[0].y} r="250" fill="#22c55e" />}
+                                                            </g>;
+                                                        })()}
                                                         {step === 3 && int && (
                                                             <g transform={`rotate(${r.rotation || 0}, ${r.x + r.w / 2}, ${r.y + r.h / 2})`}>
                                                                     {[{ k: 'top', a: c.top, cx: r.x + r.w / 2, cy: c.top ? r.y - cw.top / 2 : r.y - 300, blk: isCB(r, 'top', room.w, room.h, bRooms, bAnc) }, { k: 'bottom', a: c.bottom, cx: r.x + r.w / 2, cy: c.bottom ? r.y + r.h + cw.bottom / 2 : r.y + r.h + 300, blk: isCB(r, 'bottom', room.w, room.h, bRooms, bAnc) }, { k: 'left', a: c.left, cx: c.left ? r.x - cw.left / 2 : r.x - 300, cy: r.y + r.h / 2, blk: isCB(r, 'left', room.w, room.h, bRooms, bAnc) }, { k: 'right', a: c.right, cx: c.right ? r.x + r.w + cw.right / 2 : r.x + r.w + 300, cy: r.y + r.h / 2, blk: isCB(r, 'right', room.w, room.h, bRooms, bAnc) }]
@@ -2083,14 +2121,22 @@ const Step3 = memo(({ s, a, t }) => {
                                                                 <g style={{ pointerEvents: 'auto' }}>{r.doors?.map(d => rDr(r, d, step, ui, a, !0))}</g>
                                                                 {(() => {
                                                                     const eD = escPath?.[r.id] || escPath?.[r.id?.toString()];
-                                                                    if (!showEsc || !eD) return null;
-                                                                    const ip = eD.path || null;
-                                                                    if (!ip || !ip.length) return null;
-                                                                    // 👇 套用 Chaikin 平滑化 👇
-                                                                    const smoothed = applyChaikin(ip, 2);
-                                                                    const d = `M ${smoothed.map(pt => `${pt.x} ${pt.y}`).join(' L ')}`;
-                                                                    const s = ip[0];
-                                                                    return <g className="pointer-events-none"><path d={d} fill="none" stroke="#3b82f6" strokeWidth="40" strokeDasharray="100,50" /><circle cx={s.x} cy={s.y} r="250" fill="#3b82f6" /></g>;
+                                                                    if (!eD) return null;
+                                                                    
+                                                                    const intPath = eD.intPath || [];
+                                                                    const dInt = (showEsc.int && intPath.length > 1) ? `M ${applyChaikin(intPath, 2).map(pt => `${pt.x} ${pt.y}`).join(' L ')}` : "";
+                                                                    
+                                                                    // 🌟 改用 fullPath 確保綠線從室內最不利角落出發
+                                                                    const fullPath = eD.path || [];
+                                                                    const dExt = (showEsc.ext && fullPath.length > 1) ? `M ${applyChaikin(fullPath, 2).map(pt => `${pt.x} ${pt.y}`).join(' L ')}` : "";
+
+                                                                    return <g className="pointer-events-none">
+                                                                        {dExt && <path d={dExt} fill="none" stroke="#22c55e" strokeWidth="40" strokeDasharray="100,50" />}
+                                                                        {dInt && <path d={dInt} fill="none" stroke="#3b82f6" strokeWidth="60" />}
+                                                                        {/* 圓點各自顯示 */}
+                                                                        {showEsc.ext && fullPath[0] && <circle cx={fullPath[0].x} cy={fullPath[0].y} r="250" fill="#22c55e" />}
+                                                                        {showEsc.int && intPath[0] && <circle cx={intPath[0].x} cy={intPath[0].y} r="250" fill="#3b82f6" />}
+                                                                    </g>;
                                                                 })()}
 
                                                             {/* 👇 新增：拖曳與縮放時顯示即時藍色尺寸膠囊 (機房/IT) 👇 */}
@@ -2138,13 +2184,22 @@ const Step3 = memo(({ s, a, t }) => {
                         const i = v === 'active' && [2, 3].includes(step); 
                         const isS = floors.find(f => f.name === c.floor)?.isSeismic; 
                         // 改為 onClick 並確保圖層可點擊
-                        const delColFn = e => { e.stopPropagation(); a.setDelCol(p => { const prevB = p[bId] || {}; return { ...p, [bId]: { ...prevB, [aFlr]: [...(prevB[aFlr] || []), c.rawId] } }; }) };
+                        // 🌟 徹底改為 onPointerDown 並加入 preventDefault 防止畫布拖曳攔截 🌟
+                        const delColFn = e => { 
+                            e.stopPropagation(); 
+                            e.preventDefault(); 
+                            a.setDelCol(p => { 
+                                const prevB = p[bId] || {}; 
+                                return { ...p, [bId]: { ...prevB, [aFlr]: [...(prevB[aFlr] || []), c.rawId] } }; 
+                            }); 
+                        };
                         return isS ? (
-                            <circle key={`bc-${c.id}`} cx={c.cx} cy={c.cy} r={Math.max(c.w, c.h) / 2} fill="#ef4444" stroke="#1e293b" strokeWidth="20" opacity={v === 'active' ? 1 : 0.2} className={i ? "cursor-pointer hover:fill-red-600 transition-colors" : "pointer-events-none"} onClick={i ? delColFn : undefined} style={{ pointerEvents: i ? 'auto' : 'none' }} />
+                            <circle key={`bc-${c.id}`} cx={c.cx} cy={c.cy} r={Math.max(c.w, c.h) / 2} fill="#ef4444" stroke="#1e293b" strokeWidth="20" opacity={v === 'active' ? 1 : 0.2} className={i ? "cursor-pointer hover:fill-red-600 transition-colors" : "pointer-events-none"} onPointerDown={i ? delColFn : undefined} style={{ pointerEvents: i ? 'auto' : 'none' }} />
                         ) : (
-                            <rect key={`bc-${c.id}`} x={c.x} y={c.y} width={c.w} height={c.h} opacity={v === 'active' ? 1 : 0.2} className={i ? "fill-slate-800 hover:fill-red-500 cursor-pointer transition-colors" : "fill-slate-800 pointer-events-none"} onClick={i ? delColFn : undefined} style={{ pointerEvents: i ? 'auto' : 'none' }} />
+                            <rect key={`bc-${c.id}`} x={c.x} y={c.y} width={c.w} height={c.h} opacity={v === 'active' ? 1 : 0.2} className={i ? "fill-slate-800 hover:fill-red-500 cursor-pointer transition-colors" : "fill-slate-800 pointer-events-none"} onPointerDown={i ? delColFn : undefined} style={{ pointerEvents: i ? 'auto' : 'none' }} />
                         );
                     })}</g>}
+                    {/* 🌟 1. 先畫結構大梁，確保梁在底層不阻擋點擊 🌟 */}
                     {step === 2 && secs.beams !== false && (() => {
                         const fl = floors.find(f => f.name === aFlr) || {};
                         return <g clipPath={cpU}>
@@ -2164,29 +2219,52 @@ const Step3 = memo(({ s, a, t }) => {
                             })}
                         </g>;
                     })()}
-                    {bId === activeBuilding && showEsc && escPath && dSpc && (() => {
-                        // support both legacy fields and new BFS-based engine which may return per-room multi-point `path` arrays
+
+                    {/* 🌟 2. 再畫柱子，確保柱子覆蓋在梁上方，完美接收點擊事件 🌟 */}
+                    {step >= 2 && params.col && bCols.length > 0 && <g clipPath={cpU} style={{ zIndex: 50 }}>{bCols.map(c => { 
+                        const v = fVis[c.floor] || 'hidden'; 
+                        if (v === 'hidden') return null; 
+                        const i = v === 'active' && [2, 3].includes(step); 
+                        const isS = floors.find(f => f.name === c.floor)?.isSeismic; 
+                        const delColFn = e => { 
+                            e.stopPropagation(); 
+                            e.preventDefault(); 
+                            a.setDelCol(p => { 
+                                const prevB = p[bId] || {}; 
+                                return { ...p, [bId]: { ...prevB, [aFlr]: [...(prevB[aFlr] || []), c.rawId] } }; 
+                            }); 
+                        };
+                        return isS ? (
+                            <circle key={`bc-${c.id}`} cx={c.cx} cy={c.cy} r={Math.max(c.w, c.h) / 2} fill="#ef4444" stroke="#1e293b" strokeWidth="20" opacity={v === 'active' ? 1 : 0.2} className={i ? "cursor-pointer hover:fill-red-600 transition-colors" : "pointer-events-none"} onPointerDown={i ? delColFn : undefined} style={{ pointerEvents: i ? 'auto' : 'none' }} />
+                        ) : (
+                            <rect key={`bc-${c.id}`} x={c.x} y={c.y} width={c.w} height={c.h} opacity={v === 'active' ? 1 : 0.2} className={i ? "fill-slate-800 hover:fill-red-500 cursor-pointer transition-colors" : "fill-slate-800 pointer-events-none"} onPointerDown={i ? delColFn : undefined} style={{ pointerEvents: i ? 'auto' : 'none' }} />
+                        );
+                    })}</g>}
+                    {bId === activeBuilding && (showEsc.int || showEsc.ext) && escPath && dSpc && (() => {
                         const e = escPath;
-                                    const globalPath = e.path || null;
-                                    const forRoom = e?.[bId] || null;
-                                    const p = forRoom && forRoom.path && forRoom.path.length ? forRoom.path : (globalPath && globalPath.length ? globalPath : null);
-                                    if (!p || !p.length) return null;
-                                    const stroke = (e.isCompliant || (forRoom && forRoom.isCompliant)) ? "#22c55e" : "#ef4444";
-                                    
-                                    // 👇 呼叫 Chaikin 讓路線平滑 👇
-                                    const smoothed = applyChaikin(p, 2);
-                                    const d = `M ${smoothed.map(pt => `${pt.x} ${pt.y}`).join(' L ')}`;
-                                    
-                                    const startPt = p[0];
-                                    const endPt = p[p.length - 1];
-                                    return (
-                                        <g className="pointer-events-none">
-                                            {startPt && <circle cx={startPt.x} cy={startPt.y} r="400" fill="#ef4444" className="animate-pulse" />}
-                                            <path d={d} fill="none" stroke={stroke} strokeWidth="60" strokeDasharray="200,100" />
-                                            {endPt && <circle cx={endPt.x} cy={endPt.y} r="500" fill={stroke} />}
-                                        </g>
-                                    );
-                                })()}
+                        const forRoom = e?.[bId] || e;
+                        const intP = forRoom.intPath || [];
+                        
+                        // 🌟 改為讀取完整路徑 (包含室內)
+                        const fullP = forRoom.path || [];
+                        const stroke = forRoom.isCompliant ? "#22c55e" : "#ef4444";
+
+                        return (
+                            <g className="pointer-events-none">
+                                {/* 避難步行距離：包含室內段的完整綠/紅虛線 */}
+                                {showEsc.ext && fullP.length > 1 && <path d={`M ${applyChaikin(fullP, 2).map(pt=>`${pt.x} ${pt.y}`).join(' L ')}`} fill="none" stroke={stroke} strokeWidth="60" strokeDasharray="200,100" />}
+                                {/* DH專用：機房內部的藍實線 */}
+                                {showEsc.int && intP.length > 1 && <path d={`M ${applyChaikin(intP, 2).map(pt=>`${pt.x} ${pt.y}`).join(' L ')}`} fill="none" stroke="#3b82f6" strokeWidth="80" />}
+                                
+                                {/* 各自的起點閃爍提示 */}
+                                {showEsc.ext && fullP[0] && <circle cx={fullP[0].x} cy={fullP[0].y} r="400" fill={stroke} className="animate-pulse" />}
+                                {showEsc.int && intP[0] && <circle cx={intP[0].x} cy={intP[0].y} r="400" fill="#3b82f6" className="animate-pulse" />}
+                                
+                                {/* 樓梯終點提示 */}
+                                {showEsc.ext && fullP[fullP.length-1] && <circle cx={fullP[fullP.length-1].x} cy={fullP[fullP.length-1].y} r="500" fill={stroke} />}
+                            </g>
+                        );
+                    })()}
                     </g>
                             );
                         })}
@@ -2720,7 +2798,7 @@ const Step3 = memo(({ s, a, t }) => {
             const [secs, setSecs] = useState({ show: !1, cols: !1, beams: !1, seismic: !1, x: 22500, y: 17500 });
             const [limitParams, setLimitParams] = useState({ show: !1, roadW: 14000, setbackR: 5000, slopeR: 1.5, baseH: 31000, setbackN: 12000, slopeN: 2.5, northH: 10000, northSlope: 1.25, bounds: { top: 'neighbor', bottom: 'road', left: 'neighbor', right: 'neighbor' } });
             const [expSpc, setExpSpc] = useState(30000);
-            const [hist, setHist] = useState({ lst: [], idx: -1 }), [showEsc, setShowEsc] = useState(!1), [meas, setMeas] = useState([]);
+            const [hist, setHist] = useState({ lst: [], idx: -1 }), [showEsc, setShowEsc] = useState({ int: false, ext: false }), [meas, setMeas] = useState([]);
             const [validation, setValidation] = useState({ issues: [], suggestions: [] });
             const [previewFix, setPreviewFix] = useState(null);
             const skipHist = useRef(!1);
@@ -2780,7 +2858,28 @@ const Step3 = memo(({ s, a, t }) => {
             }), [aFlr]);
             const togFVis = useCallback(f => setFVis(p => { const n = p[f] === 'active' ? 'ghost' : p[f] === 'ghost' ? 'hidden' : 'active'; if (n === 'active') setAFlr(f); return { ...p, [f]: n } }), []);
 
-            const applyGrid = useCallback((f) => { const ps = (s, m, o) => { const a = String(s).split(',').map(x => parseInt(x.trim())).filter(n => !isNaN(n) && n > 0); if (!a.length) return [o]; const c = [o]; let cu = o, i = 0; while (cu < o + m && i <= 150) { const sp = a[Math.min(i, a.length - 1)]; cu += sp; if (cu <= o + m + sp) c.push(cu); i++; } return c; }; setGrid(p => ({ ...p, [activeBuilding]: { ...(p[activeBuilding] || {}), [f]: { x: ps(params.colGridX || '10800', room.w, 0), y: ps(params.colGridY || '10800', room.h, 0) } } })); setDelCol(p => ({ ...p, [activeBuilding]: { ...(p[activeBuilding] || {}), [f]: [] } })) }, [params.colGridX, params.colGridY, room.w, room.h, activeBuilding]);
+            const applyGrid = useCallback((f) => { 
+                const bId = activeBuilding;
+                const bFlrData = floors.find(fl => fl.name === f && (fl.buildingId || 'B1') === bId) || floors.find(fl => (fl.buildingId || 'B1') === bId) || { w: 45000, h: 35000 };
+                const bw = bFlrData.w || 45000;
+                const bh = bFlrData.h || 35000;
+
+                const ps = (s, m, o) => { 
+                    const a = String(s).split(',').map(x => parseInt(x.trim())).filter(n => !isNaN(n) && n > 0); 
+                    if (!a.length) return [o]; 
+                    const c = [o]; 
+                    let cu = o, i = 0; 
+                    while (cu < o + m && i <= 150) { 
+                        const sp = a[Math.min(i, a.length - 1)]; 
+                        cu += sp; 
+                        if (cu <= o + m + 100) c.push(cu); // 🌟 限制網格生成不得超過該棟建築總長寬 (+100mm的容差)
+                        i++; 
+                    } 
+                    return c; 
+                }; 
+                setGrid(p => ({ ...p, [bId]: { ...(p[bId] || {}), [f]: { x: ps(params.colGridX || '10800', bw, 0), y: ps(params.colGridY || '10800', bh, 0) } } })); 
+                setDelCol(p => ({ ...p, [bId]: { ...(p[bId] || {}), [f]: [] } })) 
+            }, [params.colGridX, params.colGridY, floors, activeBuilding]);
             const syncGrid = useCallback(() => { const srcGrid = (grid && grid[activeBuilding]) || {}; const srcDel = (delCol && delCol[activeBuilding]) || {}; const ng = {}, nd = {}; floors.forEach(f => { ng[f.name] = srcGrid[aFlr]; nd[f.name] = srcDel[aFlr] }); setGrid(p => ({ ...p, [activeBuilding]: ng })); setDelCol(p => ({ ...p, [activeBuilding]: nd })); }, [floors, grid, delCol, aFlr, activeBuilding]);
             const addItRoom = useCallback((bId) => { const targetB = (typeof bId === 'string') ? bId : activeBuilding; setRooms(p => { const pt = fSpot(aFlr, 21600, 25000, room.w, room.h, p, anc); return [...p, { id: Date.now(), buildingId: targetB, type: 'IT', name: `Data Hall ${p.length + 1}`, floor: aFlr, w: 21600, h: 25000, x: pt.x, y: pt.y, corridors: { ...DEF_IT_CORRIDORS }, corridorW: { ...DEF_CORRIDOR_W }, zOffset: 0, zHeight: 0, rotation: 0, doors: [{ id: Date.now() + 1, edge: 'bottom', offset: 3100, width: 900, type: 'single', direction: 'in', swing: 'right' }] }] }) }, [aFlr, room.w, room.h, anc, activeBuilding]);
             const addItDoor = useCallback((id) => setRooms(p => p.map(r => r.id !== id ? r : { ...r, doors: [...(r.doors || []), { id: Date.now(), edge: 'bottom', offset: 500, width: 900, type: 'single', direction: 'in', swing: 'left' }] })), []);
@@ -3141,21 +3240,22 @@ const Step3 = memo(({ s, a, t }) => {
                 if (drawMode === 'site' || drawMode === 'bldg') { e.stopPropagation(); const p = pt(e); if (drawMode === 'site') setSitePoly(pr => [...pr, p]); if (drawMode === 'bldg') setBldgPoly(pr => { const fP = pr['global'] || []; return { ...pr, 'global': [...fP, p] } }); return }
                 if (drawMode === 'edit') { e.stopPropagation(); const p = pt(e); let h = null, m = 1000; sitePoly.forEach((v, i) => { const d = Math.hypot(v.x - p.x, v.y - p.y); if (d < m) { m = d; h = { t: 'site', i } } }); const cP = getBP(aFlr); cP.forEach((v, i) => { const d = Math.hypot(v.x - p.x, v.y - p.y); if (d < m) { m = d; h = { t: 'bldg', i } } }); if (h) { e.target.setPointerCapture(e.pointerId); setUi(pr => ({ ...pr, dragPt: h })); return } }
                 if (ui.meas) {
-                    e.stopPropagation();
                     const bObj = getBuildingObj(activeBuilding);
-                    let pLoc = ptLocal(e, activeBuilding);
-                    let sx = null, sy = null;
+                    // 🌟 獲取當前測量建築的專屬長寬
+                    const bFlrData = floors.find(f => f.name === aFlr && (f.buildingId || 'B1') === activeBuilding) || floors.find(f => (f.buildingId || 'B1') === activeBuilding) || { w: 45000, h: 35000 };
+                    const bW = bFlrData.w || 45000, bH = bFlrData.h || 35000;
+                    
+                    let pLoc = ptLocal(e, activeBuilding), sx = null, sy = null;
                     if (ui.snap) {
                         let mx = 600, my = 600, bx = pLoc.x, by = pLoc.y;
-                        const tX = [0, room.w, ...(grid[activeBuilding]?.[aFlr]?.x || [])], tY = [0, room.h, ...(grid[activeBuilding]?.[aFlr]?.y || [])];
+                        const tX = [0, bW, ...(grid[activeBuilding]?.[aFlr]?.x || [])], tY = [0, bH, ...(grid[activeBuilding]?.[aFlr]?.y || [])];
                         [...(vRooms || []), ...(vAnc || [])].filter(r => r.floor === aFlr).forEach(r => { tX.push(r.x, r.x + r.w); tY.push(r.y, r.y + r.h); });
                         tX.forEach(t => { const d = t - pLoc.x; if (Math.abs(d) < mx) { mx = Math.abs(d); bx = pLoc.x + d; sx = t; } });
                         tY.forEach(t => { const d = t - pLoc.y; if (Math.abs(d) < my) { my = Math.abs(d); by = pLoc.y + d; sy = t; } });
                         pLoc = { x: Math.round(bx), y: Math.round(by) };
                     }
                     const pWorld = toWorld(pLoc.x, pLoc.y, bObj);
-                    if (!ui.mStart) setUi(pr => ({ ...pr, mStart: pWorld, mPos: pWorld, snapX: sx, snapY: sy })); 
-                    else { setMeas(pr => [...pr, { x1: ui.mStart.x, y1: ui.mStart.y, x2: pWorld.x, y2: pWorld.y }]); setUi(pr => ({ ...pr, mStart: null, snapX: null, snapY: null })) }
+                    setUi(pr => ({ ...pr, mPos: pWorld, snapX: sx, snapY: sy }));
                     return;
                 }
                 if ([5, 6].includes(step)) { e.target.setPointerCapture(e.pointerId); setUi(p => ({ ...p, pan: !0, lx: e.clientX, ly: e.clientY })); return }
@@ -3258,13 +3358,17 @@ const Step3 = memo(({ s, a, t }) => {
                     const isIt = !!ui.dragIt, id = ui.dragIt || ui.drag, obj = isIt ? rooms.find(r => r.id === id) : anc.find(r => r.id === id);
                     if (obj) {
                         const bId = obj.buildingId || 'B1';
+                        // 🌟 獲取該物件專屬棟別的長寬
+                        const bFlrData = floors.find(f => f.name === aFlr && (f.buildingId || 'B1') === bId) || floors.find(f => (f.buildingId || 'B1') === bId) || { w: 45000, h: 35000 };
+                        const bW = bFlrData.w || 45000, bH = bFlrData.h || 35000;
+                        
                         const op = ptLocal(e, bId);
                         let rx = op.x - ui.offX, ry = op.y - ui.offY, sx = null, sy = null;
                         if (ui.snap) {
                             let mx = 600, my = 600, bx = rx, by = ry;
                             const bRooms = (rooms || []).filter(r => (r.buildingId || 'B1') === bId);
                             const bAnc = (anc || []).filter(r => (r.buildingId || 'B1') === bId);
-                            const tX = [0, room.w, ...(grid[bId]?.[aFlr]?.x || [])], tY = [0, room.h, ...(grid[bId]?.[aFlr]?.y || [])];
+                            const tX = [0, bW, ...(grid[bId]?.[aFlr]?.x || [])], tY = [0, bH, ...(grid[bId]?.[aFlr]?.y || [])];
                             [...bRooms, ...bAnc].filter(r => r.id !== id && r.floor === aFlr).forEach(r => { tX.push(r.x, r.x + r.w); tY.push(r.y, r.y + r.h); });
                             tX.forEach(t => { [0, obj.w].forEach(w => { const d = t - (rx + w); if (Math.abs(d) < mx) { mx = Math.abs(d); bx = rx + d; sx = t } }) });
                             tY.forEach(t => { [0, obj.h].forEach(h => { const d = t - (ry + h); if (Math.abs(d) < my) { my = Math.abs(d); by = ry + d; sy = t } }) });
@@ -3273,7 +3377,7 @@ const Step3 = memo(({ s, a, t }) => {
                         if (!['OUTDOOR', 'SEMI_OUTDOOR', 'SUNKEN', 'VOID'].includes(obj.type)) {
                             const bRooms = (rooms || []).filter(r => (r.buildingId || 'B1') === bId);
                             const bAnc = (anc || []).filter(r => (r.buildingId || 'B1') === bId);
-                            const nv = getVPos(id, obj.floor, rx, ry, obj.w, obj.h, obj.x, obj.y, room.w, room.h, bRooms, bAnc); rx = nv.x; ry = nv.y;
+                            const nv = getVPos(id, obj.floor, rx, ry, obj.w, obj.h, obj.x, obj.y, bW, bH, bRooms, bAnc); rx = nv.x; ry = nv.y;
                         }
                         isIt ? setRooms(prev => prev.map(r => r.id === id ? { ...r, x: rx, y: ry } : r)) : setAnc(prev => prev.map(r => r.id === id ? { ...r, x: rx, y: ry } : r));
                         setUi(pr => ({ ...pr, snapX: sx, snapY: sy }));
@@ -3334,6 +3438,10 @@ const Step3 = memo(({ s, a, t }) => {
                     const isIt = ui.resId.t === 'it', id = ui.resId.id, obj = isIt ? rooms.find(r => r.id === id) : anc.find(r => r.id === id);
                     if (obj) {
                         const bId = obj.buildingId || 'B1';
+                        // 🌟 獲取該物件專屬棟別的長寬
+                        const bFlrData = floors.find(f => f.name === aFlr && (f.buildingId || 'B1') === bId) || floors.find(f => (f.buildingId || 'B1') === bId) || { w: 45000, h: 35000 };
+                        const bW = bFlrData.w || 45000, bH = bFlrData.h || 35000;
+
                         const op = ptLocal(e, bId);
                         const isNW = ui.resId.corner === 'nw';
                         let nx, ny, nw, nh, sx = null, sy = null;
@@ -3346,8 +3454,8 @@ const Step3 = memo(({ s, a, t }) => {
                             
                             if (ui.snap) {
                                 let mx = 600, my = 600;
-                                const tX = [0, room.w, ...(grid[bId]?.[aFlr]?.x || [])];
-                                const tY = [0, room.h, ...(grid[bId]?.[aFlr]?.y || [])];
+                                const tX = [0, bW, ...(grid[bId]?.[aFlr]?.x || [])];
+                                const tY = [0, bH, ...(grid[bId]?.[aFlr]?.y || [])];
                                 const bRooms = (rooms || []).filter(r => (r.buildingId || 'B1') === bId);
                                 const bAnc = (anc || []).filter(r => (r.buildingId || 'B1') === bId);
                                 [...bRooms, ...bAnc].filter(r => r.id !== id && r.floor === aFlr).forEach(r => { tX.push(r.x, r.x + r.w); tY.push(r.y, r.y + r.h); });
@@ -3367,8 +3475,8 @@ const Step3 = memo(({ s, a, t }) => {
                             
                             if (ui.snap) {
                                 let mx = 600, my = 600;
-                                const tX = [0, room.w, ...(grid[bId]?.[aFlr]?.x || [])];
-                                const tY = [0, room.h, ...(grid[bId]?.[aFlr]?.y || [])];
+                                const tX = [0, bW, ...(grid[bId]?.[aFlr]?.x || [])];
+                                const tY = [0, bH, ...(grid[bId]?.[aFlr]?.y || [])];
                                 const bRooms = (rooms || []).filter(r => (r.buildingId || 'B1') === bId);
                                 const bAnc = (anc || []).filter(r => (r.buildingId || 'B1') === bId);
                                 [...bRooms, ...bAnc].filter(r => r.id !== id && r.floor === aFlr).forEach(r => { tX.push(r.x, r.x + r.w); tY.push(r.y, r.y + r.h); });
@@ -3381,10 +3489,10 @@ const Step3 = memo(({ s, a, t }) => {
                         }
 
                         if (!['OUTDOOR', 'SEMI_OUTDOOR', 'SUNKEN', 'VOID'].includes(obj.type)) {
-                            nx = Math.max(0, Math.min(nx, room.w - 1200));
-                            ny = Math.max(0, Math.min(ny, room.h - 1200));
-                            if (nx + nw > room.w) nw = room.w - nx;
-                            if (ny + nh > room.h) nh = room.h - ny;
+                            nx = Math.max(0, Math.min(nx, bW - 1200));
+                            ny = Math.max(0, Math.min(ny, bH - 1200));
+                            if (nx + nw > bW) nw = bW - nx;
+                            if (ny + nh > bH) nh = bH - ny;
                             
                             const bRooms = (rooms || []).filter(r => (r.buildingId || 'B1') === bId);
                             const bAnc = (anc || []).filter(r => (r.buildingId || 'B1') === bId);
