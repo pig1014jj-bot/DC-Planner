@@ -846,7 +846,7 @@
         const Icon = memo(({ name, size = 18, className = "" }) => {
             const r = useRef(null);
 
-            // 👇 直接攔截預設名稱，1:1 替換為您的專屬手繪參考圖 👇
+            // 直接攔截預設名稱，1:1 替換為您的專屬手繪參考圖
             const customIcons = {
                 // 1. 基本設定 (對應原本的 ScanLine) -> 雙齒輪
                 'ScanLine': (
@@ -904,13 +904,9 @@
                 )
             };
 
-            // 如果攔截到我們定義的名稱，直接返回客製化 SVG
-            if (customIcons[name]) {
-                return <span className={`inline-flex items-center justify-center ${className}`}>{customIcons[name]}</span>;
-            }
-
-            // 否則退回使用原生的 Lucide 圖示 (例如存檔、測量、復原等通用按鈕)
+            // 🌟 確保 useEffect 位於 if return 之前，避免 Hook 順序錯亂
             useEffect(() => {
+                if (customIcons[name]) return; 
                 if (!r.current) return;
                 try {
                     if (window.lucide) {
@@ -921,9 +917,12 @@
                         if (s) { s.setAttribute('width', size); s.setAttribute('height', size); return; }
                     }
                 } catch (err) { }
-                // 防呆圖示
                 r.current.innerHTML = `<svg viewBox="0 0 24 24" width="${size}" height="${size}"><rect x="3" y="3" width="18" height="18" rx="3" ry="3" fill="currentColor" opacity="0.9"/></svg>`;
             }, [name, size]);
+
+            if (customIcons[name]) {
+                return <span className={`inline-flex items-center justify-center ${className}`}>{customIcons[name]}</span>;
+            }
             
             return <span ref={r} className={`inline-flex items-center justify-center ${className}`} />;
         });
@@ -1051,7 +1050,25 @@
                             <div className="flex gap-1"><button onClick={a.addFlr} className="text-xs bg-black text-white px-3 py-1.5 rounded hover:bg-gray-800 font-bold flex items-center gap-1 transition"><Icon name="Plus" size={12} /> {t('addBtn')}</button><button onClick={a.addBasementFlr} className="text-xs bg-gray-700 text-white px-3 py-1.5 rounded hover:bg-gray-600 font-bold flex items-center gap-1 transition"><Icon name="Plus" size={12} /> {t('basement')}</button></div>
                         </div>
                         <div className="space-y-2 mb-4 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
-                            {s.floors.filter(f => !f.buildingId || f.buildingId === s.activeBuilding).map((f, i) => <div key={f.id} draggable onDragStart={e => e.dataTransfer.setData('text/plain', i)} onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; e.currentTarget.style.borderBottom = '2px solid #000'; }} onDragLeave={e => e.currentTarget.style.borderBottom = ''} onDrop={e => { e.preventDefault(); e.currentTarget.style.borderBottom = ''; const from = Number(e.dataTransfer.getData('text/plain')); if (from !== i) a.reorderFlr(from, i); }} className="flex items-center gap-2 bg-gray-50 p-2 rounded border border-gray-200 relative group cursor-move hover:border-black transition-colors"><div className="flex flex-col gap-1 pr-1 border-r border-gray-200 text-gray-400"><Icon name="ArrowUp" size={12} /><Icon name="ArrowDown" size={12} /></div><input type="text" value={f.name} onChange={e => a.updFlr(f.id, 'name', e.target.value)} className="w-[50px] font-bold text-center border-b border-dashed border-gray-300 focus:border-black outline-none bg-transparent shrink-0" /><div className="flex-1 flex flex-col gap-1"><div className="flex items-center text-[10px]"><span className="w-8 shrink-0 text-gray-500">{t('height')}</span><input type="number" value={f.height} onChange={e => a.updFlr(f.id, 'height', Number(e.target.value))} className="w-full border border-gray-300 rounded px-1 outline-none font-mono focus:border-black cursor-text" /> <span className="ml-1 text-gray-400">mm</span></div><div className="flex items-center text-[10px]"><span className="w-8 shrink-0 text-gray-500">L x W</span><input type="number" value={Math.round(f.w || 45000)} onChange={e => a.updFlr(f.id, 'w', Number(e.target.value))} className="w-full min-w-[45px] text-center border border-gray-300 rounded px-1 outline-none font-mono focus:border-black disabled:bg-gray-100 disabled:text-gray-400 cursor-text [&::-webkit-inner-spin-button]:appearance-none" disabled={f.isSeismic} /><span className="mx-1 text-gray-400">x</span><input type="number" value={Math.round(f.h || 35000)} onChange={e => a.updFlr(f.id, 'h', Number(e.target.value))} className="w-full min-w-[45px] text-center border border-gray-300 rounded px-1 outline-none font-mono focus:border-black disabled:bg-gray-100 disabled:text-gray-400 cursor-text [&::-webkit-inner-spin-button]:appearance-none" disabled={f.isSeismic} /></div><div className="flex items-center text-[10px]"><span className="w-8 shrink-0 text-gray-500">{t('target')}</span><input type="number" value={f.targetArea} onChange={e => a.updFlr(f.id, 'targetArea', Number(e.target.value))} className="w-full border border-gray-300 rounded px-1 outline-none font-mono focus:border-black disabled:bg-gray-100 disabled:text-gray-400 cursor-text" disabled={f.isSeismic} /> <span className="ml-1 text-gray-400">m²</span></div><div className="flex items-center text-[10px]"><span className="w-8 shrink-0 text-gray-500">{t('slabThickness')}</span><input type="number" value={f.slabThickness || 300} onChange={e => a.updFlr(f.id, 'slabThickness', Number(e.target.value))} className="w-full border border-gray-300 rounded px-1 outline-none font-mono focus:border-black cursor-text" /> <span className="ml-1 text-gray-400">mm</span></div></div><label className="flex items-center gap-1 text-[10px] whitespace-nowrap cursor-pointer text-gray-700 shrink-0"><input type="checkbox" checked={f.isSeismic} onChange={e => { a.updFlr(f.id, 'isSeismic', e.target.checked); e.target.checked && a.updFlr(f.id, 'targetArea', 0) }} className="accent-black" /> {t('seismicLayer')}</label><button onClick={() => a.rmFlr(f.id)} className="text-gray-400 hover:text-black p-1 transition shrink-0"><Icon name="Trash2" size={14} /></button></div>)}
+                            {s.floors.filter(f => !f.buildingId || f.buildingId === s.activeBuilding).map((f, i) => <div key={f.id} draggable onDragStart={e => e.dataTransfer.setData('text/plain', i)} onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; e.currentTarget.style.borderBottom = '2px solid #000'; }} onDragLeave={e => e.currentTarget.style.borderBottom = ''} onDrop={e => { e.preventDefault(); e.currentTarget.style.borderBottom = ''; const from = Number(e.dataTransfer.getData('text/plain')); if (from !== i) a.reorderFlr(from, i); }} className="flex items-center gap-2 bg-gray-50 p-2 rounded border border-gray-200 relative group cursor-move hover:border-black transition-colors">
+                                <div className="flex flex-col gap-1 pr-1 border-r border-gray-200 text-gray-400"><Icon name="ArrowUp" size={12} /><Icon name="ArrowDown" size={12} /></div>
+                                <input type="text" value={f.name} onChange={e => a.updFlr(f.id, 'name', e.target.value)} className="w-[40px] text-xs font-bold text-center border-b border-dashed border-gray-300 focus:border-black outline-none bg-transparent shrink-0" />
+                                <div className="flex-1 flex flex-col gap-1">
+                                    <div className="flex items-center text-[10px]"><span className="w-8 shrink-0 text-gray-500">{t('height')}</span><input type="number" value={f.height} onChange={e => a.updFlr(f.id, 'height', Number(e.target.value))} className="w-full border border-gray-300 rounded px-1 outline-none font-mono focus:border-black cursor-text" /> <span className="ml-1 text-gray-400">mm</span></div>
+                                    <div className="flex items-center text-[10px]"><span className="w-8 shrink-0 text-gray-500">L x W</span><input type="number" value={Math.round(f.w || 45000)} onChange={e => a.updFlr(f.id, 'w', Number(e.target.value))} className="w-full min-w-[45px] text-center border border-gray-300 rounded px-1 outline-none font-mono focus:border-black disabled:bg-gray-100 disabled:text-gray-400 cursor-text [&::-webkit-inner-spin-button]:appearance-none" disabled={f.isSeismic} /><span className="mx-1 text-gray-400">x</span><input type="number" value={Math.round(f.h || 35000)} onChange={e => a.updFlr(f.id, 'h', Number(e.target.value))} className="w-full min-w-[45px] text-center border border-gray-300 rounded px-1 outline-none font-mono focus:border-black disabled:bg-gray-100 disabled:text-gray-400 cursor-text [&::-webkit-inner-spin-button]:appearance-none" disabled={f.isSeismic} /></div>
+                                    <div className="flex items-center text-[10px]"><span className="w-8 shrink-0 text-gray-500">{t('target')}</span><input type="number" value={f.targetArea} onChange={e => a.updFlr(f.id, 'targetArea', Number(e.target.value))} className="w-full border border-gray-300 rounded px-1 outline-none font-mono focus:border-black disabled:bg-gray-100 disabled:text-gray-400 cursor-text" disabled={f.isSeismic} /> <span className="ml-1 text-gray-400">m²</span></div>
+                                    <div className="flex items-center text-[10px]"><span className="w-8 shrink-0 text-gray-500">{t('slabThickness')}</span><input type="number" value={f.slabThickness || 300} onChange={e => a.updFlr(f.id, 'slabThickness', Number(e.target.value))} className="w-full border border-gray-300 rounded px-1 outline-none font-mono focus:border-black cursor-text" /> <span className="ml-1 text-gray-400">mm</span></div>
+                                    
+                                    {/* 🌟 免震層勾選框精準對齊到這裡 */}
+                                    <div className="flex items-center text-[10px] mt-0.5">
+                                        <span className="w-8 shrink-0"></span>
+                                        <label className="flex items-center gap-1 cursor-pointer text-gray-700 font-bold">
+                                            <input type="checkbox" checked={f.isSeismic} onChange={e => { a.updFlr(f.id, 'isSeismic', e.target.checked); e.target.checked && a.updFlr(f.id, 'targetArea', 0) }} className="accent-black" /> {t('seismicLayer')}
+                                        </label>
+                                    </div>
+                                </div>
+                                <button onClick={() => a.rmFlr(f.id)} className="text-gray-400 hover:text-red-500 p-1 transition shrink-0"><Icon name="Trash2" size={14} /></button>
+                            </div>)}
                         </div>
                         <div className="p-2 rounded text-xs font-bold border border-gray-200 bg-gray-50 text-gray-800 flex justify-between items-center"><span>{t('totalAreaFarLimit')}</span><span className={`font-mono flex items-center gap-2 ${s.bChk.isFarOk ? 'text-green-600' : 'text-red-600'}`}>{s.bChk.targetTotalArea} / {s.bChk.maxFarArea.toFixed(0)} m² {!s.bChk.isFarOk && <Icon name="AlertTriangle" size={14} />}</span></div>
                         <div className="mt-2 p-2 rounded text-xs font-bold border border-gray-200 bg-gray-50 text-gray-800 flex justify-between items-center"><span>{t('maxSingleFloorBcrLimit')}</span><span className={`font-mono flex items-center gap-2 ${s.bChk.isBcrOk ? 'text-green-600' : 'text-red-600'}`}>{s.bChk.maxTargetFloorArea} / {s.bChk.maxBcrArea.toFixed(0)} m² {!s.bChk.isBcrOk && <Icon name="AlertTriangle" size={14} />}</span></div>
@@ -1087,7 +1104,7 @@ const Step3 = memo(({ s, a, t }) => {
             const [open, setOpen] = useState({ map: false, bldg: false, rule: false, floor: false });
             const toggle = (k) => setOpen(p => ({ ...p, [k]: !p[k] }));
 
-            const { anc, selRm, newRm, aFlr, floors, params, escPath, rooms, layout, buildings, activeBuilding } = s;
+            const { anc, selRm, newRm, aFlr, floors, params, escPath, rooms, layout, buildings, activeBuilding, ui } = s;
             const eFs = floors.filter(f => !f.isSeismic && (f.buildingId || 'B1') === activeBuilding).map(f => f.name);
             const rawR = anc.find(x => x.id === selRm);
             const rawIt = rooms.find(x => x.id === selRm);
@@ -1098,6 +1115,145 @@ const Step3 = memo(({ s, a, t }) => {
             const cA = floors.find(f => f.name === aFlr)?.targetArea || 0;
             const cS = fRs.filter(x => x.type === 'STAIRS').length;
             const nT = { IT: t('dataHall'), UPS: 'UPS/Battery', IDF: t('typeMmrAlt'), AHU: 'AHU', CHILLER: 'Chiller', LV: 'LV', SHV_HV: 'SHV/HV', GEN: 'Generator', OFFICE: 'Office', STORAGE: 'Storage', EPS: 'EPS/PS', STAIRS: 'StairCase', EV_LOBBY: 'Elevator Lobby', WATER: 'Water Tank', PARKING: 'Parking', SEMI_OUTDOOR: 'Balcony', OUTDOOR: 'Outdoor', CUSTOM: 'Custom Room', COOLING_TOWER: 'Cooling Tower', PS: 'PS', DS: 'DS', SUNKEN: 'Sunken Slab', VOID: 'Void', MAIN_EXIT: 'Main Exit (主要出入口)' };
+            // 🌟 判斷是否進入「多選群組」模式 (終極防呆版)
+            const currentUi = s.ui || {};
+            const multiSelIds = currentUi.multiSel || [];
+            const isMultiSelected = multiSelIds.length > 1;
+
+            if (isMultiSelected) {
+                // --- 群組對齊引擎 ---
+                const alignGroup = (type) => {
+                    const items = [...rooms, ...anc].filter(x => multiSelIds.includes(x.id));
+                    if (items.length < 2) return;
+                    let target;
+                    if (type === 'top') target = Math.min(...items.map(i => i.y));
+                    if (type === 'bottom') target = Math.max(...items.map(i => i.y + i.h));
+                    if (type === 'left') target = Math.min(...items.map(i => i.x));
+                    if (type === 'right') target = Math.max(...items.map(i => i.x + i.w));
+                    if (type === 'centerH') target = (Math.min(...items.map(i => i.y)) + Math.max(...items.map(i => i.y + i.h))) / 2;
+                    if (type === 'centerV') target = (Math.min(...items.map(i => i.x)) + Math.max(...items.map(i => i.x + i.w))) / 2;
+
+                    const upd = r => {
+                        if (!multiSelIds.includes(r.id)) return r;
+                        let nx = r.x, ny = r.y;
+                        if (type === 'top') ny = target;
+                        if (type === 'bottom') ny = target - r.h;
+                        if (type === 'left') nx = target;
+                        if (type === 'right') nx = target - r.w;
+                        if (type === 'centerH') ny = target - r.h / 2;
+                        if (type === 'centerV') nx = target - r.w / 2;
+                        return { ...r, x: nx, y: ny };
+                    };
+                    a.setRooms(p => p.map(upd));
+                    a.setAnc(p => p.map(upd));
+                };
+
+                // --- 群組均分引擎 ---
+                const distributeGroup = (axis) => {
+                    const items = [...rooms, ...anc].filter(x => multiSelIds.includes(x.id));
+                    if (items.length < 3) return;
+                    items.sort((A, B) => A[axis] - B[axis]);
+                    const first = items[0], last = items[items.length - 1];
+                    const step = (last[axis] - first[axis]) / (items.length - 1);
+                    
+                    const upd = r => {
+                        if (!multiSelIds.includes(r.id)) return r;
+                        const idx = items.findIndex(i => i.id === r.id);
+                        if (idx <= 0 || idx >= items.length - 1) return r;
+                        return { ...r, [axis]: first[axis] + step * idx };
+                    };
+                    a.setRooms(p => p.map(upd));
+                    a.setAnc(p => p.map(upd));
+                };
+
+                // --- 群組整體平移引擎 ---
+                const getNudgeStep = () => {
+                    const el = document.getElementById('nStep');
+                    return el ? Number(el.value) : 1000;
+                };
+                const nudgeGroup = (dx, dy) => {
+                    const upd = r => {
+                        if (!multiSelIds.includes(r.id)) return r;
+                        return { ...r, x: r.x + dx, y: r.y + dy };
+                    };
+                    a.setRooms(p => p.map(upd));
+                    a.setAnc(p => p.map(upd));
+                };
+
+                // --- 群組整體複製引擎 ---
+                const dupGroup = () => {
+                    const itRooms = rooms.filter(x => multiSelIds.includes(x.id));
+                    const ancRooms = anc.filter(x => multiSelIds.includes(x.id));
+                    const newSel = [];
+                    const clone = (item, idx) => {
+                        const nId = Date.now() + Math.random() + idx;
+                        newSel.push(nId);
+                        const clonedDoors = item.doors ? item.doors.map(d => ({...d, id: Date.now() + Math.random()})) : [];
+                        return { ...item, id: nId, name: `${item.name} (複製)`, x: item.x + 1000, y: item.y + 1000, doors: clonedDoors };
+                    };
+                    if (itRooms.length) a.setRooms(p => [...p, ...itRooms.map(clone)]);
+                    if (ancRooms.length) a.setAnc(p => [...p, ...ancRooms.map(clone)]);
+                    a.setUi(p => ({ ...p, multiSel: newSel }));
+                };
+
+                return (
+                    <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
+                        <div className="bg-white text-black p-5 rounded-xl shadow-sm border border-gray-200 relative">
+                            <button onClick={() => a.setUi(p => ({ ...p, multiSel: [] }))} className="absolute top-4 right-4 text-gray-400 hover:text-black transition"><Icon name="X" size={20} /></button>
+                            <h2 className="text-sm font-bold flex items-center gap-2 mb-4 text-black"><Icon name="Blocks" size={18} /> 群組操作 ({multiSelIds.length} 個物件)</h2>
+                            
+                            {/* 對齊與均分面板 */}
+                            <div className="mb-5">
+                                <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">對齊與均分</label>
+                                <div className="grid grid-cols-3 gap-2 mb-2">
+                                    <button onClick={() => alignGroup('left')} className="p-2 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 hover:border-black transition text-xs font-bold shadow-sm">靠左對齊</button>
+                                    <button onClick={() => alignGroup('centerV')} className="p-2 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 hover:border-black transition text-xs font-bold shadow-sm">水平置中</button>
+                                    <button onClick={() => alignGroup('right')} className="p-2 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 hover:border-black transition text-xs font-bold shadow-sm">靠右對齊</button>
+                                    <button onClick={() => alignGroup('top')} className="p-2 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 hover:border-black transition text-xs font-bold shadow-sm">靠上對齊</button>
+                                    <button onClick={() => alignGroup('centerH')} className="p-2 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 hover:border-black transition text-xs font-bold shadow-sm">垂直置中</button>
+                                    <button onClick={() => alignGroup('bottom')} className="p-2 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 hover:border-black transition text-xs font-bold shadow-sm">靠下對齊</button>
+                                </div>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <button onClick={() => distributeGroup('x')} className="p-2 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-100 hover:border-blue-300 transition text-xs font-bold shadow-sm">↔ 水平均分</button>
+                                    <button onClick={() => distributeGroup('y')} className="p-2 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-100 hover:border-blue-300 transition text-xs font-bold shadow-sm">↕ 垂直均分</button>
+                                </div>
+                            </div>
+
+                            {/* 整體平移面板 */}
+                            <div className="mb-5 bg-gray-50 p-3 rounded-lg border border-gray-200">
+                                <div className="flex items-center justify-between mb-3">
+                                    <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider">群組精準平移</label>
+                                    <div className="flex items-center gap-1 bg-white border border-gray-300 rounded px-1 shadow-sm focus-within:border-black">
+                                        <input type="number" id="nStep" defaultValue="1000" className="w-14 border-none outline-none text-xs font-mono text-center py-1 font-bold text-black" />
+                                        <span className="text-[10px] text-gray-400 font-bold">mm</span>
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-3 gap-1.5 w-36 mx-auto">
+                                    <div />
+                                    <button onClick={() => nudgeGroup(0, -getNudgeStep())} className="p-2 bg-white border border-gray-200 rounded shadow-sm hover:bg-gray-100 hover:border-black transition flex justify-center"><Icon name="ArrowUp" size={16}/></button>
+                                    <div />
+                                    <button onClick={() => nudgeGroup(-getNudgeStep(), 0)} className="p-2 bg-white border border-gray-200 rounded shadow-sm hover:bg-gray-100 hover:border-black transition flex justify-center"><Icon name="ArrowLeft" size={16}/></button>
+                                    <button onClick={() => nudgeGroup(0, getNudgeStep())} className="p-2 bg-white border border-gray-200 rounded shadow-sm hover:bg-gray-100 hover:border-black transition flex justify-center"><Icon name="ArrowDown" size={16}/></button>
+                                    <button onClick={() => nudgeGroup(getNudgeStep(), 0)} className="p-2 bg-white border border-gray-200 rounded shadow-sm hover:bg-gray-100 hover:border-black transition flex justify-center"><Icon name="ArrowRight" size={16}/></button>
+                                </div>
+                            </div>
+
+                            {/* 複製與刪除操作 */}
+                            <div className="grid grid-cols-2 gap-2 mt-4 pt-4 border-t border-gray-200">
+                                <button onClick={dupGroup} className="flex items-center justify-center gap-1.5 p-2.5 bg-black text-white rounded-lg hover:bg-gray-800 transition text-xs font-bold shadow-md"><Icon name="Copy" size={14}/> 複製群組</button>
+                                <button onClick={() => {
+                                    if(window.confirm('確定要刪除選取的群組空間嗎？')) {
+                                        a.setRooms(p => p.filter(x => !multiSelIds.includes(x.id)));
+                                        a.setAnc(p => p.filter(x => !multiSelIds.includes(x.id)));
+                                        a.setUi(p => ({ ...p, multiSel: [] }));
+                                        if (a.setSelRm) a.setSelRm(null);
+                                    }
+                                }} className="flex items-center justify-center gap-1.5 p-2.5 bg-red-50 text-red-600 border border-red-200 rounded-lg hover:bg-red-100 transition text-xs font-bold shadow-sm"><Icon name="Trash2" size={14}/> 刪除群組</button>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
 
             if (selRm && r) {
                 const cw = r.corridorW || DEF_CORRIDOR_W, o = ['OUTDOOR', 'SEMI_OUTDOOR', 'SUNKEN', 'VOID'].includes(r.type), res = isIt ? layout.itResults.find(x => x.id === r.id) : null, mw = isIt ? ((res?.racks || 0) * params.kw / 1000).toFixed(2) : 0, eD = escPath?.[r.id] || { noDoor: !0 };
@@ -2038,16 +2194,44 @@ const Step3 = memo(({ s, a, t }) => {
 
                     {dSpc && bAnc.filter(r => !['OUTDOOR', 'SEMI_OUTDOOR'].includes(r.type)).map(r => {
                                                 const v = fVis[r.floor] || 'hidden';
-                                                const int = v === 'active' && step >= 2;
-                                                const c = r.corridors || DEF_CORRIDORS;
-                                                const cw = r.corridorW || DEF_CORRIDOR_W;
-                                                const iS = s.selRm === r.id;
-                                                if (v === 'hidden') return null;
-                                                return (
-                                                    <g key={`r-${r.id}`} opacity={v === 'active' ? 1 : 0.2} className={step === 3 && int ? (ui.drag === r.id ? 'cursor-grabbing' : 'cursor-move') : 'pointer-events-none'} onPointerDown={step === 3 && int ? e => { e.stopPropagation(); e.target.setPointerCapture(e.pointerId); const pp = a.ptLocal(e, b.id); a.setUi(p => ({ ...p, drag: r.id, offX: pp.x - r.x, offY: pp.y - r.y })); a.setSelRm(r.id) } : undefined}>
-                                                        <g clipPath={cpU}>
-                                                            <g transform={`rotate(${r.rotation || 0}, ${r.x + r.w / 2}, ${r.y + r.h / 2})`}>
-                                                                <rect x={r.x} y={r.y} width={r.w} height={r.h} fill={step === 2 ? '#ffffff' : (r.type === 'SUNKEN' ? 'url(#skP)' : r.type === 'VOID' ? '#f8fafc' : (SPACE_COLORS[r.type] || r.color))} stroke={step === 2 ? '#000000' : (iS ? '#2563eb' : r.type === 'VOID' ? '#ef4444' : '#1e293b')} strokeWidth={step === 2 ? '20' : (iS ? '150' : '100')} strokeDasharray={r.type === 'VOID' ? '100,100' : ''} />
+                                                    const int = v === 'active' && step >= 2;
+                                                    const c = r.corridors || DEF_CORRIDORS;
+                                                    const cw = r.corridorW || DEF_CORRIDOR_W;
+                                                    
+                                                    // 🌟 加入多選與拖曳狀態判斷 (防呆版)
+                                                    const isDragging = (ui && ui.drag === r.id);
+                                                    const isSelected = (s && s.selRm === r.id) || (ui && ui.multiSel && ui.multiSel.includes(r.id));
+                                                    
+                                                    if (v === 'hidden') return null;
+                                                    return (
+                                                        <g key={`r-${r.id}`} opacity={v === 'active' ? 1 : 0.2} 
+                                                           className={step === 3 && int ? (isDragging ? 'cursor-grabbing' : 'cursor-move') : 'pointer-events-none'} 
+                                                           onPointerDown={step === 3 && int ? e => { 
+                                                               e.stopPropagation(); 
+                                                               e.target.setPointerCapture(e.pointerId); 
+                                                               // 🌟 Shift 多選邏輯 (移除所有縮寫語法)
+                                                               if (e.shiftKey) {
+                                                                   a.setUi(p => {
+                                                                       const ms = p.multiSel || [];
+                                                                       if (ms.includes(r.id)) return { ...p, multiSel: ms.filter(x => x !== r.id) };
+                                                                       return { ...p, multiSel: [...ms, r.id] };
+                                                                   });
+                                                               } else {
+                                                                   const pp = a.ptLocal(e, b.id); 
+                                                                   a.setUi(p => ({ ...p, drag: r.id, offX: pp.x - r.x, offY: pp.y - r.y, multiSel: [] })); 
+                                                                   if (a.setSelRm) a.setSelRm(r.id);
+                                                               }
+                                                           } : undefined}>
+                                                            <g clipPath={cpU}>
+                                                                <g transform={`rotate(${r.rotation || 0}, ${r.x + r.w / 2}, ${r.y + r.h / 2})`}>
+                                                                    {/* 🌟 加入碰撞紅光濾鏡與多選藍框 */}
+                                                                    <rect x={r.x} y={r.y} width={r.w} height={r.h} 
+                                                                          fill={step === 2 ? '#ffffff' : (r.type === 'SUNKEN' ? 'url(#skP)' : r.type === 'VOID' ? '#f8fafc' : (SPACE_COLORS[r.type] || r.color))} 
+                                                                          stroke={step === 2 ? '#000000' : (isDragging && ui && ui.collide ? '#ef4444' : (isSelected ? '#2563eb' : r.type === 'VOID' ? '#ef4444' : '#1e293b'))} 
+                                                                          strokeWidth={step === 2 ? '20' : (isSelected || isDragging ? '150' : '100')} 
+                                                                          strokeDasharray={r.type === 'VOID' ? '100,100' : ''} 
+                                                                          style={{ filter: (isDragging && ui && ui.collide) ? 'drop-shadow(0 0 30px rgba(239, 68, 68, 1))' : 'none', transition: 'filter 0.1s, stroke 0.1s' }}
+                                                                    />
                                                                 {['SUNKEN', 'VOID'].includes(r.type) && <path d={`M ${r.x},${r.y} L ${r.x + r.w},${r.y + r.h} M ${r.x + r.w},${r.y} L ${r.x},${r.y + r.h}`} stroke={r.type === 'VOID' ? '#ef4444' : '#9CA3AF'} strokeWidth="15" strokeDasharray='50,50' opacity='0.6' />}
                                                                 {rStDet(r, floors.find(f => f.name === r.floor)?.height || 5000, step, ui, a, floors, bAnc)}
 
@@ -2107,13 +2291,38 @@ const Step3 = memo(({ s, a, t }) => {
                                                     const int = v === 'active' && step >= 2;
                                                     const c = r.corridors || DEF_IT_CORRIDORS;
                                                     const cw = r.corridorW || DEF_CORRIDOR_W;
-                                                    const iD = ui.dragIt === r.id;
+                                                    const iD = (ui && ui.dragIt === r.id);
+                                                    const isSelected = (s && s.selRm === r.id) || (ui && ui.multiSel && ui.multiSel.includes(r.id));
+                                                    
                                                     if (v === 'hidden') return null;
                                                     return (
-                                                        <g key={`ir-${r.id}`} opacity={v === 'active' ? 1 : 0.2} className={step === 3 && int ? (iD ? 'cursor-grabbing' : 'cursor-move') : 'pointer-events-none'} onPointerDown={step === 3 && int ? e => { e.stopPropagation(); e.target.setPointerCapture(e.pointerId); const pp = a.ptLocal(e, b.id); a.setUi(p => ({ ...p, dragIt: r.id, offX: pp.x - r.x, offY: pp.y - r.y })); a.setSelRm(r.id); } : undefined}>
+                                                        <g key={`ir-${r.id}`} opacity={v === 'active' ? 1 : 0.2} 
+                                                           className={step === 3 && int ? (iD ? 'cursor-grabbing' : 'cursor-move') : 'pointer-events-none'} 
+                                                           onPointerDown={step === 3 && int ? e => { 
+                                                               e.stopPropagation(); 
+                                                               e.target.setPointerCapture(e.pointerId); 
+                                                               // 🌟 Shift 多選邏輯 (移除所有縮寫語法)
+                                                               if (e.shiftKey) {
+                                                                   a.setUi(p => {
+                                                                       const ms = p.multiSel || [];
+                                                                       if (ms.includes(r.id)) return { ...p, multiSel: ms.filter(x => x !== r.id) };
+                                                                       return { ...p, multiSel: [...ms, r.id] };
+                                                                   });
+                                                               } else {
+                                                                   const pp = a.ptLocal(e, b.id); 
+                                                                   a.setUi(p => ({ ...p, dragIt: r.id, offX: pp.x - r.x, offY: pp.y - r.y, multiSel: [] })); 
+                                                                   if (a.setSelRm) a.setSelRm(r.id);
+                                                               }
+                                                           } : undefined}>
                                                             <g clipPath={cpU}>
                                                                 <g transform={`rotate(${r.rotation || 0}, ${r.x + r.w / 2}, ${r.y + r.h / 2})`}>
-                                                                    <rect x={r.x} y={r.y} width={r.w} height={r.h} fill={step === 2 ? '#ffffff' : SPACE_COLORS['IT']} stroke={step === 2 ? '#000000' : (iD ? '#2563eb' : '#3b82f6')} strokeWidth={step === 2 ? '20' : (iD ? '150' : '100')} opacity={step === 2 ? '1' : (iD ? '0.7' : '0.5')} />
+                                                                    <rect x={r.x} y={r.y} width={r.w} height={r.h} 
+                                                                          fill={step === 2 ? '#ffffff' : SPACE_COLORS['IT']} 
+                                                                          stroke={step === 2 ? '#000000' : (iD && ui && ui.collide ? '#ef4444' : (isSelected ? '#8b5cf6' : '#3b82f6'))} 
+                                                                          strokeWidth={step === 2 ? '20' : (isSelected || iD ? '150' : '100')} 
+                                                                          opacity={step === 2 ? '1' : (iD ? '0.8' : '0.5')} 
+                                                                          style={{ filter: (iD && ui && ui.collide) ? 'drop-shadow(0 0 30px rgba(239, 68, 68, 1))' : 'none', transition: 'filter 0.1s, stroke 0.1s' }}
+                                                                    />
                                                                 </g>
                                                             </g>
 
@@ -2385,141 +2594,195 @@ const Step3 = memo(({ s, a, t }) => {
                         {/* --- 上半部：同步平面圖 (不再位移，直接疊在原平面圖上) --- */}
                         <g>
                             <text x={room.w/2} y={-8000} fontSize="3000" fontWeight="900" fill="#3b82f6" textAnchor="middle">{t('planCheck')}</text>
-                            {/* 提示框 */}
                             <rect x={0} y={0} width={room.w} height={room.h} fill="none" stroke="#3b82f6" strokeWidth="60" strokeDasharray="200,200" className="pointer-events-none" />
                             
-                            {/* 繪製吊車 (互動層) */}
-                            {(outLogistics?.cranes || []).map(c => (
-                                <g key={c.id} 
-                                   className={ui.dragCraneId === c.id ? "cursor-grabbing" : "cursor-move"}
-                                   style={{ pointerEvents: 'auto' }}
-                                   onPointerDown={e => {
-                                       e.stopPropagation();
-                                       e.target.setPointerCapture(e.pointerId);
-                                       const pp = a.pt(e); // 記錄點擊的絕對座標
-                                       a.setUi(p => ({ ...p, dragCraneId: c.id, offX: pp.x - (c.x || 0), offY: pp.y - (c.y || 0) }));
-                                   }}>
-                                    {/* 吊臂半徑 (Boom Range - 虛線) */}
-                                    <circle cx={c.x || 0} cy={c.y || 0} r={c.boomLen || c.radius || 0} fill="none" stroke="#94a3b8" strokeWidth="40" strokeDasharray="200,200" className="pointer-events-none" />
-                                    {/* 掛鉤作業半徑 (Hook Range) */}
-                                    <circle cx={c.x || 0} cy={c.y || 0} r={c.radius || 0} fill={c.color || '#3b82f6'} opacity="0.1" stroke={c.color || '#3b82f6'} strokeWidth="60" strokeDasharray="400,200" className="pointer-events-none" />
-                                    {/* 吊車本體 */}
-                                    <rect x={(c.x || 0) - 1500} y={(c.y || 0) - 3000} width={3000} height={6000} fill="#1e293b" rx="400" className="pointer-events-none" />
+                            {/* 繪製吊車 (PLAN 互動層) */}
+                            {(outLogistics?.cranes || []).map(c => {
+                                const targetX = c.radius || 0;
+                                const absR = Math.abs(targetX);
+                                const isFlipped = targetX < 0; 
+                                const cColor = c.color || '#3b82f6';
+
+                                return (
+                                <g key={c.id}>
+                                    <circle cx={c.x || 0} cy={c.y || 0} r={Math.abs(c.boomLen || targetX)} fill="none" stroke="#94a3b8" strokeWidth="40" strokeDasharray="200,200" className="pointer-events-none" />
+                                    <circle cx={c.x || 0} cy={c.y || 0} r={absR} fill={cColor} opacity="0.1" stroke={cColor} strokeWidth="60" strokeDasharray="400,200" className="pointer-events-none" />
                                     
-                                    {/* 明顯的拖曳點 (Drag Handle) */}
-                                    <g className={ui.dragCraneId === c.id ? "cursor-grabbing" : "cursor-move"}
-                                       style={{ pointerEvents: 'auto' }}
-                                       onPointerDown={e => { 
-                                           e.stopPropagation(); 
-                                           e.target.setPointerCapture(e.pointerId); 
-                                           const pp = a.pt(e);
-                                           a.setUi(p => ({ ...p, dragCraneId: c.id, offX: pp.x - (c.x || 0), offY: pp.y - (c.y || 0) })); 
-                                       }}>
+                                    {/* 平面圖吊車本體 */}
+                                    <g transform={`translate(${c.x || 0}, ${c.y || 0}) ${isFlipped ? 'scale(-1, 1)' : ''}`} className="pointer-events-none">
+                                        <g stroke="#475569" strokeWidth="400" strokeLinecap="round">
+                                            <line x1="-3000" y1="-1500" x2="-5000" y2="-4500" />
+                                            <line x1="1000" y1="-1500" x2="3000" y2="-4500" />
+                                            <line x1="-3000" y1="1500" x2="-5000" y2="4500" />
+                                            <line x1="1000" y1="1500" x2="3000" y2="4500" />
+                                        </g>
+                                        <g stroke="#fbbf24" strokeWidth="250" strokeLinecap="round">
+                                            <line x1="-3000" y1="-1500" x2="-5000" y2="-4500" />
+                                            <line x1="1000" y1="-1500" x2="3000" y2="-4500" />
+                                            <line x1="-3000" y1="1500" x2="-5000" y2="4500" />
+                                            <line x1="1000" y1="1500" x2="3000" y2="4500" />
+                                        </g>
+                                        <rect x="-5500" y="-5000" width="1000" height="1000" fill="#1e293b" rx="200" />
+                                        <rect x="2500" y="-5000" width="1000" height="1000" fill="#1e293b" rx="200" />
+                                        <rect x="-5500" y="4000" width="1000" height="1000" fill="#1e293b" rx="200" />
+                                        <rect x="2500" y="4000" width="1000" height="1000" fill="#1e293b" rx="200" />
+
+                                        <rect x="-10000" y="-1500" width="14000" height="3000" fill="#1e293b" rx="400" />
+                                        <rect x="-9500" y="-1500" width="13000" height="3000" fill="#f59e0b" rx="200" />
+                                        <rect x="-10000" y="-1400" width="2500" height="2800" fill={cColor} rx="400" />
+                                        <rect x="-9500" y="-1200" width="1500" height="2400" fill="#94a3b8" rx="200" /> 
+                                        <circle cx={0} cy={0} r="1400" fill="#334155" /> 
+                                    </g>
+
+                                    <g transform={`translate(${c.x || 0}, ${c.y || 0}) ${isFlipped ? 'rotate(180)' : ''}`} className="pointer-events-none">
+                                        <path d="M -1200 -1600 L -3000 -1200 L -3000 1200 L -1200 1600 Z" fill="#64748b" />
+                                        <rect x="-3200" y="-1000" width="1000" height="2000" fill="#475569" rx="300" />
+                                        <rect x="-500" y="600" width="2000" height="1200" fill={cColor} rx="200" />
+                                        <rect x="0" y="700" width="1200" height="1000" fill="#bae6fd" rx="100" />
+                                        <rect x="-1500" y="-600" width="4500" height="1200" fill={cColor} rx="200" />
+                                        <rect x="1000" y="-450" width={Math.max(0, absR - 1000)} height="900" fill="#94a3b8" />
+                                        <rect x="1000" y="-300" width={Math.max(0, absR - 1000)} height="600" fill="#cbd5e1" />
+                                        <rect x={absR - 600} y="-500" width="1000" height="1000" fill={cColor} rx="200" />
+                                        <circle cx={absR + 200} cy={0} r="300" fill="#334155" />
+                                    </g>
+
+                                    <g className={ui.dragCraneId === c.id ? "cursor-grabbing" : "cursor-move"} style={{ pointerEvents: 'auto' }} onPointerDown={e => { e.stopPropagation(); e.target.setPointerCapture(e.pointerId); const pp = a.pt(e); a.setUi(p => ({ ...p, dragCraneId: c.id, offX: pp.x - (c.x || 0), offY: pp.y - (c.y || 0) })); }}>
                                         <circle cx={c.x || 0} cy={c.y || 0} r={1000} fill="#ffffff" stroke="#f59e0b" strokeWidth="200" className="hover:scale-110 transition-transform" />
                                         <Icon name="Move" size={600} className="text-gray-800" />
                                     </g>
                                     
-                                    {/* 👇 新增：半徑調整控制點 (Drag Radius Handle) 👇 */}
-                                    <g className={ui.dragCraneHookId === c.id ? "cursor-ew-resize" : "cursor-pointer"}
-                                       style={{ pointerEvents: 'auto' }}
-                                       onPointerDown={e => { 
-                                           e.stopPropagation(); 
-                                           e.target.setPointerCapture(e.pointerId); 
-                                           const pp = a.pt(e); // 記錄點擊時的滑鼠位置與初始半徑
-                                           a.setUi(p => ({ ...p, dragCraneHookId: c.id, startR: c.radius, mX: pp.x })); 
-                                       }}>
-                                        <circle cx={(c.x || 0) + (c.radius || 0)} cy={c.y || 0} r={400} fill="#3b82f6" stroke="#ffffff" strokeWidth="80" className="hover:scale-125 transition-transform" />
+                                    <g className={ui.dragCraneHookId === c.id ? "cursor-ew-resize" : "cursor-pointer"} style={{ pointerEvents: 'auto' }} onPointerDown={e => { e.stopPropagation(); e.target.setPointerCapture(e.pointerId); const pp = a.pt(e); a.setUi(p => ({ ...p, dragCraneHookId: c.id, startR: c.radius, mX: pp.x })); }}>
+                                        <circle cx={(c.x || 0) + targetX} cy={c.y || 0} r={500} fill="#ef4444" stroke="#ffffff" strokeWidth="100" className="hover:scale-125 transition-transform" />
+                                        <circle cx={(c.x || 0) + targetX} cy={c.y || 0} r={150} fill="#ffffff" />
                                     </g>   
-                                    {/* 吊車中心點 */}
-                                    <circle cx={c.x || 0} cy={c.y || 0} r={800} fill="#f59e0b" className="pointer-events-none" />
-                                    {/* 吊臂方向 */}
-                                    <line x1={c.x || 0} y1={c.y || 0} x2={(c.x || 0) + (c.radius || 0) * 0.7} y2={c.y || 0} stroke="#64748b" strokeWidth="250" className="pointer-events-none" />
-                                    {/* 標籤與半徑數據 */}
-                                    <text x={c.x || 0} y={(c.y || 0) + 4500} fill="#1e293b" fontSize="1500" fontWeight="bold" textAnchor="middle" className="pointer-events-none">{c.name}</text>
-                                    <text x={(c.x || 0) + (c.radius || 0)/2} y={(c.y || 0) - 500} fill="#3b82f6" fontSize="1500" fontWeight="bold" textAnchor="middle" className="pointer-events-none">R = {c.radius} mm</text>
+                                    
+                                    <text x={c.x || 0} y={(c.y || 0) + 6500} fill="#1e293b" fontSize="1500" fontWeight="bold" textAnchor="middle" className="pointer-events-none">{c.name}</text>
+                                    <text x={(c.x || 0) + targetX/2} y={(c.y || 0) - 1500} fill="#3b82f6" fontSize="1500" fontWeight="bold" textAnchor="middle" className="pointer-events-none">R = {absR} mm</text>
                                 </g>
-                            ))}
+                            )})}
                         </g>
 
                         {/* --- 下半部：同步斷面圖 (推到平面圖的下方 room.h + 40000 處) --- */}
                         <g transform={`translate(0, ${room.h + 40000})`}>
-                            {/* 1. 地平線 GL 與 建築樓層區塊 (最底層) */}
                             <line x1={-15000} y1={0} x2={room.w + 15000} y2={0} stroke="#374151" strokeWidth={150} />
                             
-                            {secData.blocks.map(fb => {
-                                const sy = -fb.bottomY - fb.h;
-                                return (
-                                    <g key={`s7-${fb.floor}`}>
-                                        <rect x={0} y={sy} width={room.w} height={fb.h} fill="#f8fafc" stroke="#cbd5e1" strokeWidth="40" />
-                                        <text x={-2000} y={sy + fb.h/2} fill="#64748b" fontSize="1500" fontWeight="bold" textAnchor="end" dominantBaseline="middle">{fb.floor}</text>
-                                    </g>
-                                );
-                            })}
+                            {secData.blocks.map(fb => (
+                                <g key={`s7-sec-${fb.floor}`}>
+                                    <rect x={0} y={-fb.bottomY - fb.h} width={room.w} height={fb.h} fill="#f8fafc" stroke="#cbd5e1" strokeWidth="40" />
+                                    <text x={-2000} y={-fb.bottomY - fb.h/2} fill="#64748b" fontSize="1500" fontWeight="bold" textAnchor="end" dominantBaseline="middle">{fb.floor}</text>
+                                </g>
+                            ))}
 
-                            {/* 2. 斷面圖同步繪製吊車 (中間層：高擬真版 - 包含金屬轉軸) */}
                             {(outLogistics?.cranes || []).map(c => {
-                                const boomLen = c.boomLen || Math.max((c.radius || 0), 20000);
-                                const boomAngle = Math.atan2(-20000, (c.boomLen || c.radius || 0)) * 180 / Math.PI;
+                                const pivotY = -2800; // 旋回軸的絕對高度
+                                const targetX = c.radius || 0;
+                                
+                                let targetFloorY = -15000; 
+                                if (outLogistics?.phases?.length > 0) {
+                                    const p = outLogistics.phases[0];
+                                    const targetF = secData.blocks.find(f => f.floor === p.targetFloor);
+                                    if (targetF) targetFloorY = -targetF.bottomY - targetF.h; 
+                                }
+                                
+                                const boomTipY = targetFloorY - 4000; 
+                                const dx = Math.abs(targetX);
+                                const dy = pivotY - boomTipY; 
+                                
+                                const boomLen = Math.hypot(dx, dy);
+                                const boomRot = -Math.atan2(dy, dx) * 180 / Math.PI; 
+                                const isFlipped = targetX < 0; 
+                                const cColor = c.color || "#fbbf24";
+
                                 return (
-                                <g key={`crane-sec-${c.id}`} transform={`translate(${c.x || 0}, 0)`}>
-                                    {/* swept radius */}
-                                    <circle cx={0} cy={0} r={(c.radius || 0)} fill="none" stroke="#60a5fa" strokeWidth="40" strokeDasharray="400,200" opacity="0.12" />
-
-                                    {/* outriggers */}
-                                    <g className="pointer-events-none">
-                                        <rect x={-2200} y={-140} width={400} height={160} fill="#f59e0b" rx="40" />
-                                        <rect x={1800} y={-140} width={400} height={160} fill="#f59e0b" rx="40" />
-                                        <path d="M -1000 -500 L -1500 0 M 1000 -500 L 1500 0" stroke="#f59e0b" strokeWidth="160" strokeLinecap="round" />
-                                    </g>
-
-                                    {/* chassis */}
-                                    <rect x={-2600} y={-1500} width={5200} height={1000} fill="#0f172a" rx="220" />
-                                    <g className="pointer-events-none">
-                                        <circle cx={-1600} cy={-500} r={560} fill="#0b1220" stroke="#94a3b8" strokeWidth="120" />
-                                        <circle cx={1600} cy={-500} r={560} fill="#0b1220" stroke="#94a3b8" strokeWidth="120" />
-                                    </g>
-
-                                    {/* cab */}
-                                    <g transform={`translate(-2200, -1500)`}> 
-                                        <rect x={0} y={-1200} width={1000} height={1200} rx={160} fill="#f59e0b" />
-                                        <rect x={140} y={-1100} width={720} height={540} fill="#e2e8f0" />
-                                    </g>
-
-                                    {/* turntable and pivot */}
-                                    <g transform={`translate(500, -1500)`}> 
-                                        <ellipse cx={0} cy={0} rx={900} ry={280} fill="#ef4444" opacity="0.06" />
-                                        <circle cx={0} cy={0} r={460} fill="#ea580c" />
-                                        <circle cx={0} cy={0} r={120} fill="#0f172a" stroke="#94a3b8" strokeWidth="40" />
-
-                                        {/* lattice boom (stylized) */}
-                                        <g transform={`rotate(${boomAngle})`}>
-                                            <rect x={0} y={-80} width={boomLen} height={160} fill="#fbbf24" rx={80} opacity="0.95" />
-                                            {Array.from({length: Math.max(3, Math.floor(boomLen/3000))}).map((_,i) => (
-                                                <line key={i} x1={i*(boomLen/5)} y1={-120} x2={i*(boomLen/5)+ (boomLen/5)} y2={120} stroke="#1f2937" strokeWidth="40" strokeOpacity="0.12" />
+                                <g key={`crane-sec-fid-${c.id}`} transform={`translate(${c.x || 0}, 0)`}>
+                                    <g transform={`scale(${isFlipped ? -1 : 1}, 1)`}>
+                                        
+                                        {/* 🌟 1. 立面底盤與駕駛室 (精準還原參考圖的切角造型) */}
+                                        <g id="chassis-side">
+                                            <rect x="-9500" y="-1800" width="12500" height="800" fill="#fbbf24" rx="100" />
+                                            
+                                            {/* 駕駛室本體 (有傾斜角與切角的車頭) */}
+                                            <path d="M -9000 -1000 L -12000 -1000 L -12500 -1500 L -11500 -2800 L -9000 -2800 Z" fill={cColor} />
+                                            
+                                            {/* 駕駛室車窗 (傾斜擋風玻璃與側窗) */}
+                                            <path d="M -9300 -1300 L -11800 -1300 L -11100 -2500 L -9300 -2500 Z" fill="#bae6fd" stroke="#475569" strokeWidth="40" strokeLinejoin="round" />
+                                            <line x1="-10300" y1="-1300" x2="-10300" y2="-2500" stroke="#475569" strokeWidth="40" />
+                                            
+                                            {/* 帶有輪拱深色陰影的車輪組 */}
+                                            {[-10000, -8000, -3000, -1000, 1000].map(tx => (
+                                                <g key={tx}>
+                                                    <path d={`M ${tx - 800} -1000 L ${tx - 600} -1600 L ${tx + 600} -1600 L ${tx + 800} -1000 Z`} fill="#1e293b" opacity="0.6" />
+                                                    <circle cx={tx} cy="-600" r="600" fill="#1e293b" />
+                                                    <circle cx={tx} cy="-600" r="250" fill="#fbbf24" />
+                                                    <circle cx={tx} cy="-600" r="80" fill="#0f172a" />
+                                                </g>
                                             ))}
-                                            <rect x={Math.max(0, boomLen-1200)} y={-180} width={1200} height={360} fill="#f59e0b" rx={120} />
+                                            
+                                            {/* 支撐腳 (Outrigger 柱身) */}
+                                            <rect x="-9000" y="-1000" width="300" height="1000" fill="#475569" />
+                                            <rect x="-9200" y="0" width="700" height="100" fill="#1e293b" rx="20" />
+                                            <rect x="1500" y="-1000" width="300" height="1000" fill="#475569" />
+                                            <rect x="1300" y="0" width="700" height="100" fill="#1e293b" rx="20" />
                                         </g>
-                                    </g>
 
-                                    {/* cable, hook and load */}
-                                    <g className="pointer-events-none">
-                                        <line x1={(c.radius || 0)} y1={-20000} x2={(c.radius || 0)} y2={-2500} stroke="#111827" strokeWidth="28" strokeLinecap="round" opacity="0.9" />
-                                        <g transform={`translate(${(c.radius || 0)}, -2500)`}> 
-                                            <circle cx={0} cy={0} r={220} fill="#111827" />
-                                            <rect x={-900} y={200} width={1800} height={600} fill="#bae6fd" stroke="#0284c7" strokeWidth="36" rx="40" />
+                                        {/* 🌟 2. 立面旋轉台與操作室 (包含尾部堆疊的配重塊) */}
+                                        <g transform={`translate(0, ${pivotY})`}>
+                                            <g id="turntable-side" className="pointer-events-none">
+                                                {/* 配重塊 (Counterweight - 後方有層次感的鐵塊) */}
+                                                <path d="M 0 800 L 2500 800 L 2800 300 L 2800 -1000 L 0 -1000 Z" fill="#475569" />
+                                                <line x1="2600" y1="400" x2="0" y2="400" stroke="#1e293b" strokeWidth="30" opacity="0.4"/>
+                                                <line x1="2700" y1="0" x2="0" y2="0" stroke="#1e293b" strokeWidth="30" opacity="0.4"/>
+                                                <line x1="2800" y1="-400" x2="0" y2="-400" stroke="#1e293b" strokeWidth="30" opacity="0.4"/>
+                                                
+                                                {/* 操作室 (Operator Cabin - 前方傾斜的大片全景玻璃) */}
+                                                <path d="M 500 800 L -1200 800 L -2000 0 L -1200 -1000 L 500 -1000 Z" fill={cColor} />
+                                                <path d="M 300 600 L -1000 600 L -1600 0 L -1000 -800 L 300 -800 Z" fill="#bae6fd" stroke="#475569" strokeWidth="40" strokeLinejoin="round" />
+                                                <line x1="-400" y1="600" x2="-400" y2="-800" stroke="#475569" strokeWidth="30" />
+                                                
+                                                {/* 轉軸保護蓋 */}
+                                                <circle cx="0" cy="0" r="500" fill={cColor} stroke="#1e293b" strokeWidth="30" />
+                                            </g>
+                                            
+                                            {/* 🌟 3. 仰角吊臂 */}
+                                            <g transform={`rotate(${boomRot})`}>
+                                                <rect x="-1000" y="-500" width={boomLen * 0.4 + 1000} height="1000" fill={cColor} rx="150" />
+                                                <rect x={boomLen * 0.3} y="-400" width={boomLen * 0.4} height="800" fill="#475569" rx="100" />
+                                                <rect x={boomLen * 0.35} y="-400" width="200" height="800" fill={cColor} />
+                                                <rect x={boomLen * 0.65} y="-400" width="200" height="800" fill={cColor} />
+                                                <rect x={boomLen * 0.6} y="-300" width={boomLen * 0.4} height="600" fill={cColor} rx="50" />
+                                                
+                                                {/* 油壓推桿 (動態指向吊臂底部) */}
+                                                <line x1="400" y1="800" x2={boomLen * 0.25} y2="400" stroke="#94a3b8" strokeWidth="300" strokeLinecap="round" />
+                                                <line x1="400" y1="800" x2={boomLen * 0.15} y2="550" stroke="#1e293b" strokeWidth="150" strokeLinecap="round" />
+
+                                                {/* 吊臂尖端 */}
+                                                <path d={`M ${boomLen - 400} -400 L ${boomLen + 300} -200 L ${boomLen + 300} 200 L ${boomLen - 400} 400 Z`} fill={cColor} />
+                                                <circle cx={boomLen} cy="0" r="200" fill="#1e293b" />
+
+                                                {/* 🌟 4. 吊索、滑輪組與重物 (永遠抵消旋轉垂直向下) */}
+                                                <g transform={`translate(${boomLen}, 0) rotate(${-boomRot})`}>
+                                                    <line x1="0" y1="0" x2="0" y2="2500" stroke="#334155" strokeWidth="20" />
+                                                    <rect x="-300" y="2500" width="600" height="800" fill={cColor} rx="150" />
+                                                    <path d="M -300 2700 L 300 3100 M -300 2900 L 300 3300" stroke="#1e293b" strokeWidth="40" />
+                                                    
+                                                    {/* 金屬吊鉤 */}
+                                                    <path d="M 0 3300 C 250 3300, 250 3900, 0 3900 C -200 3900, -200 3600, 0 3600" fill="none" stroke="#334155" strokeWidth="100" strokeLinecap="round" />
+                                                    
+                                                    {/* 懸吊貨物 */}
+                                                    <rect x="-1500" y="4000" width="3000" height="800" fill="#bae6fd" stroke="#0284c7" strokeWidth="40" rx="100" />
+                                                </g>
+                                            </g>
                                         </g>
                                     </g>
                                 </g>
                             )})}
 
-                            {/* 3. 標題文字、GL標籤 與 搬入階段箭頭 (最上層：永遠不被吊車擋住) */}
-                            <text x={room.w/2} y={-secData.totalAboveH - 5000} fontSize="3000" fontWeight="900" fill="#ef4444" textAnchor="middle">{t('secCheck')}</text>
-                            <text x={-15000} y={-500} fill="#374151" fontSize={1500} fontWeight="bold">{t('gl')}</text>
+                            <text x={room.w/2} y={-secData.totalAboveH - 8000} fontSize="3500" fontWeight="900" fill="#ef4444" textAnchor="middle">{t('secCheck')}</text>
                             
                             {(outLogistics?.phases || []).map((p, i) => {
                                 const targetF = secData.blocks.find(f => f.floor === p.targetFloor);
-                                const targetY = targetF ? (-targetF.bottomY - targetF.h/2) : 0;
-                                const startX = -8000 - (i * 4000); // 讓多個階段的箭頭錯開
+                                const targetY = targetF ? (-targetF.bottomY - targetF.h) : 0;
+                                const startX = -8000 - (i * 4000);
                                 return (
                                     <g key={p.id}>
                                         <path d={`M ${startX} 0 L ${startX} ${targetY} L 2000 ${targetY}`} fill="none" stroke={p.color || '#ef4444'} strokeWidth="300" markerEnd="url(#arrow)" strokeLinejoin="round" />
@@ -3374,13 +3637,22 @@ const Step3 = memo(({ s, a, t }) => {
                             tY.forEach(t => { [0, obj.h].forEach(h => { const d = t - (ry + h); if (Math.abs(d) < my) { my = Math.abs(d); by = ry + d; sy = t } }) });
                             rx = Math.round(bx); ry = Math.round(by);
                         }
+
+                        let isColliding = false; // 🌟 1. 新增：碰撞狀態標記
                         if (!['OUTDOOR', 'SEMI_OUTDOOR', 'SUNKEN', 'VOID'].includes(obj.type)) {
                             const bRooms = (rooms || []).filter(r => (r.buildingId || 'B1') === bId);
                             const bAnc = (anc || []).filter(r => (r.buildingId || 'B1') === bId);
-                            const nv = getVPos(id, obj.floor, rx, ry, obj.w, obj.h, obj.x, obj.y, bW, bH, bRooms, bAnc); rx = nv.x; ry = nv.y;
+                            const nv = getVPos(id, obj.floor, rx, ry, obj.w, obj.h, obj.x, obj.y, bW, bH, bRooms, bAnc); 
+                            
+                            // 🌟 2. 判斷物理引擎是否擋下了滑鼠的預期移動 (容差設定為 2mm)
+                            if (Math.abs(nv.x - rx) > 2 || Math.abs(nv.y - ry) > 2) isColliding = true;
+                            
+                            rx = nv.x; ry = nv.y;
                         }
                         isIt ? setRooms(prev => prev.map(r => r.id === id ? { ...r, x: rx, y: ry } : r)) : setAnc(prev => prev.map(r => r.id === id ? { ...r, x: rx, y: ry } : r));
-                        setUi(pr => ({ ...pr, snapX: sx, snapY: sy }));
+                        
+                        // 🌟 3. 將碰撞狀態 (collide) 寫入 ui state
+                        setUi(pr => ({ ...pr, snapX: sx, snapY: sy, collide: isColliding }));
                     }
                 }
                 else if (ui.dragCorr) {
