@@ -451,7 +451,26 @@
         return out; 
     }, [rooms, anc, step, aFlr, activeBuilding, layout, params.escapeType, params.fwu, params.fwuW]);
         const fmtTxt = (n, w) => { let t = n || 'Data Hall'; if (w < 5000) { const u = t.toUpperCase(); if (u.includes('ELEVATOR')) t = 'EVL'; else if (u.includes('STAIR')) t = 'Stair'; else if (u.includes('UPS')) t = 'UPS' } return { t, fs: Math.max(200, Math.min(1500, w / 2.5, (w * 1.5) / Math.max(1, t.length))) } };
-        const rDr = (rm, d, st, ui, a, iIt) => { let dx = 0, dy = 0, rt = 0; if (d.edge === 'top') dx = d.offset; else if (d.edge === 'bottom') { dx = d.offset + d.width; dy = rm.h; rt = 180 } else if (d.edge === 'left') { dy = d.offset + d.width; rt = 270 } else if (d.edge === 'right') { dx = rm.w; dy = d.offset; rt = 90 } const iD = ui.dragD?.doorId === d.id, tf = `${d.swing === 'right' ? `translate(${d.width}, 0) scale(-1, 1) ` : ''}${d.direction === 'out' ? '' : 'scale(1, -1) '}`; return <g transform={`translate(${rm.x + dx}, ${rm.y + dy}) rotate(${rt})`} key={`d-${rm.id}-${d.id}`} className={[2, 3].includes(st) ? (iD ? "cursor-grabbing" : "cursor-grab") : ""} onPointerDown={[2, 3].includes(st) ? e => { e.stopPropagation(); e.target.setPointerCapture(e.pointerId); a.setUi(p => ({ ...p, dragD: { roomId: rm.id, doorId: d.id, isIt: iIt } })) } : undefined} onDoubleClick={[2, 3].includes(st) ? e => { e.stopPropagation(); const f = o => o.map(x => { if (x.id !== d.id) return x; const eg = ['top', 'right', 'bottom', 'left']; return { ...x, edge: eg[(eg.indexOf(x.edge) + 1) % 4], offset: 0 } }); iIt ? a.setRooms(p => p.map(r => r.id !== rm.id ? r : { ...r, doors: f(r.doors || []) })) : a.setAnc(p => p.map(r => r.id !== rm.id ? r : { ...r, doors: f(r.doors) })) } : undefined}><rect x="0" y="-30" width={d.width} height="60" fill={iD ? "#e5e7eb" : (iIt ? SPACE_COLORS['IT'] : rm.color)} stroke="#111827" strokeWidth="10" />{d.type === 'single' && <g transform={tf}><path d={`M 0,0 L 0,${-d.width} A ${d.width} ${d.width} 0 0 1 ${d.width},0`} fill="none" stroke="#111827" strokeWidth="25" strokeDasharray="30,30" /><line x1="0" y1="0" x2="0" y2={-d.width} stroke="#111827" strokeWidth="25" strokeLinecap="round" /></g>}{d.type === 'double' && <g transform={tf}><path d={`M 0,0 L 0,${-d.width / 2} A ${d.width / 2} ${d.width / 2} 0 0 1 ${d.width / 2},0`} fill="none" stroke="#111827" strokeWidth="25" strokeDasharray="30,30" /><line x1="0" y1="0" x2="0" y2={-d.width / 2} stroke="#111827" strokeWidth="25" strokeLinecap="round" /><path d={`M ${d.width},0 L ${d.width},${-d.width / 2} A ${d.width / 2} ${d.width / 2} 0 0 0 ${d.width / 2},0`} fill="none" stroke="#111827" strokeWidth="25" strokeDasharray="30,30" /><line x1={d.width} y1="0" x2={d.width} y2={-d.width / 2} stroke="#111827" strokeWidth="25" strokeLinecap="round" /></g>}{d.type === 'sliding' && <g transform={tf}><line x1="-100" y1="-20" x2={d.width / 2 + 100} y2="-20" stroke="#111827" strokeWidth="25" strokeLinecap="round" /><line x1={d.width / 2 - 100} y1="20" x2={d.width + 100} y2="20" stroke="#111827" strokeWidth="25" strokeLinecap="round" /><path d={`M -50,-20 L -100,-60 L 0,-60 Z`} fill="#111827" /><path d={`M ${d.width + 50},20 L ${d.width + 100},60 L ${d.width},60 Z`} fill="#111827" /></g>}{[2, 3].includes(st) && <g transform={tf}><rect x="0" y={-d.width} width={d.width} height={d.width} fill="transparent" stroke={iD ? "#000" : "transparent"} strokeWidth="10" strokeDasharray="20,20" /></g>}</g> };
+        const rDr = (rm, d, st, ui, a, iIt) => { 
+            let dx = 0, dy = 0, rt = 0; 
+            if (d.edge === 'top') dx = d.offset; 
+            else if (d.edge === 'bottom') { dx = d.offset + d.width; dy = rm.h; rt = 180 } 
+            else if (d.edge === 'left') { dy = d.offset + d.width; rt = 270 } 
+            else if (d.edge === 'right') { dx = rm.w; dy = d.offset; rt = 90 } 
+            const iD = ui.dragD?.doorId === d.id, tf = `${d.swing === 'right' ? `translate(${d.width}, 0) scale(-1, 1) ` : ''}${d.direction === 'out' ? '' : 'scale(1, -1) '}`; 
+            
+            return <g transform={`translate(${rm.x + dx}, ${rm.y + dy}) rotate(${rt})`} key={`d-${rm.id}-${d.id}`} className={[2, 3].includes(st) ? (iD ? "cursor-grabbing" : "cursor-grab") : ""} onPointerDown={[2, 3].includes(st) ? e => { e.stopPropagation(); e.target.setPointerCapture(e.pointerId); a.setUi(p => ({ ...p, dragD: { roomId: rm.id, doorId: d.id, isIt: iIt } })) } : undefined} onDoubleClick={[2, 3].includes(st) ? e => { e.stopPropagation(); const f = o => o.map(x => { if (x.id !== d.id) return x; const eg = ['top', 'right', 'bottom', 'left']; return { ...x, edge: eg[(eg.indexOf(x.edge) + 1) % 4], offset: 0 } }); iIt ? a.setRooms(p => p.map(r => r.id !== rm.id ? r : { ...r, doors: f(r.doors || []) })) : a.setAnc(p => p.map(r => r.id !== rm.id ? r : { ...r, doors: f(r.doors) })) } : undefined}>
+                
+                {/* 👇 隱形放大觸控區 ( Hitbox ) 👇 */}
+                <rect x="-300" y="-500" width={d.width + 600} height="1000" fill="transparent" />
+                
+                <rect x="0" y="-30" width={d.width} height="60" fill={iD ? "#e5e7eb" : (iIt ? SPACE_COLORS['IT'] : rm.color)} stroke="#111827" strokeWidth="10" />
+                {d.type === 'single' && <g transform={tf}><path d={`M 0,0 L 0,${-d.width} A ${d.width} ${d.width} 0 0 1 ${d.width},0`} fill="none" stroke="#111827" strokeWidth="25" strokeDasharray="30,30" /><line x1="0" y1="0" x2="0" y2={-d.width} stroke="#111827" strokeWidth="25" strokeLinecap="round" /></g>}
+                {d.type === 'double' && <g transform={tf}><path d={`M 0,0 L 0,${-d.width / 2} A ${d.width / 2} ${d.width / 2} 0 0 1 ${d.width / 2},0`} fill="none" stroke="#111827" strokeWidth="25" strokeDasharray="30,30" /><line x1="0" y1="0" x2="0" y2={-d.width / 2} stroke="#111827" strokeWidth="25" strokeLinecap="round" /><path d={`M ${d.width},0 L ${d.width},${-d.width / 2} A ${d.width / 2} ${d.width / 2} 0 0 0 ${d.width / 2},0`} fill="none" stroke="#111827" strokeWidth="25" strokeDasharray="30,30" /><line x1={d.width} y1="0" x2={d.width} y2={-d.width / 2} stroke="#111827" strokeWidth="25" strokeLinecap="round" /></g>}
+                {d.type === 'sliding' && <g transform={tf}><line x1="-100" y1="-20" x2={d.width / 2 + 100} y2="-20" stroke="#111827" strokeWidth="25" strokeLinecap="round" /><line x1={d.width / 2 - 100} y1="20" x2={d.width + 100} y2="20" stroke="#111827" strokeWidth="25" strokeLinecap="round" /><path d={`M -50,-20 L -100,-60 L 0,-60 Z`} fill="#111827" /><path d={`M ${d.width + 50},20 L ${d.width + 100},60 L ${d.width},60 Z`} fill="#111827" /></g>}
+                {[2, 3].includes(st) && <g transform={tf}><rect x="0" y={-d.width} width={d.width} height={d.width} fill="transparent" stroke={iD ? "#000" : "transparent"} strokeWidth="10" strokeDasharray="20,20" /></g>}
+            </g> 
+        };
         const rStDet = (r, fH = 5000, step, ui, a, flrs = [], ans = []) => { 
             if (r.type === 'STAIRS') { 
                 const p = 0, w = Math.max(0, r.w), h = Math.max(0, r.h);
@@ -2088,10 +2107,18 @@ const Step3 = memo(({ s, a, t }) => {
 
             return <svg ref={svgRef} width="100%" height="100%" viewBox={`${vb.x} ${vb.y} ${vb.w} ${vb.h}`} preserveAspectRatio="xMidYMid meet" className="w-full h-full" onContextMenu={e => { if (ui.meas) { e.preventDefault(); a.setUi(p => ({ ...p, mStart: null })) } }}>
                 <defs>
-                    <pattern id="rkP" patternUnits="userSpaceOnUse" width="100" height="100" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="100" stroke="#f97316" strokeWidth="20" opacity="0.4" /></pattern>
-                    <pattern id="odP" patternUnits="userSpaceOnUse" width="400" height="400" patternTransform="rotate(45)"><path d="M 0,0 L 400,0 M 0,200 L 400,200" stroke="#86efac" strokeWidth="10" strokeDasharray="50,50" opacity="0.5" /></pattern>
-                    <pattern id="soP" patternUnits="userSpaceOnUse" width="100" height="100" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="100" stroke="#94a3b8" strokeWidth="10" opacity="0.4" /></pattern>
-                    <pattern id="skP" patternUnits="userSpaceOnUse" width="100" height="100" patternTransform="rotate(45)"><rect width="100" height="100" fill="#cbd5e1" opacity="0.3" /><line x1="0" y1="0" x2="0" y2="100" stroke="#9CA3AF" strokeWidth="20" opacity="0.5" /></pattern>
+    {/* 🌟 貼上這個：新增工業警示條紋圖案 */}
+    <pattern id="warningDiagonal" width="600" height="600" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
+        <rect width="600" height="600" fill="#ed801f" />
+        <rect y="0" width="600" height="300" fill="#2c2c2b" />
+    </pattern>
+
+    {/* 🌟 2. 修正後的原始材質標籤 */}
+    <pattern id="rkP" patternUnits="userSpaceOnUse" width="100" height="100" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="100" stroke="#f97316" strokeWidth="20" opacity="0.4" /></pattern>
+    <pattern id="odP" patternUnits="userSpaceOnUse" width="400" height="400" patternTransform="rotate(45)"><path d="M 0,0 L 400,0 M 0,200 L 400,200" stroke="#86efac" strokeWidth="10" strokeDasharray="50,50" opacity="0.5" /></pattern>
+    <pattern id="soP" patternUnits="userSpaceOnUse" width="100" height="100" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="100" stroke="#94a3b8" strokeWidth="10" opacity="0.4" /></pattern>
+    <pattern id="skP" patternUnits="userSpaceOnUse" width="100" height="100" patternTransform="rotate(45)"><rect width="100" height="100" fill="#cbd5e1" opacity="0.3" /><line x1="0" y1="0" x2="0" y2="100" stroke="#9CA3AF" strokeWidth="20" opacity="0.5" /></pattern>
+    <pattern id="bldgHatch" patternUnits="userSpaceOnUse" width="400" height="400" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="400" stroke="#3b82f6" strokeWidth="20" opacity="0.2" /></pattern>
                     <pattern id="bldgHatch" patternUnits="userSpaceOnUse" width="400" height="400" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="400" stroke="#3b82f6" strokeWidth="20" opacity="0.2" /></pattern>
                     {dxf.clip && buildings.map(b => <clipPath key={`dxC-${b.id}`} id={`dxC-${b.id}`}><g transform={`rotate(${-b.rotation}) translate(${-b.x}, ${-b.y}) translate(${-(bdOffset?.x || 0)}, ${-(bdOffset?.y || 0)})`}><path d={dxf.clip} /></g></clipPath>)}
                     {effPoly.length > 2 && buildings.map(b => <clipPath key={`blC-${b.id}`} id={`blC-${b.id}`}><g transform={`rotate(${-b.rotation}) translate(${-b.x}, ${-b.y}) translate(${-(bdOffset?.x || 0)}, ${-(bdOffset?.y || 0)})`}><polygon points={pS(effPoly)} /></g></clipPath>)}
@@ -2200,40 +2227,42 @@ const Step3 = memo(({ s, a, t }) => {
                                                     
                                                     // 🌟 加入多選與拖曳狀態判斷 (防呆版)
                                                     const isDragging = (ui && ui.drag === r.id);
+                                                    const isResizing = (ui && ui.resId?.id === r.id); // 🌟 新增判斷
                                                     const isSelected = (s && s.selRm === r.id) || (ui && ui.multiSel && ui.multiSel.includes(r.id));
+
                                                     
                                                     if (v === 'hidden') return null;
                                                     return (
                                                         <g key={`r-${r.id}`} opacity={v === 'active' ? 1 : 0.2} 
-                                                           className={step === 3 && int ? (isDragging ? 'cursor-grabbing' : 'cursor-move') : 'pointer-events-none'} 
-                                                           onPointerDown={step === 3 && int ? e => { 
-                                                               e.stopPropagation(); 
-                                                               e.target.setPointerCapture(e.pointerId); 
-                                                               // 🌟 Shift 多選邏輯 (移除所有縮寫語法)
-                                                               if (e.shiftKey) {
-                                                                   a.setUi(p => {
-                                                                       const ms = p.multiSel || [];
-                                                                       if (ms.includes(r.id)) return { ...p, multiSel: ms.filter(x => x !== r.id) };
-                                                                       return { ...p, multiSel: [...ms, r.id] };
-                                                                   });
-                                                               } else {
-                                                                   const pp = a.ptLocal(e, b.id); 
-                                                                   a.setUi(p => ({ ...p, drag: r.id, offX: pp.x - r.x, offY: pp.y - r.y, multiSel: [] })); 
-                                                                   if (a.setSelRm) a.setSelRm(r.id);
-                                                               }
-                                                           } : undefined}>
-                                                            <g clipPath={cpU}>
-                                                                <g transform={`rotate(${r.rotation || 0}, ${r.x + r.w / 2}, ${r.y + r.h / 2})`}>
-                                                                    {/* 🌟 加入碰撞紅光濾鏡與多選藍框 */}
-                                                                    <rect x={r.x} y={r.y} width={r.w} height={r.h} 
-                                                                          fill={step === 2 ? '#ffffff' : (r.type === 'SUNKEN' ? 'url(#skP)' : r.type === 'VOID' ? '#f8fafc' : (SPACE_COLORS[r.type] || r.color))} 
-                                                                          stroke={step === 2 ? '#000000' : (isDragging && ui && ui.collide ? '#ef4444' : (isSelected ? '#2563eb' : r.type === 'VOID' ? '#ef4444' : '#1e293b'))} 
-                                                                          strokeWidth={step === 2 ? '20' : (isSelected || isDragging ? '150' : '100')} 
-                                                                          strokeDasharray={r.type === 'VOID' ? '100,100' : ''} 
-                                                                          style={{ filter: (isDragging && ui && ui.collide) ? 'drop-shadow(0 0 30px rgba(239, 68, 68, 1))' : 'none', transition: 'filter 0.1s, stroke 0.1s' }}
-                                                                    />
-                                                                {['SUNKEN', 'VOID'].includes(r.type) && <path d={`M ${r.x},${r.y} L ${r.x + r.w},${r.y + r.h} M ${r.x + r.w},${r.y} L ${r.x},${r.y + r.h}`} stroke={r.type === 'VOID' ? '#ef4444' : '#9CA3AF'} strokeWidth="15" strokeDasharray='50,50' opacity='0.6' />}
-                                                                {rStDet(r, floors.find(f => f.name === r.floor)?.height || 5000, step, ui, a, floors, bAnc)}
+       className={step === 3 && int ? (isDragging ? 'cursor-grabbing' : 'cursor-move') : 'pointer-events-none'} 
+       onPointerDown={step === 3 && int ? e => { 
+           e.stopPropagation(); 
+           e.target.setPointerCapture(e.pointerId); 
+           // 🌟 Shift 多選邏輯
+           if (e.shiftKey) {
+               a.setUi(p => {
+                   const ms = p.multiSel || [];
+                   if (ms.includes(r.id)) return { ...p, multiSel: ms.filter(x => x !== r.id) };
+                   return { ...p, multiSel: [...ms, r.id] };
+               });
+           } else {
+               const pp = a.ptLocal(e, b.id); 
+               a.setUi(p => ({ ...p, drag: r.id, offX: pp.x - r.x, offY: pp.y - r.y, multiSel: [] })); 
+               if (a.setSelRm) a.setSelRm(r.id);
+           }
+       } : undefined}>
+        <g clipPath={cpU}>
+            <g transform={`rotate(${r.rotation || 0}, ${r.x + r.w / 2}, ${r.y + r.h / 2})`}>
+                {/* 🌟 這是替換進來的紅光與藍框判定 rect */}
+                <rect x={r.x} y={r.y} width={r.w} height={r.h} 
+                      fill={step === 2 ? '#ffffff' : (r.type === 'SUNKEN' ? 'url(#skP)' : r.type === 'VOID' ? '#f8fafc' : (SPACE_COLORS[r.type] || r.color))} 
+                      stroke={step === 2 ? '#000000' : ((isDragging || isResizing) && ui && ui.collide ? '#ef4444' : (isSelected ? '#2563eb' : r.type === 'VOID' ? '#ef4444' : '#1e293b'))} 
+                      strokeWidth={step === 2 ? '20' : (isSelected || isDragging || isResizing ? '150' : '100')} 
+                      strokeDasharray={r.type === 'VOID' ? '100,100' : ''} 
+                      style={{ filter: ((isDragging || isResizing) && ui && ui.collide) ? 'drop-shadow(0 0 30px rgba(239, 68, 68, 1))' : 'none', transition: 'filter 0.1s, stroke 0.1s' }}
+                />
+            {['SUNKEN', 'VOID'].includes(r.type) && <path d={`M ${r.x},${r.y} L ${r.x + r.w},${r.y + r.h} M ${r.x + r.w},${r.y} L ${r.x},${r.y + r.h}`} stroke={r.type === 'VOID' ? '#ef4444' : '#9CA3AF'} strokeWidth="15" strokeDasharray='50,50' opacity='0.6' />}
+            {rStDet(r, floors.find(f => f.name === r.floor)?.height || 5000, step, ui, a, floors, bAnc)}
 
                                                                 {/* 👇 新增：拖曳與縮放時顯示即時藍色尺寸膠囊 (附屬空間) 👇 */}
                                                                 {(ui.resId?.id === r.id || ui.drag === r.id) && (
@@ -2247,8 +2276,7 @@ const Step3 = memo(({ s, a, t }) => {
                                                             </g>
                                                         </g>
 
-                                                        {/* 1004行目の既存のドア描画コード */}
-                                                        <g transform={`rotate(${r.rotation || 0}, ${r.x + r.w / 2}, ${r.y + r.h / 2})`}>{r.doors?.map(d => rDr(r, d, step, ui, a, !1))}</g>
+                                                        
                                                         
                                                         {/* 🌟 ここから追加：附屬空間用の避難線描画ロジック */}
                                                         {(() => {
@@ -2283,6 +2311,11 @@ const Step3 = memo(({ s, a, t }) => {
                                                                 <g className="cursor-pointer" onPointerDown={e => { e.stopPropagation(); e.target.setPointerCapture(e.pointerId); a.setUi(p => ({ ...p, rotId: { id: r.id, t: 'anc' } })) }} style={{ pointerEvents: 'auto' }}><line x1={r.x + r.w / 2} y1={r.y} x2={r.x + r.w / 2} y2={r.y - 1500} stroke="#9CA3AF" strokeWidth="40" /><circle cx={r.x + r.w / 2} cy={r.y - 1500} r="300" fill="#fff" stroke="#9CA3AF" strokeWidth="60" /></g>
                                                             </g>
                                                         )}
+                                                        {/* 🌟 貼到這裡：將門片移到 DOM 最下方，保證在最頂層，不被角落縮放的透明觸控區蓋住 🌟 */}
+                                                       <g transform={`rotate(${r.rotation || 0}, ${r.x + r.w / 2}, ${r.y + r.h / 2})`} style={{ pointerEvents: 'auto' }}>
+                                                           {r.doors?.map(d => rDr(r, d, step, ui, a, !1))}
+                                                       </g>
+
                                                     </g>
                                                 );
                                             })}
@@ -2292,8 +2325,9 @@ const Step3 = memo(({ s, a, t }) => {
                                                     const c = r.corridors || DEF_IT_CORRIDORS;
                                                     const cw = r.corridorW || DEF_CORRIDOR_W;
                                                     const iD = (ui && ui.dragIt === r.id);
+                                                    const isResizing = (ui && ui.resId?.id === r.id); // 🌟 新增判斷
                                                     const isSelected = (s && s.selRm === r.id) || (ui && ui.multiSel && ui.multiSel.includes(r.id));
-                                                    
+
                                                     if (v === 'hidden') return null;
                                                     return (
                                                         <g key={`ir-${r.id}`} opacity={v === 'active' ? 1 : 0.2} 
@@ -2317,18 +2351,16 @@ const Step3 = memo(({ s, a, t }) => {
                                                             <g clipPath={cpU}>
                                                                 <g transform={`rotate(${r.rotation || 0}, ${r.x + r.w / 2}, ${r.y + r.h / 2})`}>
                                                                     <rect x={r.x} y={r.y} width={r.w} height={r.h} 
-                                                                          fill={step === 2 ? '#ffffff' : SPACE_COLORS['IT']} 
-                                                                          stroke={step === 2 ? '#000000' : (iD && ui && ui.collide ? '#ef4444' : (isSelected ? '#8b5cf6' : '#3b82f6'))} 
-                                                                          strokeWidth={step === 2 ? '20' : (isSelected || iD ? '150' : '100')} 
-                                                                          opacity={step === 2 ? '1' : (iD ? '0.8' : '0.5')} 
-                                                                          style={{ filter: (iD && ui && ui.collide) ? 'drop-shadow(0 0 30px rgba(239, 68, 68, 1))' : 'none', transition: 'filter 0.1s, stroke 0.1s' }}
-                                                                    />
+                                                                              fill={step === 2 ? '#ffffff' : SPACE_COLORS['IT']} 
+                                                                              stroke={step === 2 ? '#000000' : ((iD || isResizing) && ui && ui.collide ? '#ef4444' : (isSelected ? '#8b5cf6' : '#3b82f6'))} 
+                                                                              strokeWidth={step === 2 ? '20' : (isSelected || iD || isResizing ? '150' : '100')} 
+                                                                              opacity={step === 2 ? '1' : ((iD || isResizing) ? '0.8' : '0.5')} 
+                                                                              style={{ filter: ((iD || isResizing) && ui && ui.collide) ? 'drop-shadow(0 0 30px rgba(239, 68, 68, 1))' : 'none', transition: 'filter 0.1s, stroke 0.1s' }}
+                                                                        />
                                                                 </g>
                                                             </g>
 
-                                                            <g transform={`rotate(${r.rotation || 0}, ${r.x + r.w / 2}, ${r.y + r.h / 2})`} className="pointer-events-none">
-                                                                <g style={{ pointerEvents: 'auto' }}>{r.doors?.map(d => rDr(r, d, step, ui, a, !0))}</g>
-                                                                {(() => {
+                                                            <g transform={`rotate(${r.rotation || 0}, ${r.x + r.w / 2}, ${r.y + r.h / 2})`} className="pointer-events-none">                                                                {(() => {
                                                                     const eD = escPath?.[r.id] || escPath?.[r.id?.toString()];
                                                                     if (!eD) return null;
                                                                     
@@ -2588,200 +2620,201 @@ const Step3 = memo(({ s, a, t }) => {
                         {ui.meas && ui.mStart && ui.mPos && (() => { const d = Math.hypot(ui.mPos.x - ui.mStart.x, ui.mPos.y - ui.mStart.y), bw = Math.max(1500, Math.min(3000, d / 2 + 500)); return <g><line x1={ui.mStart.x} y1={ui.mStart.y} x2={ui.mPos.x} y2={ui.mPos.y} stroke="#3b82f6" strokeWidth="20" strokeDasharray="100,50" /><circle cx={ui.mStart.x} cy={ui.mStart.y} r="50" fill="#3b82f6" /><circle cx={ui.mPos.x} cy={ui.mPos.y} r="50" fill="#3b82f6" /><rect x={(ui.mStart.x + ui.mPos.x) / 2 - bw / 2} y={(ui.mStart.y + ui.mPos.y) / 2 - 400} width={bw} height="800" fill="#fff" stroke="#3b82f6" strokeWidth="10" rx="100" /><text x={(ui.mStart.x + ui.mPos.x) / 2} y={(ui.mStart.y + ui.mPos.y) / 2} fill="#3b82f6" fontSize="500" fontWeight="bold" textAnchor="middle" dominantBaseline="middle">{d.toFixed(0)} mm</text></g> })()}
                     </g>)}
 
-                {/* --- Step 7: 吊車視覺與互動層（置於最上層，避免被房間覆蓋） --- */}
+               {/* --- Step 7: 吊車視覺與互動層（置於最上層，避免被房間覆蓋） --- */}
                 {step === 7 && (
                     <g>
-                        {/* --- 上半部：同步平面圖 (不再位移，直接疊在原平面圖上) --- */}
+                        {/* ========================================== */}
+                        {/* --- 上半部：PLAN 吊車平面互動層 --- */}
+                        {/* ========================================== */}
                         <g>
-                            <text x={room.w/2} y={-8000} fontSize="3000" fontWeight="900" fill="#3b82f6" textAnchor="middle">{t('planCheck')}</text>
-                            <rect x={0} y={0} width={room.w} height={room.h} fill="none" stroke="#3b82f6" strokeWidth="60" strokeDasharray="200,200" className="pointer-events-none" />
+                            <text x={(room?.w || 45000)/2} y={-8000} fontSize="3000" fontWeight="900" fill="#3b82f6" textAnchor="middle">{t('planCheck')}</text>
+                            <rect x={0} y={0} width={room?.w || 45000} height={room?.h || 35000} fill="none" stroke="#3b82f6" strokeWidth="60" strokeDasharray="200,200" className="pointer-events-none" />
                             
-                            {/* 繪製吊車 (PLAN 互動層) */}
                             {(outLogistics?.cranes || []).map(c => {
-                                const targetX = c.radius || 0;
-                                const absR = Math.abs(targetX);
-                                const isFlipped = targetX < 0; 
-                                const cColor = c.color || '#3b82f6';
-
                                 return (
-                                <g key={c.id}>
-                                    <circle cx={c.x || 0} cy={c.y || 0} r={Math.abs(c.boomLen || targetX)} fill="none" stroke="#94a3b8" strokeWidth="40" strokeDasharray="200,200" className="pointer-events-none" />
-                                    <circle cx={c.x || 0} cy={c.y || 0} r={absR} fill={cColor} opacity="0.1" stroke={cColor} strokeWidth="60" strokeDasharray="400,200" className="pointer-events-none" />
-                                    
-                                    {/* 平面圖吊車本體 */}
-                                    <g transform={`translate(${c.x || 0}, ${c.y || 0}) ${isFlipped ? 'scale(-1, 1)' : ''}`} className="pointer-events-none">
-                                        <g stroke="#475569" strokeWidth="400" strokeLinecap="round">
-                                            <line x1="-3000" y1="-1500" x2="-5000" y2="-4500" />
-                                            <line x1="1000" y1="-1500" x2="3000" y2="-4500" />
-                                            <line x1="-3000" y1="1500" x2="-5000" y2="4500" />
-                                            <line x1="1000" y1="1500" x2="3000" y2="4500" />
-                                        </g>
-                                        <g stroke="#fbbf24" strokeWidth="250" strokeLinecap="round">
-                                            <line x1="-3000" y1="-1500" x2="-5000" y2="-4500" />
-                                            <line x1="1000" y1="-1500" x2="3000" y2="-4500" />
-                                            <line x1="-3000" y1="1500" x2="-5000" y2="4500" />
-                                            <line x1="1000" y1="1500" x2="3000" y2="4500" />
-                                        </g>
-                                        <rect x="-5500" y="-5000" width="1000" height="1000" fill="#1e293b" rx="200" />
-                                        <rect x="2500" y="-5000" width="1000" height="1000" fill="#1e293b" rx="200" />
-                                        <rect x="-5500" y="4000" width="1000" height="1000" fill="#1e293b" rx="200" />
-                                        <rect x="2500" y="4000" width="1000" height="1000" fill="#1e293b" rx="200" />
-
-                                        <rect x="-10000" y="-1500" width="14000" height="3000" fill="#1e293b" rx="400" />
-                                        <rect x="-9500" y="-1500" width="13000" height="3000" fill="#f59e0b" rx="200" />
-                                        <rect x="-10000" y="-1400" width="2500" height="2800" fill={cColor} rx="400" />
-                                        <rect x="-9500" y="-1200" width="1500" height="2400" fill="#94a3b8" rx="200" /> 
-                                        <circle cx={0} cy={0} r="1400" fill="#334155" /> 
+                                    <g key={`crane-plan-${c.id}`} transform={`translate(${c.x || 0}, ${c.y || 0})`}>
+                                        {/* 吊車平面旋轉中心 */}
+                                        <circle cx={0} cy={0} r="1000" fill={c.color || "#3b82f6"} className="cursor-move hover:scale-110 transition-transform" onPointerDown={e => { e.stopPropagation(); e.target.setPointerCapture(e.pointerId); a.setUi(p => ({ ...p, dragCraneId: c.id, offX: a.pt(e).x - (c.x || 0), offY: a.pt(e).y - (c.y || 0) })) }} style={{ pointerEvents: 'auto' }} />
+                                        {/* 作業半徑範圍 */}
+                                        <circle cx={0} cy={0} r={Math.abs(c.radius || 0)} fill={c.color || "#3b82f6"} opacity="0.1" className="pointer-events-none" />
+                                        <circle cx={0} cy={0} r={Math.abs(c.radius || 0)} fill="none" stroke={c.color || "#3b82f6"} strokeWidth="40" strokeDasharray="200,200" className="pointer-events-none" />
+                                        {/* 吊臂線 */}
+                                        <line x1={0} y1={0} x2={c.radius || 0} y2={0} stroke={c.color || "#3b82f6"} strokeWidth="60" strokeDasharray="100,100" className="pointer-events-none" />
+                                        {/* 掛鉤控制點 */}
+                                        <circle cx={c.radius || 0} cy={0} r="600" fill="#fff" stroke={c.color || "#3b82f6"} strokeWidth="100" className="cursor-ew-resize hover:scale-125 transition-transform" onPointerDown={e => { e.stopPropagation(); e.target.setPointerCapture(e.pointerId); a.setUi(p => ({ ...p, dragCraneHookId: c.id, mX: a.pt(e).x, startR: c.radius || 0 })) }} style={{ pointerEvents: 'auto' }} />
+                                        <text x={0} y={-1500} fill={c.color || "#3b82f6"} fontSize="1500" fontWeight="bold" textAnchor="middle">{c.name}</text>
                                     </g>
-
-                                    <g transform={`translate(${c.x || 0}, ${c.y || 0}) ${isFlipped ? 'rotate(180)' : ''}`} className="pointer-events-none">
-                                        <path d="M -1200 -1600 L -3000 -1200 L -3000 1200 L -1200 1600 Z" fill="#64748b" />
-                                        <rect x="-3200" y="-1000" width="1000" height="2000" fill="#475569" rx="300" />
-                                        <rect x="-500" y="600" width="2000" height="1200" fill={cColor} rx="200" />
-                                        <rect x="0" y="700" width="1200" height="1000" fill="#bae6fd" rx="100" />
-                                        <rect x="-1500" y="-600" width="4500" height="1200" fill={cColor} rx="200" />
-                                        <rect x="1000" y="-450" width={Math.max(0, absR - 1000)} height="900" fill="#94a3b8" />
-                                        <rect x="1000" y="-300" width={Math.max(0, absR - 1000)} height="600" fill="#cbd5e1" />
-                                        <rect x={absR - 600} y="-500" width="1000" height="1000" fill={cColor} rx="200" />
-                                        <circle cx={absR + 200} cy={0} r="300" fill="#334155" />
-                                    </g>
-
-                                    <g className={ui.dragCraneId === c.id ? "cursor-grabbing" : "cursor-move"} style={{ pointerEvents: 'auto' }} onPointerDown={e => { e.stopPropagation(); e.target.setPointerCapture(e.pointerId); const pp = a.pt(e); a.setUi(p => ({ ...p, dragCraneId: c.id, offX: pp.x - (c.x || 0), offY: pp.y - (c.y || 0) })); }}>
-                                        <circle cx={c.x || 0} cy={c.y || 0} r={1000} fill="#ffffff" stroke="#f59e0b" strokeWidth="200" className="hover:scale-110 transition-transform" />
-                                        <Icon name="Move" size={600} className="text-gray-800" />
-                                    </g>
-                                    
-                                    <g className={ui.dragCraneHookId === c.id ? "cursor-ew-resize" : "cursor-pointer"} style={{ pointerEvents: 'auto' }} onPointerDown={e => { e.stopPropagation(); e.target.setPointerCapture(e.pointerId); const pp = a.pt(e); a.setUi(p => ({ ...p, dragCraneHookId: c.id, startR: c.radius, mX: pp.x })); }}>
-                                        <circle cx={(c.x || 0) + targetX} cy={c.y || 0} r={500} fill="#ef4444" stroke="#ffffff" strokeWidth="100" className="hover:scale-125 transition-transform" />
-                                        <circle cx={(c.x || 0) + targetX} cy={c.y || 0} r={150} fill="#ffffff" />
-                                    </g>   
-                                    
-                                    <text x={c.x || 0} y={(c.y || 0) + 6500} fill="#1e293b" fontSize="1500" fontWeight="bold" textAnchor="middle" className="pointer-events-none">{c.name}</text>
-                                    <text x={(c.x || 0) + targetX/2} y={(c.y || 0) - 1500} fill="#3b82f6" fontSize="1500" fontWeight="bold" textAnchor="middle" className="pointer-events-none">R = {absR} mm</text>
-                                </g>
-                            )})}
+                                );
+                            })}
                         </g>
 
-                        {/* --- 下半部：同步斷面圖 (推到平面圖的下方 room.h + 40000 處) --- */}
-                        <g transform={`translate(0, ${room.h + 40000})`}>
-                            <line x1={-15000} y1={0} x2={room.w + 15000} y2={0} stroke="#374151" strokeWidth={150} />
+                        {/* ========================================== */}
+                        {/* --- 下半部：SECTION 吊車與建築垂直斷面 --- */}
+                        {/* ========================================== */}
+                        <g transform={`translate(0, ${(Number(room?.h) || 35000) + (Number(secData?.totalAboveH) || 15000) + 20000})`}>
+                            <text x={(room?.w || 45000)/2} y={-(Number(secData?.totalAboveH) || 15000) - 8000} fontSize="3500" fontWeight="900" fill="#ef4444" textAnchor="middle">{t('secCheck')}</text>
                             
-                            {secData.blocks.map(fb => (
-                                <g key={`s7-sec-${fb.floor}`}>
-                                    <rect x={0} y={-fb.bottomY - fb.h} width={room.w} height={fb.h} fill="#f8fafc" stroke="#cbd5e1" strokeWidth="40" />
-                                    <text x={-2000} y={-fb.bottomY - fb.h/2} fill="#64748b" fontSize="1500" fontWeight="bold" textAnchor="end" dominantBaseline="middle">{fb.floor}</text>
-                                </g>
-                            ))}
+                            {/* 1. 繪製地平線 */}
+                            <line x1={-25000} y1={0} x2={(room?.w || 45000) + 25000} y2={0} stroke="#374151" strokeWidth={150} />
+                            <text x={-25000} y={-500} fill="#334155" fontSize={1500} fontWeight="bold">{t('gl')}</text>
 
+                            {/* 2. 繪製建築物斷面塊 */}
+                            {(secData?.blocks || []).map(fb => {
+                                const sy = -(fb.bottomY || 0) - (fb.h || 0);
+                                return (
+                                    <g key={`sec-bldg-${fb.floor}`}>
+                                        <rect x={0} y={sy} width={room?.w || 45000} height={fb.h || 0} fill="#f1f5f9" stroke="#94a3b8" strokeWidth={20} opacity="0.8" />
+                                        <text x={(room?.w || 45000) / 2} y={sy + (fb.h || 0) / 2} fill="#64748b" fontSize={2000} fontWeight="bold" textAnchor="middle" dominantBaseline="middle">{fb.floor}</text>
+                                        <line x1={0} y1={sy} x2={room?.w || 45000} y2={sy} stroke="#475569" strokeWidth={40} />
+                                    </g>
+                                );
+                            })}
+
+                            {/* 3. 繪製精緻 SVG 吊車立面 */}
                             {(outLogistics?.cranes || []).map(c => {
-                                const pivotY = -2800; // 旋回軸的絕對高度
-                                const targetX = c.radius || 0;
+                                const boomLen = c.boomLen || 25000;
+                                const hookRad = c.radius || 15000;
+                                const absRad = Math.abs(hookRad);
+                                const isFlipped = hookRad < 0; 
                                 
-                                let targetFloorY = -15000; 
-                                if (outLogistics?.phases?.length > 0) {
-                                    const p = outLogistics.phases[0];
-                                    const targetF = secData.blocks.find(f => f.floor === p.targetFloor);
-                                    if (targetF) targetFloorY = -targetF.bottomY - targetF.h; 
-                                }
+                                const safeBoomLen = Math.max(absRad + 100, boomLen);
+                                const angleRad = Math.acos(Math.min(1, absRad / safeBoomLen));
+                                const boomRot = -angleRad * (180 / Math.PI); 
+
+                                const SCALE = 2800 / 90;
+                                const localBoomLen = boomLen / (SCALE * 0.75);
+                                const localDy = 4000 / (SCALE * 0.75); 
                                 
-                                const boomTipY = targetFloorY - 4000; 
-                                const dx = Math.abs(targetX);
-                                const dy = pivotY - boomTipY; 
-                                
-                                const boomLen = Math.hypot(dx, dy);
-                                const boomRot = -Math.atan2(dy, dx) * 180 / Math.PI; 
-                                const isFlipped = targetX < 0; 
-                                const cColor = c.color || "#fbbf24";
+                                // 🌟 油壓推桿連接點設在吊臂的 x=150 處
+                                const px = 260 + 150 * Math.cos(boomRot * Math.PI / 180);
+                                const py = 365 + 150 * Math.sin(boomRot * Math.PI / 180);
 
                                 return (
-                                <g key={`crane-sec-fid-${c.id}`} transform={`translate(${c.x || 0}, 0)`}>
-                                    <g transform={`scale(${isFlipped ? -1 : 1}, 1)`}>
-                                        
-                                        {/* 🌟 1. 立面底盤與駕駛室 (精準還原參考圖的切角造型) */}
-                                        <g id="chassis-side">
-                                            <rect x="-9500" y="-1800" width="12500" height="800" fill="#fbbf24" rx="100" />
-                                            
-                                            {/* 駕駛室本體 (有傾斜角與切角的車頭) */}
-                                            <path d="M -9000 -1000 L -12000 -1000 L -12500 -1500 L -11500 -2800 L -9000 -2800 Z" fill={cColor} />
-                                            
-                                            {/* 駕駛室車窗 (傾斜擋風玻璃與側窗) */}
-                                            <path d="M -9300 -1300 L -11800 -1300 L -11100 -2500 L -9300 -2500 Z" fill="#bae6fd" stroke="#475569" strokeWidth="40" strokeLinejoin="round" />
-                                            <line x1="-10300" y1="-1300" x2="-10300" y2="-2500" stroke="#475569" strokeWidth="40" />
-                                            
-                                            {/* 帶有輪拱深色陰影的車輪組 */}
-                                            {[-10000, -8000, -3000, -1000, 1000].map(tx => (
-                                                <g key={tx}>
-                                                    <path d={`M ${tx - 800} -1000 L ${tx - 600} -1600 L ${tx + 600} -1600 L ${tx + 800} -1000 Z`} fill="#1e293b" opacity="0.6" />
-                                                    <circle cx={tx} cy="-600" r="600" fill="#1e293b" />
-                                                    <circle cx={tx} cy="-600" r="250" fill="#fbbf24" />
-                                                    <circle cx={tx} cy="-600" r="80" fill="#0f172a" />
+                                    <g key={`crane-sec-${c.id}`} transform={`translate(${c.x || 0}, 0)`}>
+                                        <g transform={`scale(${isFlipped ? -SCALE : SCALE}, ${SCALE}) translate(-375, -525)`}>
+                                            <defs>
+                                                <clipPath id={`chassisClip-${c.id}`}>
+                                                    <rect x="0" y="445" width="800" height="155" />
+                                                </clipPath>
+                                            </defs>
+
+                                            <g stroke="#2c2c2b" strokeWidth="1.5">
+                                                {/* 1. 支撐腳斜臂 (Outriggers) */}
+                                                <g clipPath={`url(#chassisClip-${c.id})`}>
+                                                    <g transform="translate(225, 495) rotate(-38)">
+                                                        <rect x="0" y="-22" width="75" height="22" fill="#ed801f" />
+                                                        <line x1="15" y1="-22" x2="15" y2="0" /><line x1="30" y1="-22" x2="30" y2="0" /><line x1="45" y1="-22" x2="45" y2="0" /><line x1="60" y1="-22" x2="60" y2="0" />
+                                                    </g>
+                                                    <g transform="translate(435, 445) rotate(38)">
+                                                        <rect x="0" y="0" width="75" height="22" fill="#ed801f" />
+                                                        <line x1="15" y1="0" x2="15" y2="22" /><line x1="30" y1="0" x2="30" y2="22" /><line x1="45" y1="0" x2="45" y2="22" /><line x1="60" y1="0" x2="60" y2="22" />
+                                                    </g>
                                                 </g>
-                                            ))}
-                                            
-                                            {/* 支撐腳 (Outrigger 柱身) */}
-                                            <rect x="-9000" y="-1000" width="300" height="1000" fill="#475569" />
-                                            <rect x="-9200" y="0" width="700" height="100" fill="#1e293b" rx="20" />
-                                            <rect x="1500" y="-1000" width="300" height="1000" fill="#475569" />
-                                            <rect x="1300" y="0" width="700" height="100" fill="#1e293b" rx="20" />
-                                        </g>
 
-                                        {/* 🌟 2. 立面旋轉台與操作室 (包含尾部堆疊的配重塊) */}
-                                        <g transform={`translate(0, ${pivotY})`}>
-                                            <g id="turntable-side" className="pointer-events-none">
-                                                {/* 配重塊 (Counterweight - 後方有層次感的鐵塊) */}
-                                                <path d="M 0 800 L 2500 800 L 2800 300 L 2800 -1000 L 0 -1000 Z" fill="#475569" />
-                                                <line x1="2600" y1="400" x2="0" y2="400" stroke="#1e293b" strokeWidth="30" opacity="0.4"/>
-                                                <line x1="2700" y1="0" x2="0" y2="0" stroke="#1e293b" strokeWidth="30" opacity="0.4"/>
-                                                <line x1="2800" y1="-400" x2="0" y2="-400" stroke="#1e293b" strokeWidth="30" opacity="0.4"/>
-                                                
-                                                {/* 操作室 (Operator Cabin - 前方傾斜的大片全景玻璃) */}
-                                                <path d="M 500 800 L -1200 800 L -2000 0 L -1200 -1000 L 500 -1000 Z" fill={cColor} />
-                                                <path d="M 300 600 L -1000 600 L -1600 0 L -1000 -800 L 300 -800 Z" fill="#bae6fd" stroke="#475569" strokeWidth="40" strokeLinejoin="round" />
-                                                <line x1="-400" y1="600" x2="-400" y2="-800" stroke="#475569" strokeWidth="30" />
-                                                
-                                                {/* 轉軸保護蓋 */}
-                                                <circle cx="0" cy="0" r="500" fill={cColor} stroke="#1e293b" strokeWidth="30" />
-                                            </g>
-                                            
-                                            {/* 🌟 3. 仰角吊臂 */}
-                                            <g transform={`rotate(${boomRot})`}>
-                                                <rect x="-1000" y="-500" width={boomLen * 0.4 + 1000} height="1000" fill={cColor} rx="150" />
-                                                <rect x={boomLen * 0.3} y="-400" width={boomLen * 0.4} height="800" fill="#475569" rx="100" />
-                                                <rect x={boomLen * 0.35} y="-400" width="200" height="800" fill={cColor} />
-                                                <rect x={boomLen * 0.65} y="-400" width="200" height="800" fill={cColor} />
-                                                <rect x={boomLen * 0.6} y="-300" width={boomLen * 0.4} height="600" fill={cColor} rx="50" />
-                                                
-                                                {/* 油壓推桿 (動態指向吊臂底部) */}
-                                                <line x1="400" y1="800" x2={boomLen * 0.25} y2="400" stroke="#94a3b8" strokeWidth="300" strokeLinecap="round" />
-                                                <line x1="400" y1="800" x2={boomLen * 0.15} y2="550" stroke="#1e293b" strokeWidth="150" strokeLinecap="round" />
+                                                {/* 2. 車體底盤 (Chassis) */}
+                                                <g>
+                                                    <rect x="150" y="445" width="400" height="8" fill="#737476" stroke="none" />
+                                                    <rect x="150" y="453" width="380" height="17" fill="#2c2c2b" stroke="none" />
+                                                    <path d="M 150 445 H 550 V 453 H 530 V 470 H 150 V 445" fill="none" />
+                                                    <line x1="150" y1="453" x2="530" y2="453" />
+                                                    <rect x="272" y="470" width="6" height="40" fill="#2c2c2b" />
+                                                    <rect x="446" y="470" width="6" height="40" fill="#2c2c2b" />
+                                                    <rect x="25" y="460" width="125" height="45" fill="#2c2c2b" />
+                                                    <rect x="505" y="460" width="45" height="25" fill="#2c2c2b" />
+                                                </g>
 
-                                                {/* 吊臂尖端 */}
-                                                <path d={`M ${boomLen - 400} -400 L ${boomLen + 300} -200 L ${boomLen + 300} 200 L ${boomLen - 400} 400 Z`} fill={cColor} />
-                                                <circle cx={boomLen} cy="0" r="200" fill="#1e293b" />
+                                                {/* 3. 支撐腳垂直系統 (Outrigger Cylinders) */}
+                                                <g>
+                                                    <rect x="210" y="445" width="25" height="55" fill="#ed801f" strokeLinejoin="round" />
+                                                    <rect x="217" y="500" width="11" height="15" fill="#8e522c" strokeLinejoin="round" />
+                                                    <rect x="190" y="515" width="65" height="18" rx="6" fill="#ed801f" />
+                                                    <rect x="485" y="445" width="25" height="55" fill="#ed801f" strokeLinejoin="round" />
+                                                    <rect x="492" y="500" width="11" height="15" fill="#8e522c" strokeLinejoin="round" />
+                                                    <rect x="465" y="515" width="65" height="18" rx="6" fill="#ed801f" />
+                                                </g>
 
-                                                {/* 🌟 4. 吊索、滑輪組與重物 (永遠抵消旋轉垂直向下) */}
-                                                <g transform={`translate(${boomLen}, 0) rotate(${-boomRot})`}>
-                                                    <line x1="0" y1="0" x2="0" y2="2500" stroke="#334155" strokeWidth="20" />
-                                                    <rect x="-300" y="2500" width="600" height="800" fill={cColor} rx="150" />
-                                                    <path d="M -300 2700 L 300 3100 M -300 2900 L 300 3300" stroke="#1e293b" strokeWidth="40" />
+                                                {/* 4. 前方駕駛艙 (Front Cabin) */}
+                                                <g>
+                                                    <path d="M 85 340 L 145 340 Q 150 340 150 345 L 150 490 A 42 42 0 0 0 66 490 C 60 505, 50 515, 25 515 L 25 495 L 40 495 L 40 475 L 25 475 L 25 410 L 70 345 Q 75 340 85 340 Z" fill="#ed801f" strokeLinejoin="round" />
+                                                    <path d="M 150 475 A 50 50 0 0 0 60 482 C 50 495, 40 505, 25 505" fill="none" />
+                                                    <line x1="45" y1="425" x2="45" y2="475" />
+                                                    <line x1="135" y1="425" x2="150" y2="425" />
+                                                    <polygon points="75,355 135,355 135,425 45,425" fill="#ffffff" strokeLinejoin="round" />
+                                                    <line x1="75" y1="355" x2="75" y2="425" />
+                                                </g>
+
+                                                {/* 5. 車輪組 (Wheels) */}
+                                                {[110, 330, 410].map(wx => (
+                                                    <g key={`wh-${wx}`} transform={`translate(${wx}, 490)`}>
+                                                        <circle r="35" fill="#2c2c2b" />
+                                                        <circle r="20" fill="#454545" />
+                                                        <circle r="12" fill="#c5c5c7" />
+                                                        <circle r="4" fill="#2c2c2b" />
+                                                    </g>
+                                                ))}
+
+                                                {/* 6. 旋轉基座 (Turret Base) */}
+                                                <rect x="330" y="435" width="90" height="10" fill="#2c2c2b" />
+
+                                                {/* --- UPPER CABIN AND BOOM --- */}
+                                                <g transform="translate(375, 435) scale(0.75) translate(-435, -435)">
                                                     
-                                                    {/* 金屬吊鉤 */}
-                                                    <path d="M 0 3300 C 250 3300, 250 3900, 0 3900 C -200 3900, -200 3600, 0 3600" fill="none" stroke="#334155" strokeWidth="100" strokeLinecap="round" />
-                                                    
-                                                    {/* 懸吊貨物 */}
-                                                    <rect x="-1500" y="4000" width="3000" height="800" fill="#bae6fd" stroke="#0284c7" strokeWidth="40" rx="100" />
+                                                    {/* 操作艙與配重塊 (Rear Cab) */}
+                                                    <g fill="#ed801f">
+                                                        <rect x="185" y="365" width="215" height="70" />
+                                                        <polygon points="400,435 400,280 480,280 520,380 495,435" />
+                                                    </g>
+                                                    <line x1="400" y1="295" x2="486" y2="295" />
+                                                    <line x1="400" y1="365" x2="400" y2="435" />
+                                                    <g fill="#ffffff">
+                                                        <rect x="415" y="315" width="30" height="60" />
+                                                        <polygon points="455,315 485,315 505,375 455,375" />
+                                                    </g>
+
+                                                    {/* 動態油壓推桿 (Piston) */}
+                                                    <line x1="430" y1="280" x2={px} y2={py} stroke="#8e522c" strokeWidth="8" strokeLinecap="round" />
+                                                    <path d="M 415 280 C 415 265, 445 265, 445 280 Z" fill="#ed801f" />
+
+                                                    {/* 🌟🌟 修復重點：動態三節吊臂與滑輪組 (Boom System) 🌟🌟 */}
+                                                    <g transform={`translate(260, 365) rotate(${boomRot})`}>
+                                                        
+                                                        {/* 1. 三節臂精準拉伸 (改用比例計算，保證永不脫節) */}
+                                                        <rect x={localBoomLen * 0.6} y="-28" width={localBoomLen * 0.4} height="16" fill="#ed801f" />
+                                                        <rect x={localBoomLen * 0.3} y="-34" width={localBoomLen * 0.4} height="28" fill="#ed801f" />
+                                                        <polygon points={`-40,-40 ${localBoomLen * 0.35},-40 ${localBoomLen * 0.35},0 0,0`} fill="#ed801f" strokeLinejoin="round" />
+                                                        
+                                                        {/* 2. 油壓推桿的吊臂連接座 */}
+                                                        <path d="M 130 0 L 170 0 L 150 20 Z" fill="#ed801f" />
+
+                                                        {/* 3. 吊臂頭與警示斑馬紋 (完美黏合在末端) */}
+                                                        <rect x={localBoomLen - 60} y="-45" width="60" height="50" fill="url(#warningDiagonal)" strokeLinejoin="round" />
+
+                                                        {/* 4. 吊索、滑輪與藍色貨物 (中心點對齊，保證鋼索絕對垂直不歪斜) */}
+                                                        <g transform={`translate(${localBoomLen - 30}, -20) rotate(${-boomRot})`}>
+                                                            {/* 絕對垂直的雙鋼索 */}
+                                                            <line x1="-15" y1="0" x2="-15" y2={localDy - 70} stroke="#2c2c2b" strokeWidth="1.5" />
+                                                            <line x1="15" y1="0" x2="15" y2={localDy - 70} stroke="#2c2c2b" strokeWidth="1.5" />
+
+                                                            <g transform={`translate(0, ${localDy - 70})`}>
+                                                                <polygon points="-20,0 20,0 12,30 -12,30" fill="url(#warningDiagonal)" strokeLinejoin="round" />
+                                                                <path d="M -5 30 L 5 30 L 5 40 C 30 50, 30 90, 0 90 C -20 90, -25 75, -22 65 C -15 70, -5 78, 2 74 C 12 68, 7 56, -5 56 Z" fill="#2c2c2b" />
+                                                                <line x1="-2" y1="65" x2="-60" y2="140" stroke="#868889" strokeWidth="1.5" />
+                                                                <line x1="2" y1="65" x2="60" y2="140" stroke="#868889" strokeWidth="1.5" />
+                                                                <rect x="-60" y="140" width="120" height="35" fill="#9fdcf5" />
+                                                            </g>
+                                                        </g>
+                                                    </g>
                                                 </g>
                                             </g>
                                         </g>
                                     </g>
-                                </g>
-                            )})}
+                                );
+                            })}
 
-                            <text x={room.w/2} y={-secData.totalAboveH - 8000} fontSize="3500" fontWeight="900" fill="#ef4444" textAnchor="middle">{t('secCheck')}</text>
-                            
+                            {/* 4. 繪製階段卸貨動線箭頭 */}
                             {(outLogistics?.phases || []).map((p, i) => {
-                                const targetF = secData.blocks.find(f => f.floor === p.targetFloor);
-                                const targetY = targetF ? (-targetF.bottomY - targetF.h) : 0;
+                                const targetF = (secData?.blocks || []).find(f => f.floor === p.targetFloor);
+                                const targetY = targetF ? (-(targetF.bottomY || 0) - (targetF.h || 0)) : 0;
                                 const startX = -8000 - (i * 4000);
                                 return (
                                     <g key={p.id}>
@@ -2815,8 +2848,9 @@ const Step3 = memo(({ s, a, t }) => {
                             const sH = fb.h - 300, sY = -fb.bottomY - sH, fR = [...rooms, ...anc].filter(r => r.floor === fb.floor && (r.buildingId || 'B1') === activeBuilding && r.type !== 'OUTDOOR'), iR = fR.filter(r => r.x <= secs.x && r.x + r.w >= secs.x).sort((a, b) => a.y - b.y);
                             let cp = 0; const cr = []; iR.forEach(r => { if (r.y > cp + 10) cr.push({ s: cp, w: r.y - cp }); cp = Math.max(cp, r.y + r.h) }); if (cp < sw - 10) cr.push({ s: cp, w: sw - cp });
                             return <g key={`sxb-${fb.floor}`}>
-                                {i === 0 && <rect x={0} y={sy} width={sw} height={300} fill="#94a3b8" />}
-                                <rect x={0} y={sy + fb.h} width={sw} height={300} fill="#94a3b8" />
+                                {/* 👇 修正：改為 dB.length - 1 (頂樓) 才畫屋頂，並套用樓板厚度設定 */}
+                                {i === dB.length - 1 && <rect x={0} y={sy} width={sw} height={fb.slabThickness || 300} fill="#94a3b8" />}
+                                <rect x={0} y={sy + fb.h} width={sw} height={fb.slabThickness || 300} fill="#94a3b8" />
                                 <line x1={15} y1={sy} x2={15} y2={sy + fb.h} stroke="#64748b" strokeWidth={30} strokeDasharray="400,400" />
                                 <line x1={sw - 15} y1={sy} x2={sw - 15} y2={sy + fb.h} stroke="#64748b" strokeWidth={30} strokeDasharray="400,400" />
                                 <text x={-1000} y={sy + fb.h / 2} textAnchor="end" dominantBaseline="middle" fill="#1e293b" fontSize={2000} fontWeight="bold">{fb.floor}</text>
@@ -2841,7 +2875,11 @@ const Step3 = memo(({ s, a, t }) => {
                             if (fb.isSeismic) {
                                 const fAbove = dB[i - 1]?.floor, fBelow = dB[i + 1]?.floor;
                                 const iRSeismic = anc.filter(r => r.floor === fBelow && (r.buildingId || 'B1') === activeBuilding && ['STAIRS', 'EV_LOBBY', 'PS', 'DS', 'VOID'].includes(r.type) && anc.some(ar => ar.floor === fAbove && (ar.buildingId || 'B1') === activeBuilding && ar.type === r.type && Math.abs(ar.x - r.x) < 10 && Math.abs(ar.y - r.y) < 10)).filter(r => r.y <= secs.y && r.y + r.h >= secs.y);
-                                return <g key={`sy-${fb.floor}`}><rect x={0} y={sy} width={sw} height={300} fill="#94a3b8" /><rect x={0} y={sy + fb.h} width={sw} height={300} fill="#94a3b8" /><line x1={15} y1={sy} x2={15} y2={sy + fb.h} stroke="#64748b" strokeWidth={30} strokeDasharray="400,400" /><line x1={sw - 15} y1={sy} x2={sw - 15} y2={sy + fb.h} stroke="#64748b" strokeWidth={30} strokeDasharray="400,400" />
+                                return <g key={`syb-${fb.floor}`}>
+                                   {/* 👇 同樣的修正 */}
+                                   {i === dB.length - 1 && <rect x={0} y={sy} width={sw} height={fb.slabThickness || 300} fill="#94a3b8" />}
+                                   <rect x={0} y={sy + fb.h} width={sw} height={fb.slabThickness || 300} fill="#94a3b8" />
+                                   <line x1={15} y1={sy} x2={15} y2={sy + fb.h} stroke="#64748b" strokeWidth={30} strokeDasharray="400,400" /><line x1={sw - 15} y1={sy} x2={sw - 15} y2={sy + fb.h} stroke="#64748b" strokeWidth={30} strokeDasharray="400,400" />
                                     {iRSeismic.map((r, ri) => { const zh = fb.h, ty = sy, ft = fmtTxt(r.type === undefined ? t('dataHall') : r.name, r.w), fl = r.type === 'VOID' ? '#ffffff' : (r.color || SPACE_COLORS[r.type] || '#f1f5f9'), st = r.type === 'VOID' ? '#ef4444' : '#64748b', da = r.type === 'VOID' ? '50,50' : ''; return <g key={`sysyr-${r.id}-${ri}`}><rect x={r.x} y={ty} width={r.w} height={zh} fill={fl} opacity="1" /><line x1={r.x} y1={ty} x2={r.x} y2={ty + zh} stroke={st} strokeWidth={15} strokeDasharray={da} /><line x1={r.x + r.w} y1={ty} x2={r.x + r.w} y2={ty + zh} stroke={st} strokeWidth={15} strokeDasharray={da} />{r.w > 800 && r.type !== 'VOID' && <text x={r.x + r.w / 2} y={ty + zh / 2} textAnchor="middle" dominantBaseline="middle" fill={SPACE_TEXT_COLORS[r.type] || '#1E293B'} fontSize={ft.fs} fontWeight="bold">{ft.t}</text>}</g> })}
                                 </g>;
                             }
@@ -3760,21 +3798,27 @@ const Step3 = memo(({ s, a, t }) => {
                             nh = Math.max(1200, Math.round(rawRh));
                         }
 
+                        let isColliding = false;
                         if (!['OUTDOOR', 'SEMI_OUTDOOR', 'SUNKEN', 'VOID'].includes(obj.type)) {
                             nx = Math.max(0, Math.min(nx, bW - 1200));
                             ny = Math.max(0, Math.min(ny, bH - 1200));
                             if (nx + nw > bW) nw = bW - nx;
                             if (ny + nh > bH) nh = bH - ny;
-                            
+    
                             const bRooms = (rooms || []).filter(r => (r.buildingId || 'B1') === bId);
                             const bAnc = (anc || []).filter(r => (r.buildingId || 'B1') === bId);
-                            if (!chkCol(id, obj.floor, obj.x, obj.y, obj.w, obj.h, bRooms, bAnc) && chkCol(id, obj.floor, nx, ny, nw, nh, bRooms, bAnc)) return;
+    
+                            // 🌟 移除強制的 return 卡死機制，改為標記碰撞狀態
+                            if (chkCol(id, obj.floor, nx, ny, nw, nh, bRooms, bAnc)) {
+                                isColliding = true;
+                            }
                         }
 
-                        const cEv = es => es ? es.map(ev => ({ ...ev, dx: Math.min(ev.dx, Math.max(0, nw - ev.w)), dy: Math.min(ev.dy, Math.max(0, nh - ev.h)) })) : undefined;
-                        isIt ? setRooms(prev => prev.map(r => r.id === id ? { ...r, x: nx, y: ny, w: nw, h: nh, elevators: cEv(r.elevators) } : r)) 
-                             : setAnc(prev => prev.map(r => r.id === id ? { ...r, x: nx, y: ny, w: nw, h: nh, elevators: cEv(r.elevators) } : r));
-                        setUi(pr => ({ ...pr, snapX: sx, snapY: sy }));
+const cEv = es => es ? es.map(ev => ({ ...ev, dx: Math.min(ev.dx, Math.max(0, nw - ev.w)), dy: Math.min(ev.dy, Math.max(0, nh - ev.h)) })) : undefined;
+isIt ? setRooms(prev => prev.map(r => r.id === id ? { ...r, x: nx, y: ny, w: nw, h: nh, elevators: cEv(r.elevators) } : r)) 
+     : setAnc(prev => prev.map(r => r.id === id ? { ...r, x: nx, y: ny, w: nw, h: nh, elevators: cEv(r.elevators) } : r));
+// 🌟 將碰撞狀態傳遞給 UI
+setUi(pr => ({ ...pr, snapX: sx, snapY: sy, collide: isColliding }));
                     }
                 }
                 else if (ui.rotId) { const isIt = ui.rotId.t === 'it', obj = isIt ? rooms.find(r => r.id === ui.rotId.id) : anc.find(r => r.id === ui.rotId.id); if (obj) { const op = ptLocal(e, obj.buildingId || 'B1'); const cx = obj.x + obj.w / 2, cy = obj.y + obj.h / 2, dx = op.x - cx, dy = op.y - cy; let a = Math.atan2(dy, dx) * (180 / Math.PI) + 90; a = Math.round(a / 15) * 15; isIt ? setRooms(prev => prev.map(r => r.id === ui.rotId.id ? { ...r, rotation: a } : r)) : setAnc(prev => prev.map(r => r.id === ui.rotId.id ? { ...r, rotation: a } : r)) } }
